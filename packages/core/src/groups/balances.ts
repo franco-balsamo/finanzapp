@@ -46,6 +46,10 @@ export function displayBalance(m: Money): Money {
   return Math.abs(m.minor) < ZERO_THRESHOLD_MINOR[m.currency] ? zero(m.currency) : money(m.minor, m.currency);
 }
 
-export function isBelowThreshold(m: Money): boolean {
+/**
+ * "Al día" (02 §7): debajo del umbral de su moneda. Vale para mostrar, simplificar, abandonar,
+ * quitar a un integrante y eliminar el grupo. El saldo exacto queda guardado igual.
+ */
+export function isSettled(m: Money): boolean {
   return displayBalance(m).minor === 0;
 }

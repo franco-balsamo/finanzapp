@@ -100,6 +100,7 @@ describe('límite usado y disponible (T-06)', () => {
     const s = state(expenses, [], '2026-10-02');
     expect(find(s, '2026-08').status).toBe('overdue');
     // 50.000 + 20.000 + 30.000 + 50 × 2.028
+    expect(s.pendingTotal).toEqual({ ARS: ars(100_000), USD: usd(50) });
     expect(s.limitUsed).toEqual(ars(201_400));
     expect(s.available).toEqual(ars(798_600));
   });

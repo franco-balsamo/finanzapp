@@ -143,7 +143,10 @@ La pregunta aparece solo para gastos con fecha anterior al último cierre, así 
 
 > **✅ Decidido** (cambios respecto del prototipo):
 > - **Cierre real:** cada resumen permite corregir su fecha real de cierre y de vencimiento. El día fijo de la tarjeta se usa solo como estimación.
-> - **Días 29 a 31:** se permiten. En los meses más cortos se usa el último día del mes. *Ejemplo: cierre el 31 → en febrero cierra el 28 (o el 29 si es bisiesto); en abril, el 30.* Para saber en qué mes vence se comparan los días **configurados** (vencimiento contra cierre), y después cada fecha se ajusta al último día del mes si hace falta (eng review, 1/10). *Ejemplo: cierre 31 y vencimiento 30 → el resumen de febrero cierra el 28/2 (29 si es bisiesto) y vence el 30/3.* Si al ajustar a un mes corto el vencimiento no queda después del cierre, pasa al mes siguiente (/review del 2/10). *Ejemplo: cierre 28 y vencimiento 29 → febrero de 2027 cierra el 28/2 y vence el 29/3; en 2028, que es bisiesto, vence el 29/2.*
+> - **Días 29 a 31:** se permiten. En los meses más cortos se usa el último día del mes. *Ejemplo: cierre el 31 → en febrero cierra el 28 (o el 29 si es bisiesto); en abril, el 30.* Para saber en qué mes vence se comparan los días **configurados** (vencimiento contra cierre), y después cada fecha se ajusta al último día del mes si hace falta (eng review, 1/10). *Ejemplo: cierre 31 y vencimiento 30 → el resumen de febrero cierra el 28/2 (29 si es bisiesto) y vence el 30/3.*
+> - **Distancia entre cierre y vencimiento** (decisión del 2/10, después del /review):
+>   - El formulario de la tarjeta exige que el vencimiento quede **al menos 5 días después del cierre en todos los meses**, contando el cambio de mes y febrero. *Ejemplo: cierre 24 y vencimiento 6 → el caso más corto es febrero (24/2 → 6/3, 10 días): se acepta. Cierre 28 y vencimiento 2 → en febrero de 2027 queda 28/2 → 2/3, 2 días: se rechaza.*
+>   - Como red de seguridad, si después del ajuste a fin de mes el vencimiento queda el mismo día del cierre o antes, core lo pasa **al día siguiente del cierre**. *Ejemplo: cierre 28 y vencimiento 29 (un dato que el formulario ya no deja guardar) → febrero de 2027 cierra el 28/2 y vence el 1/3; en 2028, que es bisiesto, vence el 29/2.*
 > - **Conversión de dólares:** todo lo que es de tarjeta (pagar dólares en pesos, límite usado) usa el **dólar tarjeta**. El dólar de referencia queda para cuentas y patrimonio.
 > - **Pago parcial, vencidos y deshacer:** como se describe arriba. En el prototipo solo había pago total, los vencidos dejaban de contar y deshacer no devolvía la plata.
 > - **Eliminar:** se archiva 7 días y después se borra. En el prototipo se borraba en el momento.
@@ -276,6 +279,10 @@ Se puede **excluir** a alguien de un gasto: no se le asigna parte.
 - Saldo = lo que pagó − lo que le toca, sumado en todos los gastos del grupo, más los pagos que hizo y menos los que recibió.
 - Positivo significa que le deben; negativo, que debe.
 - Los saldos de todos suman cero. Al mostrar y al simplificar, los saldos menores a $1 se toman como cero en los grupos en pesos; en los grupos en dólares, solo los menores a US$ 0,01 (eng review, 1/10).
+- **"Al día"** (decisión del 2/10, después del /review): un integrante está al día si su saldo es menor a $1 en un grupo en pesos o menor a US$ 0,01 en uno en dólares. Ese mismo umbral vale para **todo**: mostrar el saldo, simplificar, abandonar el grupo, quitar a un integrante y eliminar el grupo sin aviso de saldos pendientes. El resto de centavos **queda guardado**; no se borra ni se redondea en la base.
+- Al simplificar, solo pagan los que **no** están al día, y les pagan a todos los que tienen saldo a favor, aunque ese saldo esté debajo del umbral. Así una deuda visible nunca se queda sin transferencias.
+
+  *Ejemplo: grupo en pesos con Ana −$2,97 y Beto, Caro y Dani +$0,99 cada uno. Beto, Caro y Dani están al día (pueden abandonar el grupo) y se muestran en $0. Ana no está al día: "Cómo saldar" le muestra $0,99 a Beto, $0,99 a Caro y $0,99 a Dani. Si en cambio Ana tuviera −$0,80 y Beto +$0,80, los dos estarían al día y no habría transferencias.*
 
 ### Simplificar deudas
 Se ordenan los que deben y los que cobran de mayor a menor y se van cruzando: el que más debe le paga al que más cobra, hasta que todos quedan en cero. Resultado: **como máximo N−1 transferencias**.
@@ -327,11 +334,19 @@ Si pagaste vos y elegiste con qué, el gasto se registra **una sola vez** y afec
 patrimonio = Σ saldos de cuentas (convertidos)
            + Σ inversiones (el prototipo ya las suma; en la v1 no hay inversiones)
            − Σ lo que falta pagar de cada tarjeta (saldo pendiente de resúmenes cerrados,
-               incluidos vencidos, + en curso + cuotas futuras), con dólar tarjeta
+               incluidos vencidos, + en curso + cuotas futuras), en pesos y en dólares
            + Σ tu saldo en cada grupo (positivo o negativo)
 ```
 
-Se muestra en pesos o en dólares según el selector de arriba, con el dólar de referencia.
+Se muestra en pesos o en dólares según el selector de arriba.
+
+> **✅ Decidido** (2/10, después del /review): cada componente se convierte **una sola vez** a la moneda en que se muestra el inicio, nunca de ida y vuelta.
+> - **En pesos:** la deuda en dólares de las tarjetas, × **dólar tarjeta**; las cuentas y los saldos de grupo en dólares, × **dólar de referencia**.
+> - **En dólares:** la deuda en dólares de las tarjetas va **tal cual**; todo lo que está en pesos (cuentas, grupos y la deuda en pesos de las tarjetas) se divide por el **dólar de referencia**.
+>
+> *Ejemplo: cuentas por $500.000 y US$ 1.000; un grupo a favor por $60.000; una tarjeta que debe $187.000 + US$ 50. Dólar tarjeta $2.028 y MEP $1.500.*
+> - *En pesos: cuentas $500.000 + 1.000 × 1.500 = $2.000.000; grupos $60.000; tarjetas $187.000 + 50 × 2.028 = $288.400. Patrimonio: **$1.771.600**.*
+> - *En dólares: cuentas 1.000 + 500.000 ÷ 1.500 = US$ 1.333,33; grupos 60.000 ÷ 1.500 = US$ 40; tarjetas 50 + 187.000 ÷ 1.500 = US$ 174,67. Patrimonio: **US$ 1.198,66**. Antes, la deuda de US$ 50 pasaba a pesos con el dólar tarjeta y volvía con el MEP, y figuraba como US$ 67,60.*
 
 ## 9. Alertas
 

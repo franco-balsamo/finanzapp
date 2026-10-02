@@ -150,16 +150,17 @@ describe('categorySpend (02 §6)', () => {
   });
 });
 
-describe('netWorth (T-16, 02 §8)', () => {
+describe('netWorth (T-16, 02 §8): cada componente se convierte una sola vez', () => {
   const input = {
     referenceRate: rate('1500.00'),
+    fxCard: rate('2028.00'),
     accountBalances: [ars(500_000), usd(1_000)],
     myGroupBalances: [ars(60_000)],
-    // $187.000 + US$ 50 a dólar tarjeta $2.028, como lo devuelve cardState.limitUsed.
-    cardDebts: [ars(288_400)],
+    // $187.000 + US$ 50, como lo devuelve cardState.pendingTotal.
+    cardDebts: [{ ARS: ars(187_000), USD: usd(50) }],
   };
 
-  it('en pesos', () => {
+  it('en pesos: la deuda en dólares de la tarjeta va a dólar tarjeta', () => {
     expect(netWorth({ ...input, display: 'ARS' })).toEqual({
       accounts: ars(2_000_000),
       groups: ars(60_000),
@@ -168,12 +169,37 @@ describe('netWorth (T-16, 02 §8)', () => {
     });
   });
 
-  it('en dólares, convirtiendo una vez por bloque', () => {
+  it('en dólares: la deuda en dólares va tal cual y lo que está en pesos se divide por el MEP', () => {
     expect(netWorth({ ...input, display: 'USD' })).toEqual({
       accounts: usd(1_333.33),
       groups: usd(40),
-      cards: usd(192.27),
-      total: usd(1_181.06),
+      cards: usd(174.67),
+      total: usd(1_198.66),
     });
+  });
+
+  it('US$ 100 de deuda de tarjeta se ven como US$ 100, sin ida y vuelta por el dólar tarjeta', () => {
+    const result = netWorth({
+      display: 'USD',
+      referenceRate: rate('1300.00'),
+      fxCard: rate('2028.00'),
+      accountBalances: [],
+      myGroupBalances: [],
+      cardDebts: [{ ARS: ars(0), USD: usd(100) }],
+    });
+    expect(result.cards).toEqual(usd(100));
+    expect(result.total).toEqual(usd(-100));
+  });
+
+  it('suma la deuda de varias tarjetas antes de convertir', () => {
+    const result = netWorth({
+      ...input,
+      display: 'ARS',
+      cardDebts: [
+        { ARS: ars(100_000), USD: usd(25) },
+        { ARS: ars(87_000), USD: usd(25) },
+      ],
+    });
+    expect(result.cards).toEqual(ars(288_400));
   });
 });

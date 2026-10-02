@@ -5,6 +5,7 @@ import {
   dueDate,
   installmentSchedule,
   statementFor,
+  validateCardDays,
   validateOverride,
 } from './schedule';
 import type { CreditCard } from './types';
@@ -66,13 +67,35 @@ describe('mes de vencimiento (02 §3)', () => {
     expect(dueDate({ ...cardA, closeDay, dueDay }, period)).toBe(due);
   });
 
-  it('si al ajustar a febrero el vencimiento cae el mismo día del cierre, pasa al mes siguiente', () => {
+  it('si después del ajuste a fin de mes vence el día del cierre o antes, vence al día siguiente', () => {
     const card: CreditCard = { ...cardA, closeDay: 28, dueDay: 29 };
     expect(closeDate(card, '2027-02')).toBe('2027-02-28');
-    expect(dueDate(card, '2027-02')).toBe('2027-03-29');
-    expect(dueDate({ ...cardA, closeDay: 30, dueDay: 31 }, '2027-02')).toBe('2027-03-31');
-    // En un bisiesto el 29/2 existe, así que vence ese mismo mes.
+    expect(dueDate(card, '2027-02')).toBe('2027-03-01');
+    expect(dueDate({ ...cardA, closeDay: 30, dueDay: 31 }, '2027-02')).toBe('2027-03-01');
+    // En un bisiesto el 29/2 existe, así que vence ese día.
     expect(dueDate(card, '2028-02')).toBe('2028-02-29');
+    // En los meses largos no cambia nada.
+    expect(dueDate(card, '2027-03')).toBe('2027-03-29');
+  });
+});
+
+describe('validateCardDays: al menos 5 días entre cierre y vencimiento (02 §3)', () => {
+  it('cierre 24 y vencimiento 6: el caso más corto es febrero, con 10 días', () => {
+    expect(validateCardDays(24, 6)).toEqual({ ok: true, minDays: 10 });
+  });
+
+  it('cierre 28 y vencimiento 2: en febrero quedan 2 días, se rechaza', () => {
+    expect(validateCardDays(28, 2)).toEqual({ ok: false, minDays: 2 });
+  });
+
+  it.each([
+    [5, 10, true],
+    [5, 9, false],
+    [28, 29, false],
+    [25, 31, false],
+    [31, 10, true],
+  ])('cierre %i y vencimiento %i → %s', (closeDay, dueDay, ok) => {
+    expect(validateCardDays(closeDay, dueDay).ok).toBe(ok);
   });
 });
 

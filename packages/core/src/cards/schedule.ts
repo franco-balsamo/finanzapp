@@ -1,11 +1,23 @@
 // En qué resumen entra cada compra y cada cuota (02 §3, D9, D10, D11).
 
-import { addMonths, clampedDate, daysBetween, parseDate, periodOf, type ISODate, type Period } from '../dates';
+import {
+  addDays,
+  addMonths,
+  clampedDate,
+  daysBetween,
+  makePeriod,
+  parseDate,
+  periodOf,
+  type ISODate,
+  type Period,
+} from '../dates';
 import { money } from '../money';
 import type { CardExpense, CreditCard, Installment, StatementOverride } from './types';
 
 const OVERRIDE_TOLERANCE_DAYS = 10;
 const MAX_INSTALLMENTS = 24;
+/** Días mínimos entre el cierre y el vencimiento que acepta el formulario de la tarjeta. */
+export const MIN_DAYS_CLOSE_TO_DUE = 5;
 
 function findOverride(overrides: readonly StatementOverride[], period: Period) {
   const override = overrides.find((o) => o.period === period);
@@ -46,8 +58,30 @@ export function dueDate(
   // Se comparan los días configurados, antes de ajustar al último día del mes (D11).
   const duePeriod = card.dueDay > card.closeDay ? period : addMonths(period, 1);
   const due = clampedDate(duePeriod, card.dueDay);
-  // Si al ajustar a un mes corto el vencimiento no queda después del cierre, pasa al mes siguiente.
-  return due > clampedDate(period, card.closeDay) ? due : clampedDate(addMonths(duePeriod, 1), card.dueDay);
+  // Red de seguridad: si al ajustar a fin de mes el vencimiento no queda después del cierre,
+  // vence al día siguiente del cierre. El formulario ya exige 5 días (validateCardDays).
+  const close = clampedDate(period, card.closeDay);
+  return due > close ? due : addDays(close, 1);
+}
+
+/**
+ * El formulario exige que el vencimiento quede al menos 5 días después del cierre en todos los
+ * meses, contando el cambio de mes y febrero (bisiesto o no). Devuelve el caso más corto.
+ */
+export function validateCardDays(
+  closeDay: number,
+  dueDay: number,
+): { ok: boolean; minDays: number } {
+  const card: CreditCard = { id: 'validacion', closeDay, dueDay, creditLimit: money(1, 'ARS') };
+  let minDays = Infinity;
+  // 2027 no es bisiesto y 2028 sí: cubren todos los largos de mes.
+  for (const year of [2027, 2028]) {
+    for (let month = 1; month <= 12; month++) {
+      const period = makePeriod(year, month);
+      minDays = Math.min(minDays, daysBetween(closeDate(card, period), dueDate(card, period)));
+    }
+  }
+  return { ok: minDays >= MIN_DAYS_CLOSE_TO_DUE, minDays };
 }
 
 /** Resumen en el que entra una compra: el día de cierre o antes, ese mes; después, el siguiente. */

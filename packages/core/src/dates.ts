@@ -65,3 +65,9 @@ export function daysBetween(from: ISODate, to: ISODate): number {
   const ms = Date.UTC(b.year, b.month - 1, b.day) - Date.UTC(a.year, a.month - 1, a.day);
   return Math.round(ms / 86_400_000);
 }
+
+export function addDays(date: ISODate, days: number): ISODate {
+  const { year, month, day } = parseDate(date);
+  const d = new Date(Date.UTC(year, month - 1, day + days));
+  return makeDate(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+}

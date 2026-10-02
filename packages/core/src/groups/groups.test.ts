@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { rate } from '../money';
 import { ars, usd } from '../cards/fixtures';
-import { displayBalance, groupBalances } from './balances';
+import { displayBalance, groupBalances, isSettled } from './balances';
 import { shares } from './shares';
 import { simplifyDebts } from './simplify';
 import type { Group, GroupExpense } from './types';
@@ -185,6 +185,31 @@ describe('umbral de cero por moneda (T-14, D14)', () => {
     expect(simplifyDebts(viaje, { vos: usd(0.8), ana: usd(-0.8), juan: usd(0) })).toEqual([
       { fromMemberId: 'ana', toMemberId: 'vos', amount: usd(0.8) },
     ]);
+  });
+
+  it('deudas chicas (02 §7): Ana debe $2,97 y le paga a los tres que están al día', () => {
+    const cuatro: Group = { ...cabana, members: [...cabana.members, { id: 'dani', name: 'Dani' }] };
+    const balances = { vos: ars(0.99), ana: ars(-2.97), juan: ars(0.99), dani: ars(0.99) };
+    expect(['vos', 'juan', 'dani'].every((id) => isSettled(balances[id as keyof typeof balances]))).toBe(true);
+    expect(isSettled(balances.ana)).toBe(false);
+    expect(simplifyDebts(cuatro, balances)).toEqual([
+      { fromMemberId: 'ana', toMemberId: 'vos', amount: ars(0.99) },
+      { fromMemberId: 'ana', toMemberId: 'juan', amount: ars(0.99) },
+      { fromMemberId: 'ana', toMemberId: 'dani', amount: ars(0.99) },
+    ]);
+  });
+
+  it('"al día" usa el mismo umbral que mostrar: menos de $1 o menos de US$ 0,01', () => {
+    expect(isSettled(ars(0.99))).toBe(true);
+    expect(isSettled(ars(-1))).toBe(false);
+    expect(isSettled(usd(0))).toBe(true);
+    expect(isSettled(usd(-0.01))).toBe(false);
+  });
+
+  it('el saldo exacto queda guardado: groupBalances no redondea los centavos', () => {
+    const balances = groupBalances(cabana, [equal('g', ars(100), 'ana')], []);
+    expect(balances['ana']).toEqual(ars(66.66));
+    expect(balances['vos']).toEqual(ars(-33.33));
   });
 
   it('empates: se desempata por orden de ingreso al grupo', () => {

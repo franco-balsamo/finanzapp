@@ -28,6 +28,8 @@ export interface CardState {
   statements: StatementView[];
   /** Resúmenes cerrados con saldo pendiente, el más próximo a vencer primero. */
   toPay: StatementView[];
+  /** Todo lo que falta pagar, por moneda: lo usa el patrimonio para convertir una sola vez. */
+  pendingTotal: ByCurrency;
   /** En pesos: todo lo que falta pagar, con los dólares a dólar tarjeta. */
   limitUsed: Money;
   available: Money;
@@ -134,9 +136,10 @@ export function cardState(input: CardStateInput): CardState {
 
   const pendingSum = (currency: Currency) =>
     statements.reduce((sum, s) => add(sum, s.pending[currency]), zero(currency));
+  const pendingTotal: ByCurrency = { ARS: pendingSum('ARS'), USD: pendingSum('USD') };
   // Los dólares se suman primero y se convierten una sola vez.
-  const limitUsed = add(pendingSum('ARS'), convert(pendingSum('USD'), fxCard, 'ARS'));
+  const limitUsed = add(pendingTotal.ARS, convert(pendingTotal.USD, fxCard, 'ARS'));
   const available = max0(subtract(card.creditLimit, limitUsed));
 
-  return { currentPeriod, statements, toPay, limitUsed, available };
+  return { currentPeriod, statements, toPay, pendingTotal, limitUsed, available };
 }

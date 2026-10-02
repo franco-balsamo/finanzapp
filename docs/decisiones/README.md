@@ -35,6 +35,16 @@ Segunda tanda, aprobada por Fran el mismo día:
 - **01:** suma el ajuste manual de saldo y, en Ajustes, las tarjetas archivadas, borrar mi cuenta y exportar mis datos.
 - **03 alineado con 02:** aviso de vencimiento con `days_before:2` (1 a 5, a las 10:00) y `delete_account()` pasa el rol de dueño.
 
+## Decisiones del /review de core (2/10)
+
+Fran aprobó las tres que quedaron abiertas en el `/review` de `packages/core`. Están en 02 con ejemplos y en core con tests:
+- **Patrimonio (02 §8):** cada componente se convierte una sola vez a la moneda en que se muestra, nunca de ida y vuelta.
+  - En pesos: la deuda en dólares de las tarjetas, × dólar tarjeta; las cuentas en dólares, × dólar de referencia.
+  - En dólares: la deuda en dólares de las tarjetas va tal cual; lo que está en pesos se divide por el dólar de referencia.
+  - Antes, US$ 100 de deuda de tarjeta se mostraban como US$ 156.
+- **Deudas chicas en grupos (02 §7):** el umbral de D14 (< $1 o < US$ 0,01) define "al día" para todo: mostrar, simplificar, abandonar, quitar a un integrante y eliminar el grupo. Los centavos que sobran quedan guardados. Al simplificar, pagan solo los que no están al día, a todos los que tienen saldo a favor, así una deuda visible siempre tiene sus transferencias.
+- **Cierre y vencimiento (02 §3):** el formulario exige al menos 5 días entre el cierre y el vencimiento en todos los meses, contando el cambio de mes y febrero (`validateCardDays`). En core, si después del ajuste a fin de mes el vencimiento queda el día del cierre o antes, vence al día siguiente del cierre. Esto reemplaza la regla anterior de pasarlo al mes siguiente.
+
 ## Decisiones abiertas
 
 - **Legal (R-LEGAL):** consultar con un abogado e inscribir la base (Ley 25.326) antes de la beta.

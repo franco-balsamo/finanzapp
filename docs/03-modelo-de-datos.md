@@ -195,21 +195,22 @@ Firmas implementadas en la épica del 2/10 ([spec](specs/2026-10-02-epica-core.m
 |---|---|---|
 | `convert(money, rate, to)` | monto, cotización en pesos por dólar, moneda destino | monto convertido, half-up al centavo alejándose del cero. Única vía de conversión (D8) |
 | `fromDbNumeric(s, currency)` / `toDbNumeric(money)` | `numeric(14,2)` como string / `Money` | conversión exacta en el borde con la base |
-| `closeDate` / `dueDate(card, period, overrides)` | tarjeta, resumen, cierres corregidos | fecha de cierre y de vencimiento (días 29 a 31 ajustados, D11) |
+| `closeDate` / `dueDate(card, period, overrides)` | tarjeta, resumen, cierres corregidos | fecha de cierre y de vencimiento (días 29 a 31 ajustados, D11; si el vencimiento ajustado no queda después del cierre, vence al día siguiente) |
+| `validateCardDays(closeDay, dueDay)` | días configurados | ok si en todos los meses el vencimiento queda al menos 5 días después del cierre, y el mínimo de días |
 | `statementFor(card, date, overrides)` | tarjeta, fecha de compra, cierres corregidos | resumen en el que entra; usa el cierre real si existe |
 | `validateOverride(card, period, override, overrides)` | corrección propuesta | ok, o el motivo del rechazo (±10 días y entre los cierres vecinos, D10) |
 | `installmentSchedule(card, expense, overrides)` | gasto con cuotas | cuota, resumen y monto de cada una; el resto va a la primera (D9) |
-| `cardState({card, expenses, payments, overrides, today, fxCard})` | tarjeta, consumos, pagos, hoy, dólar tarjeta | resúmenes con estado, total, pagado, pendiente y excedente; "A pagar"; límite usado y disponible |
+| `cardState({card, expenses, payments, overrides, today, fxCard})` | tarjeta, consumos, pagos, hoy, dólar tarjeta | resúmenes con estado, total, pagado, pendiente y excedente; "A pagar"; pendiente total por moneda (`pendingTotal`); límite usado y disponible |
 | `lateExpenseImpact({card, expense, expenses, payments, overrides, today, fxCard})` | gasto que se está cargando | si es tarde, si hay que preguntar "¿Ya lo pagaste?" y los pagos propuestos (R3-3, R3-4) |
 | `shares(group, expense)` | gasto de grupo | parte de cada incluido en la moneda del grupo, con el resto al que pagó |
 | `groupBalances(group, expenses, payments)` | gastos y pagos del grupo | saldo exacto por integrante; suman cero |
-| `displayBalance(money)` | saldo | cero si está debajo del umbral de su moneda (D14) |
-| `simplifyDebts(group, balances)` | saldos | transferencias, como máximo N−1 |
+| `displayBalance(money)` / `isSettled(money)` | saldo | cero si está debajo del umbral de su moneda (D14) / si el integrante está "al día" (02 §7) |
+| `simplifyDebts(group, balances)` | saldos | transferencias, como máximo N−1: pagan solo los que no están al día, a todos los que tienen saldo a favor |
 | `accountBalance(account, movements, payments)` | cuenta, movimientos, pagos de tarjeta | saldo actual |
 | `categorySpend({movements, cards, month, reference, todayRate})` | movimientos y tarjetas | gasto por categoría en pesos: tu parte; con tarjeta, cada cuota en el mes de cierre de su resumen |
-| `netWorth({display, referenceRate, accountBalances, myGroupBalances, cardDebts})` | saldos ya calculados | cuentas, grupos, tarjetas y total en pesos o en dólares |
+| `netWorth({display, referenceRate, fxCard, accountBalances, myGroupBalances, cardDebts})` | saldos ya calculados; `cardDebts` = `pendingTotal` de cada tarjeta | cuentas, grupos, tarjetas y total en pesos o en dólares, cada componente convertido una sola vez (02 §8) |
 
 - Son funciones en **TypeScript puro, sin dependencias ni acceso a la base**: reciben filas y devuelven resultados con `Money`.
 - Las usan la app (incluso sin conexión) y las Edge Functions (aviso de cierre y vencimientos), así que los números siempre coinciden.
 - Se testean con Vitest; los ejemplos de [02-reglas-de-negocio.md](02-reglas-de-negocio.md) son los primeros tests (matriz completa en [05-plan-tecnico.md](05-plan-tecnico.md)).
-- `groupBalances` devuelve los saldos exactos. El umbral de cero por moneda lo aplican `displayBalance` (al mostrar) y `simplifyDebts`.
+- `groupBalances` devuelve los saldos exactos. El umbral de cero por moneda lo aplican `displayBalance`, `isSettled` y `simplifyDebts`; la base usa el mismo umbral para abandonar, quitar a un integrante y eliminar el grupo.
