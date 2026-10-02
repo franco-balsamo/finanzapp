@@ -5,6 +5,11 @@ web-build/
 *.tsbuildinfo
 .DS_Store
 
-# gstack vendorizado (879 MB) y su estado local
-.claude/skills/gstack/
+# gstack vendorizado (879 MB), sus skills (symlinks con rutas de esta máquina) y su estado local
+.claude/skills/
 .gstack/
+
+# Variables de entorno: nunca al repo (solo un .env.example sin secretos)
+.env
+.env.*
+!.env.example

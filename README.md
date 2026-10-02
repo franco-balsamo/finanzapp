@@ -2,7 +2,7 @@
 
 App de finanzas personales para Argentina: cuentas en pesos y en dólares, tarjetas con sus cuotas, gastos compartidos y el dólar del día, en un solo lugar. El nombre es provisorio.
 
-**Estado:** prototipo visual terminado; alcance de la v1 en revisión. Todavía no hay código de la app.
+**Estado:** prototipo visual terminado y alcance de la v1 revisado. Ya está el monorepo con `packages/core` (los cálculos, con tests) y `apps/mobile` (Expo, todavía sin pantallas). Comandos: `pnpm install`, `pnpm test` y `pnpm typecheck`.
 
 ## Documentación
 
