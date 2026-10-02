@@ -185,6 +185,7 @@ Salen de los hallazgos de esta revisión. Hay que correrlos con Claude Code o Co
   - Viene de: D4. Verificación: deploy de prueba.
 - [ ] **T10 (P1, vos solo: ~2 días / CC: ~2 h):** app y base. "Borrar mi cuenta" y "Exportar mis datos".
   - Viene de: D17. Verificación: T-26.
+  - `delete_account` pone `payment_alias` en nulo en cada lugar que pasa a provisorio (decisión del 2/10).
 - [ ] **T11 (P1, vos solo: ~2 días / CC: ~4 h):** E2E. Maestro con los flujos E-1 a E-4 contra Supabase local.
   - Viene de: D15. Verificación: los 4 flujos pasan.
 - [ ] **T12 (P2, vos solo: ~1 h):** cuenta. Verificar el precio del plan pago de Supabase y cómo pausa los proyectos inactivos.

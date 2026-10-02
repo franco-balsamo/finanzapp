@@ -31,6 +31,9 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - Funciones `is_group_member`, `get_guest_group` y `create_group`.
   - 125 tests pgTAP en `supabase/tests/` (T-20, T-21, T-25, dos usuarios y permisos de grupo).
   - Comandos (con colima andando): `npx supabase start`, `npx supabase db reset`, `npx supabase test db` y `npx supabase db lint`.
+- **Funciones de grupo hechas** (decisiones en `docs/decisiones/2026-10-02-spec-funciones-de-grupo.md`):
+  - Migración `supabase/migrations/20261002130000_group_functions.sql`: `claim_member`, `undo_claim`, `leave_group`, `void_group_payment`, `rotate_invite_token`, `revoke_invite_token`, `updated_by` en gastos de grupo y saldos en SQL que copian core.
+  - 195 tests pgTAP en verde.
 
 ## Próximos pasos
 1. **Claude:** actualizar el prototipo a la v1:
@@ -40,7 +43,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - toast con "Deshacer";
    - detalle de tarjeta y de grupo en el orden nuevo;
    - sin débito como tipo propio, sin comprobante, sin presupuestos, sin alertas de precio, solo Iguales y Montos.
-2. **T6:** trigger de cotización por fecha del gasto y cron. Después, la prueba T9 (que las Edge Functions importen `packages/core`) y las funciones de negocio: `leave_group`, `claim_member`, `undo_claim`, `transfer_ownership`, `delete_account`, `export_account`, la purga y regenerar el token de invitación.
+2. **T6:** trigger de cotización por fecha del gasto y cron. Después, la prueba T9 (que las Edge Functions importen `packages/core`) y lo que falta de la base: quitar a un integrante, eliminar el grupo, `delete_account` y `export_account` (T10) y la purga (T7).
 3. **Pendiente de herramientas:** instalar `codex` si se quiere la revisión externa en `/spec` y `/review` (esta vez no corrió) y `gh` si se suben los specs como issues.
 
 ## Commits

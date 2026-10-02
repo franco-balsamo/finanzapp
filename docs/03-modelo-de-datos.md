@@ -161,12 +161,14 @@ Cotizaciones que guarda el backend.
 Índices: `group_members(user_id, group_id)` y `group_expenses(group_id, date)`.
 
 ### `group_expenses`, `group_expense_parts`
-| group_expenses | id, group_id, date, description, amount, currency, fx_rate (fija), payer_member_id, split_mode (equal/exact; pct y shares en la fase 2), category_id, created_by, updated_at, deleted_at |
+| group_expenses | id, group_id, date, description, amount, currency, fx_rate (fija), payer_member_id, split_mode (equal/exact; pct y shares en la fase 2), category_id, created_by, updated_at y updated_by (los completa un trigger al editar), deleted_at |
 |---|---|
 | **group_expense_parts** | group_id, group_expense_id, member_id, value (1 en partes iguales; monto, % o partes según el modo) |
 
 ### `group_payments`
-| id | group_id | from_member_id | to_member_id | amount (moneda del grupo) | date |
+| id | group_id | from_member_id | to_member_id | amount (moneda del grupo) | date | created_by | deleted_at, voided_by |
+
+Un pago nunca se edita: si estaba mal, cualquier integrante lo **anula** (`void_group_payment`, guarda `deleted_at` y `voided_by`) y se registra de nuevo. Los saldos y la web de invitados ignoran los anulados.
 
 ### `alerts` y `notifications`
 | alerts | id, user_id, type (en la v1: `card_closing`/`card_due`; precio, presupuesto, grupo y semanal después), enabled, params jsonb. Uno por tarjeta y tipo; solo push en la v1 |
@@ -183,14 +185,17 @@ Ejemplos de `params` según el tipo:
 | Función | Qué hace |
 |---|---|
 | `is_group_member(group_id)` | Security definer y stable, con `search_path` fijo. Devuelve true si el usuario actual es integrante activo (`left_at` nulo) de un grupo no eliminado. La usan todas las políticas de grupo. Solo `authenticated` |
-| `get_guest_group(token)` | Security definer. Compara el SHA-256 del token y devuelve nombre, moneda, integrantes (`id`, `display_name`, `has_account`, `active`), gastos no borrados con sus partes y pagos, **sin** `payment_alias`, `user_id` ni `created_by`. Los montos van como texto. Los saldos los calcula la web con `groupBalances` de core. Es la única función que ejecuta el rol anónimo |
+| `get_guest_group(token)` | Security definer. Compara el SHA-256 del token y devuelve nombre, moneda, integrantes (`id`, `display_name`, `has_account`, `active`), gastos no borrados con sus partes y pagos, **sin** `payment_alias`, `user_id` ni `created_by`. Los montos van como texto. Los saldos los calcula la web con `groupBalances` de core. Es la única función que ejecuta el rol anónimo. No muestra los pagos anulados |
 | `create_group(group_name, group_currency, member_name)` | Security definer. Con sesión iniciada: crea el grupo y el lugar de quien lo crea, y lo deja como dueño |
-| `leave_group(group_id)` | *(pendiente)* Salir estando al día; si es el dueño, pasa el rol (02 §7). Es la única forma de escribir `left_at` |
-| `claim_member(token, member_id)` | Con sesión iniciada: asigna `user_id` a un integrante provisorio, guarda `claimed_at`, crea los movimientos con `origin = claim` y avisa al grupo |
-| `undo_claim(member_id)` | Solo el dueño o quien reclamó, dentro de los 7 días. **Solo corta el vínculo** (revisión del 2/10, R3-8 y R3-9): pone `user_id` en nulo, así el lugar vuelve a ser provisorio con el mismo nombre; los gastos y pagos del grupo no cambian. Borra los movimientos de esa cuenta con `origin = claim` de ese grupo, porque eran del integrante provisorio. En los demás movimientos de esa cuenta que venían del grupo pone `group_expense_id` en nulo, así pasan a contar completos. No borra nada más de la cuenta. Guarda `unclaimed_at` y `unclaimed_by` y avisa a la persona desvinculada |
-| `transfer_ownership(group_id)` | Al irse el dueño: elige al azar un integrante con `user_id` y avisa a todos; si no hay ninguno, deja el dueño en nulo |
+| `leave_group(group_id)` | Salir estando al día (umbral por moneda, calculado con `private.group_balances`). Si es el dueño, llama a `transfer_ownership`. Es la única forma de escribir `left_at` |
+| `claim_member(token, member_id)` | Con sesión iniciada y el token vigente: asigna `user_id` a un integrante provisorio y activo, guarda `claimed_at`, crea un movimiento `origin = claim` "Sin medio de pago" por cada gasto no borrado que pagó ese lugar (con su categoría y `my_share` = su parte en la moneda del gasto) y avisa a los integrantes con cuenta. Falla si quien reclama ya es integrante activo del grupo |
+| `void_group_payment(payment_id)` | Cualquier integrante anula un pago. Anular uno ya anulado no hace nada |
+| `rotate_invite_token(group_id)` / `revoke_invite_token(group_id)` | Integrantes con cuenta. `rotate` genera un token de 128 bits en base64url, guarda su SHA-256 y lo devuelve una sola vez; el link anterior deja de andar. `revoke` lo borra |
+| `undo_claim(member_id)` | Solo el dueño o quien reclamó, dentro de los 7 días. **Solo corta el vínculo** (revisión del 2/10, R3-8 y R3-9): pone `user_id` en nulo, así el lugar vuelve a ser provisorio con el mismo nombre; los gastos y pagos del grupo no cambian. Borra los movimientos de esa cuenta con `origin = claim` de ese grupo, porque eran del integrante provisorio. En los demás movimientos de esa cuenta que venían del grupo pone `group_expense_id` en nulo, así pasan a contar completos. No borra nada más de la cuenta. Borra el `payment_alias` (es de la persona, no del lugar). Guarda `unclaimed_at` y `unclaimed_by` y avisa a la persona desvinculada, salvo que lo haya deshecho ella. Si el lugar era el dueño, llama a `transfer_ownership` |
+| `private.transfer_ownership(group_id, leaving_member)` | Interna. Al irse el dueño: elige al azar otro integrante activo con `user_id` y avisa a todos; si no hay ninguno, deja el dueño en nulo |
 | `purge_archived_cards(now)` | Diaria, en una transacción: convierte los pagos no revertidos en movimientos `card_payment` (`origin = purge`) y después borra la tarjeta, sus consumos y sus pagos |
-| `delete_account()` | Borra los datos personales; en los grupos, el lugar pasa a provisorio con el mismo nombre. Si era dueño, llama a `transfer_ownership` aunque tenga saldo (02 §10) |
+| `delete_account()` | *(T10)* Borra los datos personales; en los grupos, el lugar pasa a provisorio con el mismo nombre y `payment_alias` en nulo. Si era dueño, llama a `transfer_ownership` aunque tenga saldo (02 §10) |
+| `private.member_shares` / `private.group_balances` | Internas. Copia en SQL de `shares` y `groupBalances` de core, en centavos, para "al día" y `my_share`. Tienen que dar lo mismo que core: los tests de `supabase/tests/05_group_balances.test.sql` usan los mismos ejemplos. Si cambia la regla en core, cambia acá |
 | `export_account()` | Devuelve un JSON con todo lo del usuario |
 
 ## Cálculos (`packages/core`)

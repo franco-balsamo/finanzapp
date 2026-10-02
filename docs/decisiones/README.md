@@ -11,6 +11,7 @@
 | [2026-10-02-revision-claude.md](2026-10-02-revision-claude.md) | Revisión de las decisiones del 1/10. Fran aprobó todas las propuestas de la §2 y ya están aplicadas en 02, `producto-y-lanzamiento.md` y 01 |
 | [2026-10-02-spec-core.md](2026-10-02-spec-core.md) | /spec de `packages/core`: monorepo, `Money`, tarjetas, grupos, categorías, cuentas y patrimonio (T1 a T4) |
 | [2026-10-02-spec-t5-supabase.md](2026-10-02-spec-t5-supabase.md) | /spec de T5: migraciones, políticas por fila, FK compuestas, `is_group_member`, `get_guest_group`, `create_group` y tests pgTAP |
+| [2026-10-02-spec-funciones-de-grupo.md](2026-10-02-spec-funciones-de-grupo.md) | /spec de funciones de grupo: reclamar y deshacer, salir, anular pagos, link de invitación y saldos en SQL |
 
 La fuente de verdad es `02-reglas-de-negocio.md` junto con `03-modelo-de-datos.md`.
 
@@ -48,7 +49,7 @@ Fran aprobó las tres que quedaron abiertas en el `/review` de `packages/core`. 
 
 ## Decisiones abiertas
 
-- **Base (T5):** deshacer un pago entre integrantes (`group_payments` no tiene update ni borrado) y limpiar el `payment_alias` en `delete_account`. Detalle en `2026-10-02-spec-t5-supabase.md`.
+- **Base:** quitar a un integrante y eliminar el grupo (02 §7) todavía no tienen función.
 - **Legal (R-LEGAL):** consultar con un abogado e inscribir la base (Ley 25.326) antes de la beta.
 - **Verificaciones técnicas:**
   - Que las Edge Functions puedan importar `packages/core` (T9). **Pendiente:** el repo todavía no tiene el monorepo armado (no hay `package.json`, `apps/`, `packages/` ni `supabase/`). Hay que hacer la prueba apenas exista. Si Deno no resuelve el paquete del workspace, se usa un import map (`deno.json`) que apunte a `../../packages/core/src/index.ts`, siempre que el paquete no use APIs de Node. Copiarlo al hacer deploy queda como última opción (revisión del 2/10).

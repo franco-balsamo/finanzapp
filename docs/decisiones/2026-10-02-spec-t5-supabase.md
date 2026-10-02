@@ -88,6 +88,5 @@ Cubre T5 del informe de eng review: migraciones de 03, políticas por fila con `
 
 ## Abierto
 
-- **Pagos entre integrantes:** `group_payments` no tiene update, delete ni `deleted_at`, así que un pago mal registrado no se puede deshacer. Decidir antes de la pantalla de grupo.
-- **Alias al borrar la cuenta:** al borrar una cuenta, `user_id` pasa a nulo, pero el `payment_alias` queda. Lo tiene que limpiar `delete_account`.
+- ~~Pagos entre integrantes~~ y ~~alias al borrar la cuenta~~: resueltos en `2026-10-02-spec-funciones-de-grupo.md`.
 - **Gasto de grupo en otra moneda:** que tenga `fx_rate` no se valida en la base. Lo valida core (`shares` rechaza un gasto sin cotización).

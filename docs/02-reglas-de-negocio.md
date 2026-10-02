@@ -312,6 +312,7 @@ Si pagaste vos y elegiste con qué, el gasto se registra **una sola vez** y afec
 - Si pagó otro integrante, en tus finanzas no se registra nada: solo cambia tu saldo en el grupo.
 - También se puede cargar un gasto de grupo eligiendo **"No sumarlo a mis finanzas"**.
 - Al **registrar un pago** entre integrantes baja el saldo. Opcionalmente puede mover el saldo de una de tus cuentas (por defecto, "No mover saldos"). En la v1 Mangos solo **registra** pagos; no mueve plata (procesar pagos exige registrarse ante el BCRA).
+- Un pago **nunca se edita**. Si estaba mal, cualquier integrante lo **anula** y se registra de nuevo. Los saldos no cuentan los pagos anulados (decisión del 2/10).
 
 ### Permisos
 
