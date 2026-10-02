@@ -28,6 +28,8 @@ export function groupBalances(
   }
 
   for (const payment of payments) {
+    // Un pago anulado no cuenta: se registra de nuevo si estaba mal (02 §7).
+    if (payment.deletedAt) continue;
     if (payment.amount.currency !== group.currency) {
       throw new RangeError(`El pago ${payment.id} no está en la moneda del grupo`);
     }

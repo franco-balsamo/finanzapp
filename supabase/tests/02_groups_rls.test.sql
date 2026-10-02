@@ -2,7 +2,7 @@
 -- permisos por columna, sin delete y sin referencias a otro grupo.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(43);
+select plan(44);
 
 -- Ana (dueña), Beto (integrante), Caro (ex integrante) y Dani (ajena, con su propio grupo).
 insert into auth.users (id, email) values
@@ -79,22 +79,30 @@ select is_empty($$select 1 from public.group_expenses$$, 'la ex integrante ya no
 -- ── Beto, integrante: no referencia a integrantes de otro grupo ──
 set local request.jwt.claims = '{"sub": "b0000000-0000-4000-8000-000000000002", "role": "authenticated"}';
 select lives_ok(
-  $$insert into public.group_expenses (id, group_id, date, description, amount, currency, payer_member_id, split_mode)
-    values ('f0000000-0000-4000-8000-000000000002', '90000000-0000-4000-8000-000000000001', '2026-10-02', 'Asado', 30000, 'ARS',
-            'e0000000-0000-4000-8000-000000000002', 'equal')$$,
+  $$select public.save_group_expense('f0000000-0000-4000-8000-000000000002', '90000000-0000-4000-8000-000000000001',
+      '2026-10-02', 'Asado', 30000, 'ARS', null, 'e0000000-0000-4000-8000-000000000002', 'equal', null,
+      '[{"member_id": "e0000000-0000-4000-8000-000000000001"}, {"member_id": "e0000000-0000-4000-8000-000000000002"}]')$$,
   'un integrante carga un gasto'
 );
 select throws_ok(
-  $$insert into public.group_expenses (group_id, date, description, amount, currency, payer_member_id, split_mode)
-    values ('90000000-0000-4000-8000-000000000001', '2026-10-02', 'Pagó Dani', 1000, 'ARS', 'e0000000-0000-4000-8000-000000000005', 'equal')$$,
-  '23503', null,
+  $$select public.save_group_expense(gen_random_uuid(), '90000000-0000-4000-8000-000000000001',
+      '2026-10-02', 'Pagó Dani', 1000, 'ARS', null, 'e0000000-0000-4000-8000-000000000005', 'equal', null,
+      '[{"member_id": "e0000000-0000-4000-8000-000000000001"}]')$$,
+  '22023', null,
   'un gasto con un pagador de otro grupo se rechaza'
 );
 select throws_ok(
-  $$insert into public.group_expense_parts (group_id, group_expense_id, member_id, value)
-    values ('90000000-0000-4000-8000-000000000001', 'f0000000-0000-4000-8000-000000000002', 'e0000000-0000-4000-8000-000000000005', 1)$$,
-  '23503', null,
+  $$select public.save_group_expense(gen_random_uuid(), '90000000-0000-4000-8000-000000000001',
+      '2026-10-02', 'Con Dani', 1000, 'ARS', null, 'e0000000-0000-4000-8000-000000000002', 'equal', null,
+      '[{"member_id": "e0000000-0000-4000-8000-000000000005"}]')$$,
+  '22023', null,
   'una parte para un integrante de otro grupo se rechaza'
+);
+select throws_ok(
+  $$insert into public.group_expense_parts (group_id, group_expense_id, member_id, value)
+    values ('90000000-0000-4000-8000-000000000001', 'f0000000-0000-4000-8000-000000000002', 'e0000000-0000-4000-8000-000000000004', 1)$$,
+  '42501', null,
+  'las partes no se escriben directo'
 );
 select throws_ok(
   $$insert into public.group_payments (group_id, from_member_id, to_member_id, amount, date)
@@ -120,9 +128,9 @@ select lives_ok(
   'un integrante vincula su movimiento a un gasto del grupo'
 );
 select throws_ok(
-  $$insert into public.group_expenses (group_id, date, description, amount, currency, payer_member_id, split_mode, category_id)
-    values ('90000000-0000-4000-8000-000000000001', '2026-10-02', 'Sin categoría ajena', 1000, 'ARS',
-            'e0000000-0000-4000-8000-000000000002', 'equal', '00000000-0000-4000-8000-0000000000ff')$$,
+  $$select public.save_group_expense(gen_random_uuid(), '90000000-0000-4000-8000-000000000001',
+      '2026-10-02', 'Sin categoría ajena', 1000, 'ARS', null, 'e0000000-0000-4000-8000-000000000002', 'equal',
+      '00000000-0000-4000-8000-0000000000ff', '[{"member_id": "e0000000-0000-4000-8000-000000000002"}]')$$,
   '23503', null,
   'un gasto de grupo con una categoría inexistente se rechaza'
 );

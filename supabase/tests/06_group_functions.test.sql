@@ -133,7 +133,11 @@ select is(
 set local role authenticated;
 set local request.jwt.claims = '{"sub": "b0000000-0000-4000-8000-000000000002", "role": "authenticated"}';
 select lives_ok(
-  $$update public.group_expenses set description = 'Súper Coto' where id = 'ab000000-0000-4000-8000-000000000001'$$,
+  $$select public.save_group_expense('ab000000-0000-4000-8000-000000000001', '90000000-0000-4000-8000-000000000001',
+      '2026-10-01', 'Súper Coto', 30000, 'ARS', null, 'e0000000-0000-4000-8000-000000000003', 'equal',
+      '00000000-0000-4000-8000-000000000001',
+      '[{"member_id": "e0000000-0000-4000-8000-000000000001"}, {"member_id": "e0000000-0000-4000-8000-000000000002"},
+        {"member_id": "e0000000-0000-4000-8000-000000000003"}]')$$,
   'Beto edita un gasto'
 );
 reset role;

@@ -29,6 +29,8 @@ export interface GroupPayment {
   fromMemberId: string;
   toMemberId: string;
   amount: Money;
+  /** Si está anulado (void_group_payment), no cuenta para los saldos. */
+  deletedAt?: string | null;
 }
 
 export type Balances = Record<string, Money>;

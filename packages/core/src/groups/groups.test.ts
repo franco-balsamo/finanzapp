@@ -41,12 +41,8 @@ const anaPaga = exact('g2', ars(30_000), 'ana', [
   ['juan', ars(20_000)],
 ]);
 
-describe('saldos y simplificación (T-10, T-11)', () => {
-  it('Vos +60.000, Ana −10.000, Juan −50.000; suman cero', () => {
-    const balances = groupBalances(cabana, [vosPaga, anaPaga], []);
-    expect(balances).toEqual({ vos: ars(60_000), ana: ars(-10_000), juan: ars(-50_000) });
-  });
-
+// Los saldos y las partes de los ejemplos de 02 §7 están en fixtures.test.ts (compartidos con la base).
+describe('simplificación (T-11)', () => {
   it('Juan → Vos $50.000 y Ana → Vos $10.000', () => {
     const balances = groupBalances(cabana, [vosPaga, anaPaga], []);
     expect(simplifyDebts(cabana, balances)).toEqual([
@@ -54,41 +50,9 @@ describe('saldos y simplificación (T-10, T-11)', () => {
       { fromMemberId: 'ana', toMemberId: 'vos', amount: ars(10_000) },
     ]);
   });
-
-  it('un pago entre integrantes baja la deuda', () => {
-    const balances = groupBalances(
-      cabana,
-      [vosPaga, anaPaga],
-      [{ id: 'p', fromMemberId: 'juan', toMemberId: 'vos', amount: ars(50_000) }],
-    );
-    expect(balances).toEqual({ vos: ars(10_000), ana: ars(-10_000), juan: ars(0) });
-  });
 });
 
 describe('restos al dividir (T-12, T-13, D9)', () => {
-  it('$100 entre 3, pagó Ana → Ana $33,34', () => {
-    expect(shares(cabana, equal('g', ars(100), 'ana'))).toEqual({
-      vos: ars(33.33),
-      ana: ars(33.34),
-      juan: ars(33.33),
-    });
-  });
-
-  it('si el que pagó quedó excluido, el resto va al primer incluido', () => {
-    expect(shares(cabana, equal('g', ars(0.03), 'ana', ['vos', 'juan']))).toEqual({
-      vos: ars(0.02),
-      juan: ars(0.01),
-    });
-  });
-
-  it('montos exactos: la diferencia de hasta $0,50 va al que pagó', () => {
-    const gasto = exact('g', ars(1_000), 'vos', [
-      ['vos', ars(600)],
-      ['ana', ars(399.6)],
-    ]);
-    expect(shares(cabana, gasto)).toEqual({ vos: ars(600.4), ana: ars(399.6) });
-  });
-
   it('montos exactos con una diferencia de $0,60 se rechazan', () => {
     const gasto = exact('g', ars(1_000), 'vos', [
       ['vos', ars(600)],
@@ -111,34 +75,6 @@ describe('restos al dividir (T-12, T-13, D9)', () => {
 });
 
 describe('gasto en otra moneda que el grupo', () => {
-  it('US$ 100 a $1.500 en un grupo en pesos: se convierte y después se divide', () => {
-    const gasto = { ...equal('g', usd(100), 'vos'), fxRate: rate('1500.00') };
-    const parts = shares(cabana, gasto);
-    expect(parts).toEqual({ vos: ars(50_000), ana: ars(50_000), juan: ars(50_000) });
-  });
-
-  it('las partes suman exacto el total convertido', () => {
-    const gasto = { ...equal('g', usd(10.01), 'ana'), fxRate: rate('1333.33') };
-    const parts = Object.values(shares(cabana, gasto));
-    // 10,01 × 1333,33 = 13.346,63
-    expect(parts.reduce((a, b) => a + b.minor, 0)).toBe(1_334_663);
-  });
-
-  it('montos exactos en dólares: cada parte se convierte y el resto va al que pagó', () => {
-    const gasto: GroupExpense = {
-      ...exact('g', usd(10.01), 'ana', [
-        ['vos', usd(3.33)],
-        ['ana', usd(3.34)],
-        ['juan', usd(3.34)],
-      ]),
-      fxRate: rate('1333.33'),
-    };
-    const parts = shares(cabana, gasto);
-    // 10,01 × 1333,33 = 13.346,63, igual a la suma de las partes convertidas.
-    expect(Object.values(parts).reduce((a, b) => a + b.minor, 0)).toBe(1_334_663);
-    expect(parts['vos']).toEqual(ars(4_439.99));
-  });
-
   it('montos exactos en dólares con US$ 0,60 de diferencia se rechazan', () => {
     const gasto: GroupExpense = {
       ...exact('g', usd(10), 'ana', [
@@ -197,19 +133,6 @@ describe('umbral de cero por moneda (T-14, D14)', () => {
       { fromMemberId: 'ana', toMemberId: 'juan', amount: ars(0.99) },
       { fromMemberId: 'ana', toMemberId: 'dani', amount: ars(0.99) },
     ]);
-  });
-
-  it('"al día" usa el mismo umbral que mostrar: menos de $1 o menos de US$ 0,01', () => {
-    expect(isSettled(ars(0.99))).toBe(true);
-    expect(isSettled(ars(-1))).toBe(false);
-    expect(isSettled(usd(0))).toBe(true);
-    expect(isSettled(usd(-0.01))).toBe(false);
-  });
-
-  it('el saldo exacto queda guardado: groupBalances no redondea los centavos', () => {
-    const balances = groupBalances(cabana, [equal('g', ars(100), 'ana')], []);
-    expect(balances['ana']).toEqual(ars(66.66));
-    expect(balances['vos']).toEqual(ars(-33.33));
   });
 
   it('empates: se desempata por orden de ingreso al grupo', () => {

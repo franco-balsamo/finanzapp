@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "test": "pnpm --filter @mangos/core test",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "gen:sql-fixtures": "node packages/core/scripts/gen-sql-fixtures.ts"
   },
   "packageManager": "pnpm@11.24.0"
 }

@@ -1,0 +1,124 @@
+{
+  "$comment": "Ejemplos de saldos de grupo (02 §7, D9, D14) compartidos por core y la base. Vitest los lee en src/groups/fixtures.test.ts. Si cambiás algo, corré pnpm gen:sql-fixtures para regenerar supabase/tests/05_group_balances.test.sql. Montos en texto con 2 decimales; integrantes en orden de ingreso.",
+  "cases": [
+    {
+      "name": "Ejemplo de 02 §7: Vos +60.000, Ana −10.000, Juan −50.000 (T-10)",
+      "currency": "ARS",
+      "members": ["vos", "ana", "juan"],
+      "expenses": [
+        { "id": "g1", "amount": "90000.00", "currency": "ARS", "fxRate": null, "payer": "vos", "splitMode": "equal",
+          "parts": [["vos", null], ["ana", null], ["juan", null]] },
+        { "id": "g2", "amount": "30000.00", "currency": "ARS", "fxRate": null, "payer": "ana", "splitMode": "exact",
+          "parts": [["ana", "10000.00"], ["juan", "20000.00"]] }
+      ],
+      "payments": [],
+      "balances": { "vos": "60000.00", "ana": "-10000.00", "juan": "-50000.00" }
+    },
+    {
+      "name": "Un pago de Juan a Vos baja la deuda",
+      "currency": "ARS",
+      "members": ["vos", "ana", "juan"],
+      "expenses": [
+        { "id": "g1", "amount": "90000.00", "currency": "ARS", "fxRate": null, "payer": "vos", "splitMode": "equal",
+          "parts": [["vos", null], ["ana", null], ["juan", null]] },
+        { "id": "g2", "amount": "30000.00", "currency": "ARS", "fxRate": null, "payer": "ana", "splitMode": "exact",
+          "parts": [["ana", "10000.00"], ["juan", "20000.00"]] }
+      ],
+      "payments": [{ "id": "p1", "from": "juan", "to": "vos", "amount": "50000.00", "voided": false }],
+      "balances": { "vos": "10000.00", "ana": "-10000.00", "juan": "0.00" }
+    },
+    {
+      "name": "Un pago anulado no cuenta",
+      "currency": "ARS",
+      "members": ["vos", "ana", "juan"],
+      "expenses": [
+        { "id": "g1", "amount": "90000.00", "currency": "ARS", "fxRate": null, "payer": "vos", "splitMode": "equal",
+          "parts": [["vos", null], ["ana", null], ["juan", null]] },
+        { "id": "g2", "amount": "30000.00", "currency": "ARS", "fxRate": null, "payer": "ana", "splitMode": "exact",
+          "parts": [["ana", "10000.00"], ["juan", "20000.00"]] }
+      ],
+      "payments": [{ "id": "p1", "from": "juan", "to": "vos", "amount": "50000.00", "voided": true }],
+      "balances": { "vos": "60000.00", "ana": "-10000.00", "juan": "-50000.00" }
+    },
+    {
+      "name": "$100 entre 3, pagó Ana: Ana $33,34 y el saldo exacto queda guardado (T-12)",
+      "currency": "ARS",
+      "members": ["vos", "ana", "juan"],
+      "expenses": [
+        { "id": "g1", "amount": "100.00", "currency": "ARS", "fxRate": null, "payer": "ana", "splitMode": "equal",
+          "parts": [["vos", null], ["ana", null], ["juan", null]] }
+      ],
+      "payments": [],
+      "shares": { "g1": { "vos": "33.33", "ana": "33.34", "juan": "33.33" } },
+      "balances": { "vos": "-33.33", "ana": "66.66", "juan": "-33.33" }
+    },
+    {
+      "name": "Si el que pagó quedó excluido, el resto va al primer incluido (T-13)",
+      "currency": "ARS",
+      "members": ["vos", "ana", "juan"],
+      "expenses": [
+        { "id": "g1", "amount": "0.03", "currency": "ARS", "fxRate": null, "payer": "ana", "splitMode": "equal",
+          "parts": [["vos", null], ["juan", null]] }
+      ],
+      "payments": [],
+      "shares": { "g1": { "vos": "0.02", "juan": "0.01" } },
+      "balances": { "vos": "-0.02", "ana": "0.03", "juan": "-0.01" }
+    },
+    {
+      "name": "Montos exactos: la diferencia de hasta $0,50 va al que pagó ($600,40)",
+      "currency": "ARS",
+      "members": ["vos", "ana", "juan"],
+      "expenses": [
+        { "id": "g1", "amount": "1000.00", "currency": "ARS", "fxRate": null, "payer": "vos", "splitMode": "exact",
+          "parts": [["vos", "600.00"], ["ana", "399.60"]] }
+      ],
+      "payments": [],
+      "shares": { "g1": { "vos": "600.40", "ana": "399.60" } },
+      "balances": { "vos": "399.60", "ana": "-399.60", "juan": "0.00" }
+    },
+    {
+      "name": "US$ 100 a $1.500 en un grupo en pesos: se convierte y después se divide",
+      "currency": "ARS",
+      "members": ["vos", "ana", "juan"],
+      "expenses": [
+        { "id": "g1", "amount": "100.00", "currency": "USD", "fxRate": "1500.00", "payer": "vos", "splitMode": "equal",
+          "parts": [["vos", null], ["ana", null], ["juan", null]] }
+      ],
+      "payments": [],
+      "shares": { "g1": { "vos": "50000.00", "ana": "50000.00", "juan": "50000.00" } },
+      "balances": { "vos": "100000.00", "ana": "-50000.00", "juan": "-50000.00" }
+    },
+    {
+      "name": "US$ 10,01 × 1333,33: las partes suman exacto $13.346,63",
+      "currency": "ARS",
+      "members": ["vos", "ana", "juan"],
+      "expenses": [
+        { "id": "g1", "amount": "10.01", "currency": "USD", "fxRate": "1333.33", "payer": "ana", "splitMode": "equal",
+          "parts": [["vos", null], ["ana", null], ["juan", null]] }
+      ],
+      "payments": [],
+      "shares": { "g1": { "vos": "4448.87", "ana": "4448.89", "juan": "4448.87" } },
+      "balances": { "vos": "-4448.87", "ana": "8897.74", "juan": "-4448.87" }
+    },
+    {
+      "name": "Montos exactos en dólares: cada parte se convierte y el resto va al que pagó",
+      "currency": "ARS",
+      "members": ["vos", "ana", "juan"],
+      "expenses": [
+        { "id": "g1", "amount": "10.01", "currency": "USD", "fxRate": "1333.33", "payer": "ana", "splitMode": "exact",
+          "parts": [["vos", "3.33"], ["ana", "3.34"], ["juan", "3.34"]] }
+      ],
+      "payments": [],
+      "shares": { "g1": { "vos": "4439.99", "ana": "4453.32", "juan": "4453.32" } },
+      "balances": { "vos": "-4439.99", "ana": "8893.31", "juan": "-4453.32" }
+    }
+  ],
+  "settled": [
+    { "amount": "0.99", "currency": "ARS", "settled": true },
+    { "amount": "0.80", "currency": "ARS", "settled": true },
+    { "amount": "-1.00", "currency": "ARS", "settled": false },
+    { "amount": "0.00", "currency": "USD", "settled": true },
+    { "amount": "0.80", "currency": "USD", "settled": false },
+    { "amount": "-0.01", "currency": "USD", "settled": false }
+  ]
+}

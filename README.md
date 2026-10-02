@@ -4,6 +4,12 @@ App de finanzas personales para Argentina: cuentas en pesos y en dólares, tarje
 
 **Estado:** prototipo visual terminado y alcance de la v1 revisado. Ya está el monorepo con `packages/core` (los cálculos, con tests) y `apps/mobile` (Expo, todavía sin pantallas), y el esquema de Supabase en `supabase/` con sus políticas por fila y tests pgTAP. Comandos: `pnpm install`, `pnpm test`, `pnpm typecheck` y, con Docker, `npx supabase start` y `npx supabase test db`.
 
+## Ejemplos compartidos entre core y la base
+
+Los saldos de grupo se calculan en core (`shares`, `groupBalances`) y en SQL (`private.member_shares`, `private.group_balances`). Los dos se prueban con los mismos ejemplos de `packages/core/fixtures/group-balances.json`: Vitest los lee directo, y `supabase/tests/05_group_balances.test.sql` se genera desde ese JSON.
+
+Corré `pnpm gen:sql-fixtures` cada vez que cambies el JSON, y commiteá el SQL generado junto con el JSON. `pnpm gen:sql-fixtures --check` falla si el SQL quedó viejo. Si cambia una regla de cálculo, cambiala en core y en SQL, y sumá el ejemplo al JSON.
+
 ## Documentación
 
 | Archivo | Qué tiene | Para qué skill de gstack |

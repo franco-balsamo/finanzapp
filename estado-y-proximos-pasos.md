@@ -24,7 +24,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - **Paso 5 de gstack (`/spec`) hecho e implementado** (T1 a T4 del informe de eng review):
   - Spec en `docs/specs/2026-10-02-epica-core.md`; decisiones en `docs/decisiones/2026-10-02-spec-core.md`.
   - El repo ya es git (rama `main`). Monorepo con pnpm: `packages/core` (`@mangos/core`) y `apps/mobile` (Expo SDK 57, rutas en `src/app/`, export web con `/g/[token]`).
-  - Core tiene `Money`/`convert`, tarjetas (`statementFor`, `cardState`, `lateExpenseImpact`…), grupos (`shares`, `groupBalances`, `simplifyDebts`), `accountBalance`, `categorySpend` y `netWorth`. 134 tests en verde.
+  - Core tiene `Money`/`convert`, tarjetas (`statementFor`, `cardState`, `lateExpenseImpact`…), grupos (`shares`, `groupBalances`, `simplifyDebts`), `accountBalance`, `categorySpend` y `netWorth`. 139 tests en verde.
   - Comandos: `pnpm test`, `pnpm typecheck`, y `npx expo export --platform web` dentro de `apps/mobile`.
 - **T5 hecho** (decisiones en `docs/decisiones/2026-10-02-spec-t5-supabase.md`):
   - Migración `supabase/migrations/20261002120000_schema_v1.sql` con las tablas de la v1, FK compuestas, permisos por columna y políticas por fila.
@@ -34,6 +34,10 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - **Funciones de grupo hechas** (decisiones en `docs/decisiones/2026-10-02-spec-funciones-de-grupo.md`):
   - Migración `supabase/migrations/20261002130000_group_functions.sql`: `claim_member`, `undo_claim`, `leave_group`, `void_group_payment`, `rotate_invite_token`, `revoke_invite_token`, `updated_by` en gastos de grupo y saldos en SQL que copian core.
   - 195 tests pgTAP en verde.
+- **Cierre de grupos hecho** (decisiones en `docs/decisiones/2026-10-02-spec-cierre-de-grupos.md`):
+  - `save_group_expense` valida en la base y es la única forma de escribir gastos de grupo y partes; `remove_member` y `delete_group`.
+  - Ejemplos de saldos en `packages/core/fixtures/group-balances.json`, compartidos por Vitest y pgTAP (`pnpm gen:sql-fixtures`).
+  - 249 tests pgTAP y 139 de Vitest en verde.
 
 ## Próximos pasos
 1. **Claude:** actualizar el prototipo a la v1:
@@ -43,7 +47,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - toast con "Deshacer";
    - detalle de tarjeta y de grupo en el orden nuevo;
    - sin débito como tipo propio, sin comprobante, sin presupuestos, sin alertas de precio, solo Iguales y Montos.
-2. **T6:** trigger de cotización por fecha del gasto y cron. Después, la prueba T9 (que las Edge Functions importen `packages/core`) y lo que falta de la base: quitar a un integrante, eliminar el grupo, `delete_account` y `export_account` (T10) y la purga (T7).
+2. **T6:** trigger de cotización por fecha del gasto y cron. Después, la prueba T9 (que las Edge Functions importen `packages/core`) y lo que falta de la base: `delete_account` y `export_account` (T10) y la purga (T7).
 3. **Pendiente de herramientas:** instalar `codex` si se quiere la revisión externa en `/spec` y `/review` (esta vez no corrió) y `gh` si se suben los specs como issues.
 
 ## Commits

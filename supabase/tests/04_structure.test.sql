@@ -1,7 +1,7 @@
 -- Estructura: índices de D16, políticas y funciones security definer.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(14);
 
 select has_index('public', 'group_members', 'group_members_user_group_idx', array['user_id', 'group_id'], 'D16: group_members(user_id, group_id)');
 select has_index('public', 'movements', 'movements_user_card_date_idx', array['user_id', 'card_id', 'date'], 'D16: movements(user_id, card_id, date)');
@@ -35,6 +35,21 @@ select is_empty(
   'no hay delete en las tablas de grupo'
 );
 
+select ok(
+  not has_table_privilege('authenticated', 'public.group_expense_parts', 'insert')
+  and not has_table_privilege('authenticated', 'public.group_expense_parts', 'update')
+  and not has_table_privilege('authenticated', 'public.group_expense_parts', 'delete')
+  and not has_any_column_privilege('authenticated', 'public.group_expense_parts', 'insert')
+  and not has_any_column_privilege('authenticated', 'public.group_expense_parts', 'update'),
+  'las partes de un gasto se escriben solo con save_group_expense'
+);
+select ok(
+  not has_any_column_privilege('authenticated', 'public.group_expenses', 'insert')
+  and not has_column_privilege('authenticated', 'public.group_expenses', 'amount', 'update')
+  and not has_column_privilege('authenticated', 'public.group_expenses', 'payer_member_id', 'update')
+  and has_column_privilege('authenticated', 'public.group_expenses', 'deleted_at', 'update'),
+  'el gasto de grupo se escribe con save_group_expense; directo, solo el borrado lógico'
+);
 select ok(
   (select prosecdef and provolatile = 's' and proconfig @> array['search_path=""']
    from pg_proc where oid = 'public.is_group_member(uuid)'::regprocedure),
