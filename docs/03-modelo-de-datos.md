@@ -14,8 +14,12 @@
 - **Lo que se calcula no se guarda:** cuotas por resumen, estado de un resumen, saldos de grupo y gasto por categoría se calculan a partir de los movimientos. Se guarda solo lo que el usuario decide: pagos, ajustes y cierres corregidos.
 - **Borrado lógico** (`deleted_at`) en cuentas, grupos y gastos de grupo.
 - **Tarjetas archivadas:** `archived_at`. Un proceso diario borra definitivamente las tarjetas archivadas hace más de 7 días, con sus consumos y pagos.
+- **Esquema:** `supabase/migrations/20261002120000_schema_v1.sql` (T5, 2/10). Los valores de los tipos van en inglés (`bank`, `card_due`…), salvo `mep`, `oficial` y `blue`. Las cotizaciones son `numeric(14,4)`.
 - **Seguridad por fila:**
   - Cada tabla personal tiene la política `user_id = auth.uid()`.
+  - Nadie referencia filas de otro usuario o de otro grupo adivinando un UUID: FK compuestas `(user_id, id)` en cuentas y tarjetas, y `(group_id, id)` en integrantes y gastos de grupo. Lo que una FK no cubre (categoría, `group_expense_id`, la tarjeta de un aviso) lo valida un trigger.
+  - Permisos por columna: lo que solo cambia una función (`deleted_at`, `owner_member_id`, `invite_token_hash`, `currency` del grupo, `user_id` y `left_at` de un integrante) no tiene grant de update.
+  - Las tablas personales tienen delete (el "Deshacer" borra). Las de grupo no, salvo las partes de un gasto, que cambian al editarlo.
   - En los grupos, cada integrante ve el grupo entero mediante `is_group_member(group_id)` (ver Funciones de la base).
   - El rol anónimo no lee ninguna tabla: la web de invitados entra solo por `get_guest_group(token)`.
   - La clave `service_role` se usa solo en las Edge Functions, nunca en la app.
@@ -52,18 +56,18 @@ erDiagram
 | display_currency | ARS/USD | Moneda en que se ve el inicio |
 | fx_reference | mep/oficial/blue | Dólar de referencia |
 | theme | system/light/dark | |
-| notify_push, notify_mail, notify_whatsapp | bool | |
-| whatsapp_number | text | Pro |
+| notify_push | bool | |
 | quiet_from, quiet_to | smallint | Horario de "no molestar" |
-| weekly_summary | bool | |
-| goal | control/ahorro/invertir | Elegido en la bienvenida |
+| goal | control/save/invest | Elegido en la bienvenida |
+
+En la base es `user_settings`, con `user_id` → `auth.users` (nombre y mail viven en `auth.users`). Se crea sola al registrarse. Avisos por mail y WhatsApp y el resumen semanal quedan fuera de la v1.
 
 ### `accounts`
 | Campo | Tipo | Notas |
 |---|---|---|
 | id, user_id | uuid | |
 | name | text | "Caja de ahorro Galicia" |
-| type | banco/billetera/efectivo | |
+| type | bank/wallet/cash | |
 | currency | ARS/USD | Una sola por cuenta |
 | opening_balance | numeric | El saldo actual se calcula |
 
@@ -139,7 +143,7 @@ Un gasto "cargado tarde" no tiene columna: se calcula comparando su fecha con el
 |---|---|
 | **budgets** *(fuera de la v1)* | category_id, monthly_amount_ars (opcional) |
 
-En la beta hay 6 categorías fijas (`is_system`). También existe `category_keywords` (user_id, word, category_id), donde se guardan las correcciones de categoría que hace cada usuario (02 §5). Es única por (user_id, word): si la misma palabra se corrige a otra categoría, se pisa y gana la última corrección. Las palabras de la lista que no enseña (02 §5) nunca se guardan.
+En la beta hay 6 categorías fijas (`is_system`), del sistema (`user_id` nulo) y compartidas por todos, con UUID fijos: `00000000-0000-4000-8000-000000000001` Supermercado, `…02` Salidas, `…03` Transporte, `…04` Servicios, `…05` Suscripciones y `…06` Otros. Un gasto de grupo solo usa categorías del sistema. También existe `category_keywords` (user_id, word, category_id), donde se guardan las correcciones de categoría que hace cada usuario (02 §5). Es única por (user_id, word): si la misma palabra se corrige a otra categoría, se pisa y gana la última corrección. Las palabras de la lista que no enseña (02 §5) nunca se guardan.
 
 ### `fx_rates`
 Cotizaciones que guarda el backend.
@@ -150,7 +154,7 @@ Cotizaciones que guarda el backend.
 - Un trigger `before insert` en `movements` completa `fx_mep`, `fx_oficial` y `fx_blue` con la venta de la fecha del gasto (02 §1).
 
 ### `groups`, `group_members`
-| groups | id, name, currency, owner_member_id (pasa al azar a otro integrante con cuenta si el dueño se va; puede quedar nulo), invite_token_hash (SHA-256 de un token aleatorio de 128 bits; reemplaza a `invite_code`), invite_token_created_at, deleted_at |
+| groups | id, name, currency, owner_member_id (pasa al azar a otro integrante con cuenta si el dueño se va; puede quedar nulo), invite_token_hash (SHA-256 en hex de un token aleatorio de 128 bits; reemplaza a `invite_code`), invite_token_created_at, deleted_at |
 |---|---|
 | **group_members** | id, group_id, user_id (nulo si es provisorio), display_name, payment_alias (alias o CBU para saldar; **nunca** sale en la web de invitados), joined_at, left_at, claimed_at (cuándo se reclamó el lugar; habilita deshacer durante 7 días), unclaimed_at, unclaimed_by (quién deshizo el reclamo y cuándo) |
 
@@ -159,13 +163,13 @@ Cotizaciones que guarda el backend.
 ### `group_expenses`, `group_expense_parts`
 | group_expenses | id, group_id, date, description, amount, currency, fx_rate (fija), payer_member_id, split_mode (equal/exact; pct y shares en la fase 2), category_id, created_by, updated_at, deleted_at |
 |---|---|
-| **group_expense_parts** | group_expense_id, member_id, value (1 en partes iguales; monto, % o partes según el modo) |
+| **group_expense_parts** | group_id, group_expense_id, member_id, value (1 en partes iguales; monto, % o partes según el modo) |
 
 ### `group_payments`
 | id | group_id | from_member_id | to_member_id | amount (moneda del grupo) | date |
 
 ### `alerts` y `notifications`
-| alerts | id, user_id, type (precio/vencimiento/presupuesto/grupo/semanal), enabled, channels[], params jsonb |
+| alerts | id, user_id, type (en la v1: `card_closing`/`card_due`; precio, presupuesto, grupo y semanal después), enabled, params jsonb. Uno por tarjeta y tipo; solo push en la v1 |
 |---|---|
 | **notifications** | id, user_id, alert_id, title, body, severity, created_at, sent_at, read_at |
 
@@ -178,8 +182,10 @@ Ejemplos de `params` según el tipo:
 
 | Función | Qué hace |
 |---|---|
-| `is_group_member(group_id)` | Security definer y stable, con `search_path` fijo. Devuelve true si el usuario actual es integrante activo (`left_at` nulo). La usan todas las políticas de grupo |
-| `get_guest_group(token)` | Security definer. Compara el SHA-256 del token y devuelve nombre, moneda, gastos, saldos y nombres, **sin** `payment_alias` ni `user_id`. Es la única entrada del rol anónimo |
+| `is_group_member(group_id)` | Security definer y stable, con `search_path` fijo. Devuelve true si el usuario actual es integrante activo (`left_at` nulo) de un grupo no eliminado. La usan todas las políticas de grupo. Solo `authenticated` |
+| `get_guest_group(token)` | Security definer. Compara el SHA-256 del token y devuelve nombre, moneda, integrantes (`id`, `display_name`, `has_account`, `active`), gastos no borrados con sus partes y pagos, **sin** `payment_alias`, `user_id` ni `created_by`. Los montos van como texto. Los saldos los calcula la web con `groupBalances` de core. Es la única función que ejecuta el rol anónimo |
+| `create_group(group_name, group_currency, member_name)` | Security definer. Con sesión iniciada: crea el grupo y el lugar de quien lo crea, y lo deja como dueño |
+| `leave_group(group_id)` | *(pendiente)* Salir estando al día; si es el dueño, pasa el rol (02 §7). Es la única forma de escribir `left_at` |
 | `claim_member(token, member_id)` | Con sesión iniciada: asigna `user_id` a un integrante provisorio, guarda `claimed_at`, crea los movimientos con `origin = claim` y avisa al grupo |
 | `undo_claim(member_id)` | Solo el dueño o quien reclamó, dentro de los 7 días. **Solo corta el vínculo** (revisión del 2/10, R3-8 y R3-9): pone `user_id` en nulo, así el lugar vuelve a ser provisorio con el mismo nombre; los gastos y pagos del grupo no cambian. Borra los movimientos de esa cuenta con `origin = claim` de ese grupo, porque eran del integrante provisorio. En los demás movimientos de esa cuenta que venían del grupo pone `group_expense_id` en nulo, así pasan a contar completos. No borra nada más de la cuenta. Guarda `unclaimed_at` y `unclaimed_by` y avisa a la persona desvinculada |
 | `transfer_ownership(group_id)` | Al irse el dueño: elige al azar un integrante con `user_id` y avisa a todos; si no hay ninguno, deja el dueño en nulo |

@@ -173,7 +173,7 @@ Salen de los hallazgos de esta revisión. Hay que correrlos con Claude Code o Co
   - Viene de: D9, D10 y D11. Verificación: T-01 a T-09.
 - [x] **T4 (P1, vos solo: ~2 días / CC: ~2 h):** core. `groupBalances`, `simplifyDebts` con umbral por moneda y `netWorth`.
   - Viene de: D9 y D14. Verificación: T-10 a T-16.
-- [ ] **T5 (P1, vos solo: ~3 días / CC: ~3 h):** base. Migraciones de 03 con `debited_amount`, `fx_pending` e `invite_token_hash`, más las políticas por fila con `is_group_member` y los índices.
+- [x] **T5 (P1, vos solo: ~3 días / CC: ~3 h):** base. Migraciones de 03 con `debited_amount`, `fx_pending` e `invite_token_hash`, más las políticas por fila con `is_group_member` y los índices.
   - Viene de: D5, D12 y D16. Verificación: T-20, T-21 y T-25 con pgTAP.
 - [ ] **T6 (P1, vos solo: ~1 día / CC: ~1 h):** base. Trigger de cotización por fecha del gasto y cron cada 10 minutos más el del historial.
   - Viene de: D7 y D3. Verificación: T-17.

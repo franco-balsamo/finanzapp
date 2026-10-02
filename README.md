@@ -2,7 +2,7 @@
 
 App de finanzas personales para Argentina: cuentas en pesos y en dólares, tarjetas con sus cuotas, gastos compartidos y el dólar del día, en un solo lugar. El nombre es provisorio.
 
-**Estado:** prototipo visual terminado y alcance de la v1 revisado. Ya está el monorepo con `packages/core` (los cálculos, con tests) y `apps/mobile` (Expo, todavía sin pantallas). Comandos: `pnpm install`, `pnpm test` y `pnpm typecheck`.
+**Estado:** prototipo visual terminado y alcance de la v1 revisado. Ya está el monorepo con `packages/core` (los cálculos, con tests) y `apps/mobile` (Expo, todavía sin pantallas), y el esquema de Supabase en `supabase/` con sus políticas por fila y tests pgTAP. Comandos: `pnpm install`, `pnpm test`, `pnpm typecheck` y, con Docker, `npx supabase start` y `npx supabase test db`.
 
 ## Documentación
 
@@ -26,5 +26,5 @@ Claude Code no puede abrir estos links: por eso las copias están dentro del rep
 ## Stack previsto
 
 - App: React Native con Expo y TypeScript.
-- Backend: a decidir en `/plan-eng-review` (FastAPI + Postgres o Supabase).
+- Backend: Supabase (Postgres con políticas por fila, autenticación por mail, pg_cron y Edge Functions). Ver `docs/03-modelo-de-datos.md`.
 - Cotizaciones: DolarApi y ArgentinaDatos, consultadas desde el backend.
