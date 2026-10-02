@@ -67,6 +67,21 @@ describe('un resumen por estado (T-05)', () => {
     ]);
   });
 
+  it('un cierre adelantado al mes anterior no rompe el estado de la tarjeta', () => {
+    const card = { ...cardA, closeDay: 2, dueDay: 15 };
+    const enero = { period: '2027-01', closeDate: '2026-12-30', dueDate: '2027-01-15' };
+    const s = cardState({
+      card,
+      expenses: [expense('e', '2026-12-31', ars(1_000))],
+      payments: [],
+      overrides: [enero],
+      today: '2026-12-31',
+      fxCard,
+    });
+    expect(s.currentPeriod).toBe('2027-02');
+    expect(s.limitUsed).toEqual(ars(1_000));
+  });
+
   it('el día de cierre el resumen sigue en curso', () => {
     expect(state([expense('e', '2026-09-10', ars(1_000))], [], '2026-09-24').currentPeriod).toBe('2026-09');
     expect(state([expense('e', '2026-09-10', ars(1_000))], [], '2026-09-25').currentPeriod).toBe('2026-10');
@@ -97,7 +112,9 @@ describe('límite usado y disponible (T-06)', () => {
 
 describe('casos que 02 no resolvía (decididos en el spec)', () => {
   it('un resumen cerrado en $0 queda Pagado', () => {
-    const s = state([expense('cero', '2026-09-10', ars(0))], [], '2026-10-04');
+    // Un resumen sin consumos que solo tiene un pago revertido.
+    const revertido = payment('p', '2026-09', ars(1_000), 'caja', '2026-10-03', { revertedAt: '2026-10-03' });
+    const s = state([], [revertido], '2026-10-04');
     expect(find(s, '2026-09').status).toBe('paid');
     expect(s.toPay).toEqual([]);
   });
@@ -139,6 +156,11 @@ describe('casos que 02 no resolvía (decididos en el spec)', () => {
       ['2026-08', 'overdue'],
       ['2026-09', 'to_pay'],
     ]);
+  });
+
+  it('rechaza dólares pagados en pesos sin el dólar tarjeta que se usó', () => {
+    const sinCotizacion = payment('p', '2026-09', usd(50), 'caja', '2026-10-03', { debitedAmount: ars(101_400) });
+    expect(() => state([], [sinCotizacion], '2026-10-04')).toThrow(RangeError);
   });
 
   it('rechaza un pago cuyo monto no coincide con la parte que cubre', () => {

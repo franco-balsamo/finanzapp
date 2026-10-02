@@ -31,6 +31,9 @@ export function groupBalances(
     if (payment.amount.currency !== group.currency) {
       throw new RangeError(`El pago ${payment.id} no está en la moneda del grupo`);
     }
+    if (payment.amount.minor <= 0) {
+      throw new RangeError(`El pago ${payment.id} tiene que ser mayor a cero`);
+    }
     apply(payment.fromMemberId, payment.amount);
     apply(payment.toMemberId, negate(payment.amount));
   }

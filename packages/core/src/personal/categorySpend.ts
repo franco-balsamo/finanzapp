@@ -37,6 +37,9 @@ export function categorySpend(input: CategorySpendInput): CategorySpend {
     if (m.type !== 'expense') continue;
     // Si viene de un grupo, cuenta solo tu parte. Si se desvinculó del grupo, cuenta completo.
     const base = m.groupExpenseId !== null && m.myShare !== null ? m.myShare : m.amount;
+    if (base.currency !== m.amount.currency) {
+      throw new RangeError(`La parte propia del movimiento ${m.id} no está en su moneda`);
+    }
 
     let portions: Money[];
     if (m.cardId !== null) {

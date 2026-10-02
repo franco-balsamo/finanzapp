@@ -97,6 +97,14 @@ describe('restos al dividir (T-12, T-13, D9)', () => {
     expect(() => shares(cabana, gasto)).toThrow(RangeError);
   });
 
+  it('un integrante repetido en montos exactos se rechaza', () => {
+    const gasto = exact('g', ars(1_000), 'vos', [
+      ['ana', ars(600)],
+      ['ana', ars(400)],
+    ]);
+    expect(() => shares(cabana, gasto)).toThrow(RangeError);
+  });
+
   it('sin nadie incluido se rechaza', () => {
     expect(() => shares(cabana, equal('g', ars(100), 'vos', []))).toThrow(RangeError);
   });
@@ -114,6 +122,50 @@ describe('gasto en otra moneda que el grupo', () => {
     const parts = Object.values(shares(cabana, gasto));
     // 10,01 × 1333,33 = 13.346,63
     expect(parts.reduce((a, b) => a + b.minor, 0)).toBe(1_334_663);
+  });
+
+  it('montos exactos en dólares: cada parte se convierte y el resto va al que pagó', () => {
+    const gasto: GroupExpense = {
+      ...exact('g', usd(10.01), 'ana', [
+        ['vos', usd(3.33)],
+        ['ana', usd(3.34)],
+        ['juan', usd(3.34)],
+      ]),
+      fxRate: rate('1333.33'),
+    };
+    const parts = shares(cabana, gasto);
+    // 10,01 × 1333,33 = 13.346,63, igual a la suma de las partes convertidas.
+    expect(Object.values(parts).reduce((a, b) => a + b.minor, 0)).toBe(1_334_663);
+    expect(parts['vos']).toEqual(ars(4_439.99));
+  });
+
+  it('montos exactos en dólares con US$ 0,60 de diferencia se rechazan', () => {
+    const gasto: GroupExpense = {
+      ...exact('g', usd(10), 'ana', [
+        ['vos', usd(4.7)],
+        ['ana', usd(4.7)],
+      ]),
+      fxRate: rate('1500.00'),
+    };
+    expect(() => shares(cabana, gasto)).toThrow(RangeError);
+  });
+
+  it('rechaza gastos de $0 o negativos, partes exactas negativas y pagos no positivos', () => {
+    expect(() => shares(cabana, equal('g', ars(0), 'vos'))).toThrow(RangeError);
+    expect(() => shares(cabana, equal('g', ars(-90_000), 'vos'))).toThrow(RangeError);
+    const negativa = exact('g', ars(1_000), 'vos', [
+      ['vos', ars(1_500)],
+      ['ana', ars(-500)],
+    ]);
+    expect(() => shares(cabana, negativa)).toThrow(RangeError);
+    const conCero = exact('g', ars(1_000), 'vos', [
+      ['vos', ars(1_000)],
+      ['ana', ars(0)],
+    ]);
+    expect(shares(cabana, conCero)).toEqual({ vos: ars(1_000), ana: ars(0) });
+    expect(() =>
+      groupBalances(cabana, [], [{ id: 'p', fromMemberId: 'juan', toMemberId: 'vos', amount: ars(-50) }]),
+    ).toThrow(RangeError);
   });
 
   it('sin cotización se rechaza', () => {

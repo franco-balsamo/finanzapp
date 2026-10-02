@@ -17,10 +17,15 @@ function toGroupCurrency(group: Group, expense: GroupExpense, m: Money): Money {
 /** Las partes de cada incluido, en la moneda del grupo. Los excluidos no aparecen. */
 export function shares(group: Group, expense: GroupExpense): Balances {
   const memberIds = group.members.map((m) => m.id);
+  const seen = new Set<string>();
   for (const part of expense.parts) {
     if (!memberIds.includes(part.memberId)) {
       throw new RangeError(`${part.memberId} no es integrante del grupo ${group.id}`);
     }
+    if (seen.has(part.memberId)) {
+      throw new RangeError(`${part.memberId} aparece dos veces en el gasto ${expense.id}`);
+    }
+    seen.add(part.memberId);
   }
   if (!memberIds.includes(expense.payerMemberId)) {
     throw new RangeError(`${expense.payerMemberId} no es integrante del grupo ${group.id}`);
@@ -34,6 +39,9 @@ export function shares(group: Group, expense: GroupExpense): Balances {
   }
   // El resto va al que pagó, o al primer incluido si el que pagó quedó afuera.
   const remainderTo = included.includes(expense.payerMemberId) ? expense.payerMemberId : first;
+  if (expense.amount.minor <= 0) {
+    throw new RangeError(`El monto del gasto ${expense.id} tiene que ser mayor a cero`);
+  }
   const total = toGroupCurrency(group, expense, expense.amount);
   const result: Record<string, number> = {};
 
@@ -45,6 +53,9 @@ export function shares(group: Group, expense: GroupExpense): Balances {
     for (const part of expense.parts) {
       if (!part.value || part.value.currency !== expense.amount.currency) {
         throw new RangeError(`En montos exactos cada parte va en la moneda del gasto (${part.memberId})`);
+      }
+      if (part.value.minor < 0) {
+        throw new RangeError(`La parte de ${part.memberId} no puede ser negativa`);
       }
       sum += part.value.minor;
     }

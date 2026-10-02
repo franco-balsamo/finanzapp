@@ -46,9 +46,33 @@ describe('installmentSchedule', () => {
     expect(schedule.map((i) => i.period)).toEqual(['2026-10', '2026-11', '2026-12']);
   });
 
+  it('rechaza gastos de $0 o negativos', () => {
+    expect(() => installmentSchedule(cardA, expense('e', '2026-09-10', ars(0)))).toThrow(RangeError);
+    expect(() => installmentSchedule(cardA, expense('e', '2026-09-10', ars(-100)))).toThrow(RangeError);
+  });
+
   it('rechaza cuotas fuera de 1 a 24', () => {
     expect(() => installmentSchedule(cardA, expense('e', '2026-09-10', ars(1), 0))).toThrow(RangeError);
     expect(() => installmentSchedule(cardA, expense('e', '2026-09-10', ars(1), 25))).toThrow(RangeError);
+  });
+});
+
+describe('mes de vencimiento (02 §3)', () => {
+  it.each([
+    [5, 20, '2026-10', '2026-10-20'],
+    [10, 10, '2026-10', '2026-11-10'],
+    [31, 31, '2026-02', '2026-03-31'],
+  ])('cierre %i, vence %i → el resumen %s vence el %s', (closeDay, dueDay, period, due) => {
+    expect(dueDate({ ...cardA, closeDay, dueDay }, period)).toBe(due);
+  });
+
+  it('si al ajustar a febrero el vencimiento cae el mismo día del cierre, pasa al mes siguiente', () => {
+    const card: CreditCard = { ...cardA, closeDay: 28, dueDay: 29 };
+    expect(closeDate(card, '2027-02')).toBe('2027-02-28');
+    expect(dueDate(card, '2027-02')).toBe('2027-03-29');
+    expect(dueDate({ ...cardA, closeDay: 30, dueDay: 31 }, '2027-02')).toBe('2027-03-31');
+    // En un bisiesto el 29/2 existe, así que vence ese mismo mes.
+    expect(dueDate(card, '2028-02')).toBe('2028-02-29');
   });
 });
 
@@ -86,6 +110,24 @@ describe('cierre real corregido (T-08, D10)', () => {
     expect(validateOverride(cardA, '2026-10', october)).toEqual({ ok: true });
   });
 
+  it.each([
+    ['2026-11-03', true],
+    ['2026-11-04', false],
+    ['2026-10-14', true],
+    ['2026-10-13', false],
+  ])('borde de ±10 días: cierre corregido al %s → %s', (close, ok) => {
+    const result = validateOverride(cardA, '2026-10', { closeDate: close, dueDate: '2026-11-20' });
+    expect(result.ok).toBe(ok);
+  });
+
+  it('un cierre adelantado al mes anterior no deja fechas sin resumen', () => {
+    const card: CreditCard = { ...cardA, closeDay: 2, dueDay: 15 };
+    const enero = { period: '2027-01', closeDate: '2026-12-30', dueDate: '2027-01-15' };
+    expect(validateOverride(card, '2027-01', enero)).toEqual({ ok: true });
+    expect(statementFor(card, '2026-12-30', [enero])).toBe('2027-01');
+    expect(statementFor(card, '2026-12-31', [enero])).toBe('2027-02');
+  });
+
   it('rechaza una corrección de +15 días', () => {
     expect(
       validateOverride(cardA, '2026-10', { closeDate: '2026-11-08', dueDate: '2026-11-20' }),
@@ -106,6 +148,12 @@ describe('cierre real corregido (T-08, D10)', () => {
     expect(
       validateOverride(cardA, '2026-10', { closeDate: '2026-11-02', dueDate: '2026-11-14' }, [november]),
     ).toEqual({ ok: false, reason: 'not_before_next' });
+  });
+
+  it('rechaza fechas corregidas mal escritas', () => {
+    const malFormada = { period: '2026-10', closeDate: '2026-10-7', dueDate: '2026-11-08' };
+    expect(() => statementFor(cardA, '2026-10-05', [malFormada])).toThrow(RangeError);
+    expect(() => validateOverride(cardA, '2026-10', malFormada)).toThrow(RangeError);
   });
 
   it('rechaza un vencimiento que no es posterior al cierre', () => {

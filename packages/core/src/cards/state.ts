@@ -53,6 +53,9 @@ export function assertPayment(p: StatementPayment): void {
   if (p.amount.currency !== p.appliesTo) {
     throw new RangeError(`El pago ${p.id} cubre ${p.appliesTo} pero el monto está en ${p.amount.currency}`);
   }
+  if (p.debitedAmount.currency !== p.appliesTo && p.fxCardRate === null) {
+    throw new RangeError(`El pago ${p.id} se hizo en otra moneda y no tiene el dólar tarjeta que se usó`);
+  }
 }
 
 function statusOf(

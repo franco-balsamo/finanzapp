@@ -73,6 +73,21 @@ describe('gasto tarde con varios pagos (R3-3, tarjeta B)', () => {
     expect(propuesta).toMatchObject({ amount: ars(12_000), fromAccountId: 'mp', paidAt: '2026-10-06' });
   });
 
+  it('ignora los pagos revertidos al elegir la cuenta', () => {
+    const conRevertido = [
+      payment('p1', '2026-09', ars(100_000), 'galicia', '2026-10-03'),
+      payment('p2', '2026-09', ars(40_000), 'mp', '2026-10-06', { revertedAt: '2026-10-07' }),
+    ];
+    const [propuesta] = impact(cardB, nuevo, [base], conRevertido, '2026-10-08').proposedPayments;
+    expect(propuesta).toMatchObject({ fromAccountId: 'galicia', paidAt: '2026-10-03' });
+  });
+
+  it('da lo mismo si la lista de gastos ya incluye el gasto nuevo', () => {
+    expect(impact(cardB, nuevo, [base, nuevo], pagos, '2026-10-08')).toEqual(
+      impact(cardB, nuevo, [base], pagos, '2026-10-08'),
+    );
+  });
+
   it('aplicado deja el resumen Pagado; revertido vuelve a Pago parcial', () => {
     const [propuesta] = impact(cardB, nuevo, [base], pagos, '2026-10-08').proposedPayments;
     const nuevoPago = asPayment(propuesta!, 'p3');
@@ -169,10 +184,42 @@ describe('cuotas cargadas tarde (02 §3, tarjeta C)', () => {
   });
 });
 
+describe('resumen pagado de más (tarjeta B)', () => {
+  const base = expense('base', '2026-09-15', ars(1_000));
+  const nuevo = expense('tarde', '2026-09-28', ars(50));
+
+  it('si el excedente cubre el gasto nuevo, no hay pago que proponer', () => {
+    const pago = payment('p', '2026-09', ars(1_100), 'galicia', '2026-10-03');
+    expect(impact(cardB, nuevo, [base], [pago], '2026-10-05')).toEqual({
+      isLate: true,
+      askAlreadyPaid: false,
+      proposedPayments: [],
+    });
+  });
+
+  it('si lo cubre en parte, propone solo la diferencia', () => {
+    const pago = payment('p', '2026-09', ars(1_020), 'galicia', '2026-10-03');
+    const [propuesta] = impact(cardB, nuevo, [base], [pago], '2026-10-05').proposedPayments;
+    expect(propuesta?.amount).toEqual(ars(30));
+  });
+});
+
 describe('cuándo no se pregunta', () => {
   it('un gasto del resumen en curso no es tarde', () => {
     const result = impact(cardB, expense('hoy', '2026-10-04', ars(1_000)), [], [], '2026-10-05');
     expect(result).toEqual({ isLate: false, askAlreadyPaid: false, proposedPayments: [] });
+  });
+
+  it('el día de cierre, un gasto de ese día todavía no es tarde', () => {
+    const result = impact(cardB, expense('hoy', '2026-09-30', ars(1_000)), [], [], '2026-09-30');
+    expect(result.isLate).toBe(false);
+  });
+
+  it('un resumen con pago parcial no dispara la pregunta', () => {
+    const base = expense('base', '2026-09-15', ars(100_000));
+    const parcial = payment('p', '2026-09', ars(60_000), 'galicia', '2026-10-03');
+    const result = impact(cardB, expense('tarde', '2026-09-28', ars(12_000)), [base], [parcial], '2026-10-05');
+    expect(result).toEqual({ isLate: true, askAlreadyPaid: false, proposedPayments: [] });
   });
 
   it('un resumen cerrado sin pagos no dispara la pregunta', () => {

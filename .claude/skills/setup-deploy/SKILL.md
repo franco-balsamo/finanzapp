@@ -1,1 +1,0 @@
-/home/fbalsamo/repositorios/franco/finanzas/.claude/skills/gstack/setup-deploy/SKILL.md

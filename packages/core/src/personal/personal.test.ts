@@ -124,6 +124,26 @@ describe('categorySpend (02 §6)', () => {
     expect(spend([compra], '2026-09')).toMatchObject({ total: ars(15_000), approximate: true });
   });
 
+  it('con fxPending no usa la cotización guardada aunque exista', () => {
+    const compra = expenseFrom('m', '2026-09-10', usd(10), {
+      accountId: 'caja-usd',
+      categoryId: 'suscripciones',
+      fxPending: true,
+      fx: { mep: rate('1400.00'), oficial: null, blue: null },
+    });
+    expect(spend([compra], '2026-09')).toMatchObject({ total: ars(15_000), approximate: true });
+  });
+
+  it('un gasto sin categoría va a la clave "none"', () => {
+    const compra = expenseFrom('m', '2026-09-10', ars(1_000), { accountId: 'caja' });
+    expect(spend([compra], '2026-09').byCategory).toEqual({ none: ars(1_000) });
+  });
+
+  it('rechaza una parte propia en otra moneda que el gasto', () => {
+    const malo = expenseFrom('m', '2026-09-10', usd(30), { myShare: ars(10_000), groupExpenseId: 'g1' });
+    expect(() => spend([malo], '2026-09')).toThrow(RangeError);
+  });
+
   it('ingresos y transferencias no cuentan', () => {
     const ingreso = movement('i', { type: 'income', date: '2026-09-10', amount: ars(1_000), accountId: 'caja' });
     expect(spend([ingreso], '2026-09').total).toEqual(ars(0));

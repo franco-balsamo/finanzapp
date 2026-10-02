@@ -2,7 +2,7 @@
 // Core solo propone: si la persona contesta "Sí", la app guarda los pagos propuestos.
 
 import type { ISODate, Period } from '../dates';
-import { add, convert, zero, type Currency, type Money, type Rate } from '../money';
+import { add, convert, money, zero, type Currency, type Money, type Rate } from '../money';
 import { closeDate, installmentSchedule } from './schedule';
 import { assertPayment, cardState, isActivePayment } from './state';
 import type { CardExpense, CreditCard, StatementOverride, StatementPayment } from './types';
@@ -55,44 +55,20 @@ function propose(
   fxCard: Rate,
 ): ProposedPayment {
   const sameCurrency = lastPayment(periodPayments.filter((p) => p.appliesTo === amount.currency));
-  if (sameCurrency) {
-    const accountCurrency = sameCurrency.debitedAmount.currency;
-    if (accountCurrency === amount.currency) {
-      return {
-        period,
-        appliesTo: amount.currency,
-        amount,
-        fromAccountId: sameCurrency.fromAccountId,
-        debitedAmount: amount,
-        fxCardRate: null,
-        paidAt: sameCurrency.paidAt,
-      };
-    }
-    // Dólares pagados en pesos: con el dólar tarjeta de ese último pago (R3-4).
-    const fx = sameCurrency.fxCardRate ?? fxCard;
-    return {
-      period,
-      appliesTo: amount.currency,
-      amount,
-      fromAccountId: sameCurrency.fromAccountId,
-      debitedAmount: convert(amount, fx, accountCurrency),
-      fxCardRate: fx,
-      paidAt: sameCurrency.paidAt,
-    };
-  }
-
-  // Esa parte nunca se pagó: cuenta y fecha del último pago del resumen, con el dólar tarjeta de hoy.
-  const any = lastPayment(periodPayments);
-  if (!any) throw new Error(`El resumen ${period} no tiene pagos`);
-  const accountCurrency = any.debitedAmount.currency;
+  // Si esa parte nunca se pagó: cuenta y fecha del último pago del resumen, con el dólar tarjeta de hoy.
+  const source = sameCurrency ?? lastPayment(periodPayments);
+  if (!source) throw new Error(`El resumen ${period} no tiene pagos`);
+  // Dólares pagados en pesos: con el dólar tarjeta de ese último pago (R3-4). assertPayment garantiza que exista.
+  const fx = sameCurrency?.fxCardRate ?? fxCard;
+  const accountCurrency = source.debitedAmount.currency;
   return {
     period,
     appliesTo: amount.currency,
     amount,
-    fromAccountId: any.fromAccountId,
-    debitedAmount: convert(amount, fxCard, accountCurrency),
-    fxCardRate: accountCurrency === amount.currency ? null : fxCard,
-    paidAt: any.paidAt,
+    fromAccountId: source.fromAccountId,
+    debitedAmount: convert(amount, fx, accountCurrency),
+    fxCardRate: accountCurrency === amount.currency ? null : fx,
+    paidAt: source.paidAt,
   };
 }
 
@@ -126,7 +102,12 @@ export function lateExpenseImpact(input: LateExpenseInput): LateExpenseImpact {
     const statement = before.statements.find((s) => s.period === period);
     // Un resumen de $0 sin pagos también figura como pagado, pero no hay nada que preguntar.
     const wasPaid = statement?.status === 'paid' && periodPayments.length > 0;
-    if (wasPaid) proposedPayments.push(propose(period, amount, periodPayments, fxCard));
+    if (!wasPaid) continue;
+    // Si el resumen se había pagado de más, el excedente cubre primero el gasto nuevo.
+    const uncovered = amount.minor - statement.overpaid[amount.currency].minor;
+    if (uncovered > 0) {
+      proposedPayments.push(propose(period, money(uncovered, amount.currency), periodPayments, fxCard));
+    }
   }
 
   return {

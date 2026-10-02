@@ -1,13 +1,20 @@
 // En qué resumen entra cada compra y cada cuota (02 §3, D9, D10, D11).
 
-import { addMonths, clampedDate, daysBetween, periodOf, type ISODate, type Period } from '../dates';
+import { addMonths, clampedDate, daysBetween, parseDate, periodOf, type ISODate, type Period } from '../dates';
 import { money } from '../money';
 import type { CardExpense, CreditCard, Installment, StatementOverride } from './types';
 
 const OVERRIDE_TOLERANCE_DAYS = 10;
+const MAX_INSTALLMENTS = 24;
 
 function findOverride(overrides: readonly StatementOverride[], period: Period) {
-  return overrides.find((o) => o.period === period);
+  const override = overrides.find((o) => o.period === period);
+  if (override) {
+    // Las fechas se comparan como texto: tienen que venir completas ('YYYY-MM-DD').
+    parseDate(override.closeDate);
+    parseDate(override.dueDate);
+  }
+  return override;
 }
 
 function assertDay(day: number, label: string): void {
@@ -35,9 +42,12 @@ export function dueDate(
   const override = findOverride(overrides, period);
   if (override) return override.dueDate;
   assertDay(card.dueDay, 'El día de vencimiento');
+  assertDay(card.closeDay, 'El día de cierre');
   // Se comparan los días configurados, antes de ajustar al último día del mes (D11).
   const duePeriod = card.dueDay > card.closeDay ? period : addMonths(period, 1);
-  return clampedDate(duePeriod, card.dueDay);
+  const due = clampedDate(duePeriod, card.dueDay);
+  // Si al ajustar a un mes corto el vencimiento no queda después del cierre, pasa al mes siguiente.
+  return due > clampedDate(period, card.closeDay) ? due : clampedDate(addMonths(duePeriod, 1), card.dueDay);
 }
 
 /** Resumen en el que entra una compra: el día de cierre o antes, ese mes; después, el siguiente. */
@@ -47,8 +57,9 @@ export function statementFor(
   overrides: readonly StatementOverride[] = [],
 ): Period {
   const base = periodOf(date);
-  // Se mira también el mes anterior por si una corrección corrió el cierre al mes de la compra.
-  for (const period of [addMonths(base, -1), base, addMonths(base, 1)]) {
+  // Una corrección de ±10 días puede correr un cierre al mes anterior o al siguiente,
+  // así que se mira desde el mes anterior hasta dos meses después.
+  for (const period of [addMonths(base, -1), base, addMonths(base, 1), addMonths(base, 2)]) {
     const previousClose = closeDate(card, addMonths(period, -1), overrides);
     if (previousClose < date && date <= closeDate(card, period, overrides)) {
       return period;
@@ -71,6 +82,8 @@ export function validateOverride(
   override: Omit<StatementOverride, 'period'>,
   overrides: readonly StatementOverride[] = [],
 ): OverrideCheck {
+  parseDate(override.closeDate);
+  parseDate(override.dueDate);
   const others = overrides.filter((o) => o.period !== period);
   const estimated = closeDate(card, period);
   if (Math.abs(daysBetween(estimated, override.closeDate)) > OVERRIDE_TOLERANCE_DAYS) {
@@ -95,8 +108,11 @@ export function installmentSchedule(
   overrides: readonly StatementOverride[] = [],
 ): Installment[] {
   const n = expense.installments;
-  if (!Number.isInteger(n) || n < 1 || n > 24) {
-    throw new RangeError(`Las cuotas tienen que ser de 1 a 24: ${n}`);
+  if (!Number.isInteger(n) || n < 1 || n > MAX_INSTALLMENTS) {
+    throw new RangeError(`Las cuotas tienen que ser de 1 a ${MAX_INSTALLMENTS}: ${n}`);
+  }
+  if (expense.amount.minor <= 0) {
+    throw new RangeError(`El monto del gasto ${expense.id} tiene que ser mayor a cero`);
   }
   const first = statementFor(card, expense.date, overrides);
   const total = expense.amount.minor;
