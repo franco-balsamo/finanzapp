@@ -1,0 +1,9 @@
+{
+  "name": "mangos",
+  "private": true,
+  "scripts": {
+    "test": "pnpm --filter @mangos/core test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "packageManager": "pnpm@11.24.0"
+}
