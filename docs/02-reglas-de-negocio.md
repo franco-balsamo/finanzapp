@@ -85,7 +85,11 @@ Banco, nombre, red (Visa, Mastercard, Amex, Cabal), últimos 4 números, vencimi
   - **en pesos:** con el **dólar tarjeta de la fecha de ese último pago**, que es el que tiene guardado el sistema.
 
   Se puede editar.
+
+  Si la parte en dólares de ese resumen **nunca se pagó** (por ejemplo, el resumen solo tenía pesos), el pago nuevo sale de la cuenta del último pago del resumen, con su fecha y con el **dólar tarjeta de hoy** (spec de core, 2/10).
 - **Cuotas cargadas tarde:** cada cuota va al resumen que le toca por su fecha. Si varias caen en resúmenes ya pagados, la pregunta se hace una sola vez para todas. Con **Sí**, se registra un pago nuevo por cada resumen, con la cuenta y la fecha del último pago de ese resumen.
+
+En los ejemplos que siguen, la Visa cierra el 30 y vence el 10, salvo el de cuotas, donde cierra el 25 y vence el 8.
 
 **Ejemplo:** el resumen de septiembre de la Visa cerró en $100.000 y se pagó completo. El 5/10 cargás "28/09 12000 farmacia visa". Ese resumen pasa a $112.000. Con **Sí**, queda pagado; con **No**, quedan $100.000 pagados y $12.000 pendientes.
 
