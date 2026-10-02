@@ -165,13 +165,13 @@ Fallas críticas sin test, sin manejo y silenciosas: 0.
 
 Salen de los hallazgos de esta revisión. Hay que correrlos con Claude Code o Codex e ir tildándolos a medida que se terminan.
 
-- [ ] **T1 (P1, vos solo: ~1 día / CC: ~1 h):** repo. Armar el monorepo con `apps/mobile` (Expo Router con web) y `packages/core`, con Vitest.
+- [x] **T1 (P1, vos solo: ~1 día / CC: ~1 h):** repo. Armar el monorepo con `apps/mobile` (Expo Router con web) y `packages/core`, con Vitest.
   - Viene de: D1 y D4. Verificación: `vitest` corre y la ruta `/g/test` exporta a web.
-- [ ] **T2 (P1, vos solo: ~1 día / CC: ~1 h):** core. Tipo `Money`, `convert()` con half-up y conversión en el borde de la base.
+- [x] **T2 (P1, vos solo: ~1 día / CC: ~1 h):** core. Tipo `Money`, `convert()` con half-up y conversión en el borde de la base.
   - Viene de: D8. Verificación: T-23 y T-24.
-- [ ] **T3 (P1, vos solo: ~3 días / CC: ~3 h):** core. `statementFor` con cierres corregidos, días 29 a 31, cuotas con resto y `cardState`.
+- [x] **T3 (P1, vos solo: ~3 días / CC: ~3 h):** core. `statementFor` con cierres corregidos, días 29 a 31, cuotas con resto y `cardState`.
   - Viene de: D9, D10 y D11. Verificación: T-01 a T-09.
-- [ ] **T4 (P1, vos solo: ~2 días / CC: ~2 h):** core. `groupBalances`, `simplifyDebts` con umbral por moneda y `netWorth`.
+- [x] **T4 (P1, vos solo: ~2 días / CC: ~2 h):** core. `groupBalances`, `simplifyDebts` con umbral por moneda y `netWorth`.
   - Viene de: D9 y D14. Verificación: T-10 a T-16.
 - [ ] **T5 (P1, vos solo: ~3 días / CC: ~3 h):** base. Migraciones de 03 con `debited_amount`, `fx_pending` e `invite_token_hash`, más las políticas por fila con `is_group_member` y los índices.
   - Viene de: D5, D12 y D16. Verificación: T-20, T-21 y T-25 con pgTAP.

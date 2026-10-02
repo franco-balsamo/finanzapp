@@ -21,6 +21,11 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - Revisión de Claude: `docs/decisiones/2026-10-02-revision-claude.md`, con propuestas para R3-1 a R3-10, el rango de cuotas, T9, el plazo sin margen, la métrica "activo en el ciclo" y la lista de lo que hay que actualizar en `producto-y-lanzamiento.md`.
 
 - Propuestas de la revisión aplicadas en 02, `producto-y-lanzamiento` y 01. Revisión posterior de 02 y 01 hecha y corregida (también 03); el detalle está en `docs/decisiones/README.md`, "Correcciones de la revisión de Claude (2/10)".
+- **Paso 5 de gstack (`/spec`) hecho e implementado** (T1 a T4 del informe de eng review):
+  - Spec en `docs/specs/2026-10-02-epica-core.md`; decisiones en `docs/decisiones/2026-10-02-spec-core.md`.
+  - El repo ya es git (rama `main`). Monorepo con pnpm: `packages/core` (`@mangos/core`) y `apps/mobile` (Expo SDK 57, rutas en `src/app/`, export web con `/g/[token]`).
+  - Core tiene `Money`/`convert`, tarjetas (`statementFor`, `cardState`, `lateExpenseImpact`…), grupos (`shares`, `groupBalances`, `simplifyDebts`), `accountBalance`, `categorySpend` y `netWorth`. 96 tests en verde.
+  - Comandos: `pnpm test`, `pnpm typecheck`, y `npx expo export --platform web` dentro de `apps/mobile`.
 
 ## Próximos pasos
 1. **Claude:** actualizar el prototipo a la v1:
@@ -30,7 +35,11 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - toast con "Deshacer";
    - detalle de tarjeta y de grupo en el orden nuevo;
    - sin débito como tipo propio, sin comprobante, sin presupuestos, sin alertas de precio, solo Iguales y Montos.
-2. **Paso 5 de gstack:** `/spec` para `packages/core` (T2 a T4 del informe de eng review: `Money`/`convert`, `statementFor`/`cardState`, `groupBalances`/`simplifyDebts`/`netWorth`).
+2. **T5 del informe:** migraciones de 03 en Supabase, políticas por fila con `is_group_member` e índices (T-20, T-21 y T-25 con pgTAP). Después, la prueba T9: que las Edge Functions importen `packages/core`.
+3. **Pendiente de herramientas:** instalar `codex` si se quiere la revisión externa en `/spec` y `/review` (esta vez no corrió) y `gh` si se suben los specs como issues.
+
+## Commits
+Sin la línea "Co-Authored-By" de Claude. Se usa la identidad global de git.
 
 ## Cómo trabajar con Fran
 Castellano rioplatense, ritmo rápido y pocas preguntas. Aprueba con "Dale".

@@ -117,7 +117,7 @@ Saldo pendiente de un resumen = total del resumen − Σ pagos no revertidos (po
 | currency | ARS/USD | |
 | card_id | uuid | Si se pagó con tarjeta de crédito |
 | account_id | uuid | Si se pagó con débito, billetera o efectivo (o es la cuenta afectada) |
-| to_account_id | uuid | Transferencias y compra de dólares |
+| to_account_id | uuid | Transferencias y compra de dólares. En una transferencia, `amount` y `currency` son lo que **entra** a esta cuenta y `debited_amount` lo que **sale** de `account_id`, en su moneda (spec de core, 2/10). *Ejemplo: comprás US$ 100 pagando $142.000 → `amount` US$ 100, `debited_amount` $142.000.* |
 | installments | smallint | 1 por defecto; solo con tarjeta de crédito. De 1 a 24 (`check`, revisión del 2/10) |
 | category_id | uuid | |
 | my_share | numeric | Si viene de un grupo: tu parte, en la moneda del movimiento |
@@ -189,16 +189,27 @@ Ejemplos de `params` según el tipo:
 
 ## Cálculos (`packages/core`)
 
+Firmas implementadas en la épica del 2/10 ([spec](specs/2026-10-02-epica-core.md)). Montos con `Money` (centavos enteros), cotizaciones con `Rate` (string decimal), fechas `'YYYY-MM-DD'` y resúmenes `'YYYY-MM'` (mes de cierre).
+
 | Función | Entrada | Salida |
 |---|---|---|
-| `statementFor(card, date, overrides)` | tarjeta, fecha de compra, cierres corregidos | período del resumen; usa el cierre real si existe (eng review, 1/10) |
-| `cardState(card, today)` | tarjeta, movimientos y pagos | resúmenes con estado y saldo pendiente, en curso, futuras, límite usado (dólar tarjeta) |
-| `groupBalances(group)` | gastos y pagos del grupo | saldo por integrante |
-| `simplifyDebts(balances)` | saldos | lista de transferencias |
-| `categorySpend(user, month)` | movimientos | gasto por categoría: tu parte; con tarjeta de crédito, una cuota en el mes de cierre de cada resumen |
-| `netWorth(user)` | todo lo anterior | patrimonio en pesos o en dólares |
+| `convert(money, rate, to)` | monto, cotización en pesos por dólar, moneda destino | monto convertido, half-up al centavo alejándose del cero. Única vía de conversión (D8) |
+| `fromDbNumeric(s, currency)` / `toDbNumeric(money)` | `numeric(14,2)` como string / `Money` | conversión exacta en el borde con la base |
+| `closeDate` / `dueDate(card, period, overrides)` | tarjeta, resumen, cierres corregidos | fecha de cierre y de vencimiento (días 29 a 31 ajustados, D11) |
+| `statementFor(card, date, overrides)` | tarjeta, fecha de compra, cierres corregidos | resumen en el que entra; usa el cierre real si existe |
+| `validateOverride(card, period, override, overrides)` | corrección propuesta | ok, o el motivo del rechazo (±10 días y entre los cierres vecinos, D10) |
+| `installmentSchedule(card, expense, overrides)` | gasto con cuotas | cuota, resumen y monto de cada una; el resto va a la primera (D9) |
+| `cardState({card, expenses, payments, overrides, today, fxCard})` | tarjeta, consumos, pagos, hoy, dólar tarjeta | resúmenes con estado, total, pagado, pendiente y excedente; "A pagar"; límite usado y disponible |
+| `lateExpenseImpact({card, expense, expenses, payments, overrides, today, fxCard})` | gasto que se está cargando | si es tarde, si hay que preguntar "¿Ya lo pagaste?" y los pagos propuestos (R3-3, R3-4) |
+| `shares(group, expense)` | gasto de grupo | parte de cada incluido en la moneda del grupo, con el resto al que pagó |
+| `groupBalances(group, expenses, payments)` | gastos y pagos del grupo | saldo exacto por integrante; suman cero |
+| `displayBalance(money)` | saldo | cero si está debajo del umbral de su moneda (D14) |
+| `simplifyDebts(group, balances)` | saldos | transferencias, como máximo N−1 |
+| `accountBalance(account, movements, payments)` | cuenta, movimientos, pagos de tarjeta | saldo actual |
+| `categorySpend({movements, cards, month, reference, todayRate})` | movimientos y tarjetas | gasto por categoría en pesos: tu parte; con tarjeta, cada cuota en el mes de cierre de su resumen |
+| `netWorth({display, referenceRate, accountBalances, myGroupBalances, cardDebts})` | saldos ya calculados | cuentas, grupos, tarjetas y total en pesos o en dólares |
 
 - Son funciones en **TypeScript puro, sin dependencias ni acceso a la base**: reciben filas y devuelven resultados con `Money`.
 - Las usan la app (incluso sin conexión) y las Edge Functions (aviso de cierre y vencimientos), así que los números siempre coinciden.
 - Se testean con Vitest; los ejemplos de [02-reglas-de-negocio.md](02-reglas-de-negocio.md) son los primeros tests (matriz completa en [05-plan-tecnico.md](05-plan-tecnico.md)).
-- `groupBalances` aplica el umbral de cero por moneda solo al mostrar y simplificar.
+- `groupBalances` devuelve los saldos exactos. El umbral de cero por moneda lo aplican `displayBalance` (al mostrar) y `simplifyDebts`.
