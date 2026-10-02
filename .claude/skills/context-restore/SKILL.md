@@ -1,0 +1,1 @@
+/home/fbalsamo/repositorios/franco/finanzas/.claude/skills/gstack/context-restore/SKILL.md

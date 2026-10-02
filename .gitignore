@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.expo/
+web-build/
+*.tsbuildinfo
+.DS_Store
+
+# gstack vendorizado (879 MB) y su estado local
+.claude/skills/gstack/
+.gstack/
