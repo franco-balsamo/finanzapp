@@ -32,15 +32,18 @@ Las secciones marcadas "Fuera de la v1" quedan para después y no se programan e
 > - Se usa la cotización de **venta** de la **fecha del gasto**, en hora de Argentina: la última guardada ese día.
 > - Si ese día no hubo cotización (fin de semana o feriado), se usa la del último día hábil anterior, mirando hasta 4 días hacia atrás (T6, 2/10).
 > - Si falta el historial de esa fecha, el gasto se guarda igual, marcado como pendiente, y una tarea completa la cotización después. Nunca se bloquea la carga.
+> - Si la fecha del gasto tiene más de 2 días y sigue pendiente, la tarea diaria usa la última cotización anterior a esa fecha, sin límite de días. Si la fecha es anterior a todo el historial, usa la primera disponible. En los dos casos el gasto queda marcado como **estimado**, para revisarlo (ajuste de T6, 4/10).
 > - Si se cambia la fecha del gasto, la cotización se vuelve a calcular. Si se edita otra cosa, queda la que estaba.
 >
 > *Ejemplo: un gasto del sábado 3/10/2026 cargado el lunes 5/10 guarda la cotización del viernes 2/10, no la del lunes.*
+>
+> *Ejemplo: un gasto del 1/2/2020, cuando el último historial anterior es del 10/1/2020, queda pendiente al cargarlo. A la madrugada siguiente toma la cotización del 10/1 y queda estimado.*
 
 ## 2. Cuentas
 
 - **Tipos:** banco, billetera virtual, efectivo. Cada cuenta tiene **una sola moneda**.
 - **Saldo** = saldo inicial + ingresos − gastos con débito o billetera − pagos de tarjeta ± transferencias.
-- Si el gasto está en otra moneda que la cuenta, se descuenta convertido. **Decidido** (eng review, 1/10): se guarda lo descontado en la moneda de la cuenta (`debited_amount`). La app lo propone con el **dólar tarjeta del día** y la persona lo puede corregir si el banco cobró otra cosa. El saldo suma ese monto y nunca se recalcula con otra cotización. *Ejemplo: US$ 12 desde una caja en pesos con dólar tarjeta a $2.028 → se proponen $24.336, editables.*
+- Si el gasto está en otra moneda que la cuenta, se descuenta convertido. **Decidido** (eng review, 1/10): se guarda lo descontado en la moneda de la cuenta (`debited_amount`). La app lo propone con el **dólar tarjeta de la fecha del gasto** (`fx_rate_on('tarjeta', fecha)`, con la misma ventana de 4 días que §1) y la persona lo puede corregir si el banco cobró otra cosa. El saldo suma ese monto y nunca se recalcula con otra cotización. *Ejemplo: US$ 12 desde una caja en pesos con dólar tarjeta a $2.028 → se proponen $24.336, editables.*
 - El usuario tiene que poder **ajustar el saldo a mano**, y el ajuste queda guardado como un movimiento, para no perder el historial.
 
 > **✅ Decidido:** el prototipo no tiene ajuste manual y guarda el saldo pisando el valor anterior. La app real suma el ajuste manual y **calcula el saldo a partir de los movimientos**, así se puede reconstruir y auditar.
@@ -127,7 +130,7 @@ La pregunta aparece solo para gastos con fecha anterior al último cierre, así 
 
 ### Registrar el pago
 - El usuario **paga lo que quiera**: el total, el mínimo o cualquier monto. Se puede registrar más de un pago para el mismo resumen.
-- Se elige de qué cuenta sale cada parte. La parte en dólares puede salir de una cuenta en dólares o pagarse en pesos con el **dólar tarjeta**.
+- Se elige de qué cuenta sale cada parte. La parte en dólares puede salir de una cuenta en dólares o pagarse en pesos con el **dólar tarjeta** de la fecha del pago, que la app pide con `fx_rate_on('tarjeta', fecha)`.
 - Cada pago se descuenta de la cuenta de la que salió y queda guardado con esa cuenta.
 - **Saldo pendiente** = total del resumen − pagos registrados. Si queda saldo, el resumen sigue figurando como deuda (en "A pagar", en el límite usado y en el patrimonio) hasta cubrirlo.
 - **Deshacer un pago:** el resumen vuelve a tener ese saldo pendiente y la plata **vuelve a la cuenta de la que salió**.

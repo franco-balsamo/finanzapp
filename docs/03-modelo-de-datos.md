@@ -129,6 +129,7 @@ Saldo pendiente de un resumen = total del resumen − Σ pagos no revertidos (po
 | group_expense_id | uuid | Vínculo con el gasto de grupo |
 | fx_mep, fx_oficial, fx_blue | numeric | Cotizaciones del día; las completa un trigger de la base según la fecha del gasto, en hora de Argentina (eng review, 1/10) |
 | fx_pending | bool | Falta alguna cotización de esa fecha; `ingest_fx_rates` la completa cuando llega |
+| fx_estimated | bool | La cotización salió de fuera de la ventana de 4 días (la tarea diaria resolvió un pendiente de más de 2 días): hay que revisarla (ajuste de T6, 4/10) |
 | debited_amount | numeric | Si la moneda del gasto difiere de la cuenta: lo descontado, en la moneda de la cuenta (eng review, 1/10) |
 | receipt_path | text | Imagen del comprobante *(fuera de la v1, fase 2)* |
 | created_at, updated_at | timestamptz | |
@@ -160,6 +161,7 @@ Cotizaciones que guarda el backend.
 - **Trigger `movements_fx`** (`before insert or update`): completa `fx_mep`, `fx_oficial` y `fx_blue` con la venta de la fecha del gasto (02 §1).
   - Se calcula al crear, al cambiar la fecha y mientras el movimiento esté pendiente. En cualquier otra edición conserva lo guardado, y lo que mande la app se pisa.
   - Sin cotización en los 4 días hasta la fecha, la que falta queda nula y `fx_pending = true`.
+  - **Tarea diaria `fx-resolve-stale`** (7:00 UTC, 4:00 en Argentina, una hora después del historial): `private.resolve_stale_fx` resuelve los pendientes cuya fecha tiene más de 2 días con la última venta anterior, sin límite de días, o con la primera del historial si la fecha es anterior a todo. Esos movimientos quedan con `fx_estimated = true`. Solo esa tarea estima: cargar o editar desde la app nunca lo hace, y la app no puede cambiar la marca. Si después se cambia la fecha, se recalcula con la ventana normal y la marca se borra.
 
 ### `groups`, `group_members`
 | groups | id, name, currency, owner_member_id (pasa al azar a otro integrante con cuenta si el dueño se va; puede quedar nulo), invite_token_hash (SHA-256 en hex de un token aleatorio de 128 bits; reemplaza a `invite_code`), invite_token_created_at, deleted_at |
@@ -209,6 +211,8 @@ Ejemplos de `params` según el tipo:
 | `private.member_shares` / `private.group_balances` | Internas. Copia en SQL de `shares` y `groupBalances` de core, en centavos, para "al día" y `my_share`. Tienen que dar lo mismo que core: los tests de `supabase/tests/05_group_balances.test.sql` usan los mismos ejemplos. Si cambia la regla en core, cambia acá |
 | `export_account()` | Devuelve un JSON con todo lo del usuario |
 | `ingest_fx_rates(source, payload)` | Solo `service_role` (la llaman las Edge Functions `fx-rates` y `fx-history`). `source` es `dolarapi` o `argentinadatos` (si no, `22023`) y `payload` es la lista que devolvió la API. Mapea las casas, saltea las filas que no se pueden leer (venta nula, ≤ 0 o en texto, fecha inválida), no duplica, y después vuelve a calcular los movimientos con `fx_pending`. Devuelve cuántas filas nuevas guardó |
+| `fx_rate_on(kind, date)` | Solo `authenticated`. La venta de un tipo en una fecha, con la misma ventana de 4 días que el trigger, o nulo. La app la usa con `tarjeta` para proponer `debited_amount` y los pagos de dólares en pesos (02 §2 y §3). Un tipo desconocido da `22023` |
+| `private.fx_sell_fallback(kind, date)` / `private.resolve_stale_fx()` | Internas, de la tarea diaria: la última venta anterior sin límite (o la primera del historial) y la resolución de los pendientes de más de 2 días |
 | `private.fx_sell_on(kind, date)` | Interna. La venta más reciente entre `date − 4` y `date` (por `rate_date` y después `fetched_at`), o nulo. Cubre fines de semana y feriados puente |
 | `private.call_edge(fn)` | Interna. La usan los cron: `POST` con `pg_net` a `functions_url/fn` con `Authorization: Bearer fx_cron_secret`, los dos de Vault |
 

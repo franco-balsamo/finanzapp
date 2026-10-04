@@ -4,6 +4,10 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(38);
 
+-- Sin lo que haya quedado en la base local (historial cargado, secretos de Vault).
+delete from public.fx_rates;
+delete from vault.secrets where name in ('functions_url', 'fx_cron_secret');
+
 insert into auth.users (id, email) values ('a0000000-0000-4000-8000-000000000001', 'ana@test.local');
 insert into public.accounts (id, user_id, name, type, currency) values
   ('a1000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'Caja Ana', 'bank', 'ARS');
@@ -222,12 +226,12 @@ reset role;
 -- ═════════════════════════ Cron ═════════════════════════
 
 select is(
-  (select array_agg(jobname || ' ' || schedule order by jobname) from cron.job where jobname like 'fx-%'),
+  (select array_agg(jobname || ' ' || schedule order by jobname) from cron.job where jobname in ('fx-rates', 'fx-history')),
   array['fx-history 0 6 * * *', 'fx-rates */10 * * * *'],
   'los dos cron de cotizaciones están programados'
 );
 select is(
-  (select array_agg(command order by jobname) from cron.job where jobname like 'fx-%'),
+  (select array_agg(command order by jobname) from cron.job where jobname in ('fx-rates', 'fx-history')),
   array['select private.call_edge(''fx-history'')', 'select private.call_edge(''fx-rates'')'],
   'cada cron llama a su Edge Function'
 );

@@ -75,3 +75,23 @@ T6 del informe de eng review:
 - **`group_expenses.fx_rate`:** sigue llegando desde la app (`save_group_expense`). Si se quiere que lo complete la base, va aparte.
 - **`fx_rates` crece:** unas 6 filas por cada cambio de DolarApi, más 6 por día de historial. Sin purga por ahora.
 - **colima:** con 2 GiB y los contenedores de otros proyectos, la VM se colgó. Se reinició con 6 GiB (`colima start --memory 6`).
+
+## Ajustes del 4/10
+
+Pedido de Fran:
+1. La tarea diaria resuelve los `fx_pending` de más de 2 días con la última cotización anterior a la fecha, sin límite de días. Si la fecha es anterior a todo el historial, usa la primera disponible y marca el movimiento para revisar (`fx_estimated`).
+2. Confirmar que se guarda la casa `tarjeta` de DolarApi y sumar `fx_rate_on(kind, date)` para el dólar tarjeta de una fecha (02 §2 y §3).
+
+Migración `supabase/migrations/20261004120000_fx_estimated.sql` y tests en `supabase/tests/09_fx_estimated.test.sql` (27 asserts, 314 en total). 02 §1, §2 y §3 y 03 actualizados antes del código.
+
+Criterios que tomé (Fran respondió "dale" sin elegir; se pueden cambiar):
+- **"Más de 2 días"** se cuenta desde la fecha del gasto (`date < hoy − 2` en hora de Argentina), no desde que se cargó: si el historial de esa fecha no llegó en 2 días, no va a llegar.
+- **`fx_estimated`** se marca siempre que la cotización sale de fuera de la ventana de 4 días, no solo para fechas anteriores a todo el historial: las dos son estimaciones.
+
+Decisiones de la implementación:
+- **Solo la tarea estima.** `private.resolve_stale_fx` prende `mangos.fx_resolve_stale` (variable local de la transacción) y el trigger solo busca sin límite cuando la ve prendida. Editar un pendiente viejo desde la app lo deja pendiente.
+- **Cron `fx-resolve-stale`** a las 7:00 UTC, una hora después de `fx-history`, sin pasar por una Edge Function: corre SQL directo.
+- **Los estimados no se corrigen solos** si después llega historial de su fecha: ya no están pendientes. Se corrigen cambiando la fecha (vuelve a la ventana normal y se borra la marca).
+- **`fx_rate_on`** usa la misma ventana de 4 días que el trigger y devuelve nulo sin datos, así la app pide el dato en vez de proponer una cotización vieja. Valida el tipo (`22023`).
+- **Casa `tarjeta`:** ya se guardaba desde T6. La prueba con DolarApi trajo $2.002 del 2/10, y el historial tiene 2.476 días desde el 23/12/2019. El test 09 lo confirma.
+- **Test 08:** ahora borra `fx_rates` y los secretos de Vault al empezar, para no depender de lo que haya en la base local.
