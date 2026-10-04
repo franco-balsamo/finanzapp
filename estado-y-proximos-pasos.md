@@ -51,6 +51,11 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **T9 en local** (decisiones en `docs/decisiones/2026-10-04-t9-core-en-edge.md`): una Edge Function importa `packages/core` directo. Core pasó a importar con la extensión `.ts`; Vitest, los dos typecheck y el export web de Expo siguen andando. Falta confirmarlo en el primer deploy.
 
+- **Avisos de cierre y de vencimiento** (decisiones en `docs/decisiones/2026-10-04-spec-avisos-de-tarjeta.md`):
+  - Core calcula qué avisar y el texto (`closingNotices`, `dueNotices`, `formatMoney`); las Edge Functions `card-closing-notices` (20:00) y `card-due-notices` (10:00) leen con `card_notice_input` y guardan con `record_card_notices`, una vez por tarjeta y ciclo.
+  - Migración `supabase/migrations/20261004140000_card_notices.sql`. El push no se manda todavía: queda en `notifications` con `deliver_after`.
+  - 386 tests pgTAP y 167 de Vitest en verde.
+
 ## Próximos pasos
 1. **Claude:** actualizar el prototipo a la v1:
    - lista de tarjetas con `CardRow` en vez del carrusel;
@@ -59,7 +64,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - toast con "Deshacer";
    - detalle de tarjeta y de grupo en el orden nuevo;
    - sin débito como tipo propio, sin comprobante, sin presupuestos, sin alertas de precio, solo Iguales y Montos.
-2. **Producción de T6:** cargar `CRON_SECRET`, los secretos de Vault y el historial completo (README). En ese primer deploy, confirmar que las Edge Functions llevan `packages/core` (T9). Después, la parte de la app de T10 (Ajustes, volver a pedir el código y descargar el JSON).
+2. **Producción de T6:** cargar `CRON_SECRET`, los secretos de Vault y el historial completo (README). En ese primer deploy, confirmar que las Edge Functions llevan `packages/core` (T9). Después, el envío del push de los avisos (cuando la app registre tokens) y la parte de la app de T10 (Ajustes, volver a pedir el código y descargar el JSON).
 3. **Pendiente de herramientas:** instalar `codex` si se quiere la revisión externa en `/spec` y `/review` (esta vez no corrió) y `gh` si se suben los specs como issues.
 
 ## Commits

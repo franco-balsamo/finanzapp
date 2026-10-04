@@ -370,6 +370,13 @@ Se muestra en pesos o en dólares según el selector de arriba.
   - Abre el detalle de la tarjeta con el campo de carga por texto.
   - Textos: "Cerró tu Visa: te vienen $187.000. ¿Te falta cargar algo?". Con dólares: "$187.000 + US$ 50".
   - Si el total es $0 y el ciclo anterior tuvo consumos: "Cerró tu Visa y no tiene consumos cargados este ciclo. ¿Te falta cargar algo?". Si tampoco tuvo, no se manda nada.
+- **Aviso de vencimiento** (spec de avisos, 4/10):
+  - Solo si el resumen tiene saldo pendiente. Si el aviso no salió el día que correspondía, sale igual mientras no haya vencido; el día del vencimiento ya no.
+  - Texto: "Tu Visa vence el martes 6/10: quedan $80.000 por pagar.". Si vencen varias, una sola notificación: "Vencen tu Visa (martes 6/10, $80.000) y tu Master (miércoles 7/10, US$ 50).".
+- **Aviso de cierre, detalles** (spec de avisos, 4/10):
+  - Si cierran varias el mismo día: "Cerraron tu Visa ($187.000) y tu Master (sin consumos cargados). ¿Te falta cargar algo?".
+  - Si el aviso no salió el día del cierre, sale al día siguiente: "Ayer cerró tu Visa: te vienen $187.000. ¿Te falta cargar algo?". Más tarde, no.
+- **Sin configurar:** los dos avisos están prendidos y el de vencimiento sale 2 días antes. Las tarjetas archivadas no reciben avisos.
 - **Canales:** notificación en la v1; mail y WhatsApp en el plan Pro.
 - **No molestar:** entre la hora de inicio y la de fin, los avisos se guardan y salen al terminar.
 - Las alertas **informan hechos, nunca recomiendan** comprar o vender, para no entrar en asesoramiento regulado por la CNV.

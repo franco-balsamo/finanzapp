@@ -420,3 +420,9 @@ verify_jwt = false
 
 [functions.fx-history]
 verify_jwt = false
+
+[functions.card-closing-notices]
+verify_jwt = false
+
+[functions.card-due-notices]
+verify_jwt = false

@@ -180,13 +180,18 @@ Cotizaciones que guarda el backend.
 
 Un pago nunca se edita: si estaba mal, cualquier integrante lo **anula** (`void_group_payment`, guarda `deleted_at` y `voided_by`) y se registra de nuevo. Los saldos y la web de invitados ignoran los anulados.
 
+### `private.card_notices`
+Qué aviso de tarjeta ya se mandó: card_id (se borra con la tarjeta), kind (`card_closing`/`card_due`), period, notification_id, created_at. Único por (card_id, kind, period): un aviso por tarjeta y ciclo aunque el cron corra dos veces.
+
 ### `private.job_failures`
 Lo que una tarea diaria no pudo hacer, para revisarlo: id, job, ref_id, error, failed_at. La app no la ve (T7).
 
 ### `alerts` y `notifications`
 | alerts | id, user_id, type (en la v1: `card_closing`/`card_due`; precio, presupuesto, grupo y semanal después), enabled, params jsonb. Uno por tarjeta y tipo; solo push en la v1 |
 |---|---|
-| **notifications** | id, user_id, alert_id, title, body, severity, created_at, sent_at, read_at |
+| **notifications** | id, user_id, alert_id, title, body, severity, kind (`card_closing`/`card_due`; nulo en las de grupo), data (jsonb: `{"card_ids"}` para abrir el detalle con la carga por texto), deliver_after (cuándo puede salir el push, con el no molestar), created_at, sent_at, read_at |
+
+Sin fila en `alerts` para una tarjeta, los dos avisos están prendidos y el de vencimiento es a 2 días. El envío del push llega con la app (cuando registre los tokens de dispositivo): va a mandar las que tienen `deliver_after` vencido, `sent_at` nulo y `notify_push`.
 
 Ejemplos de `params` según el tipo:
 - **precio:** `{asset:"mep", op:">", value:1600}`
@@ -213,6 +218,9 @@ Ejemplos de `params` según el tipo:
 | `delete_account()` | *(T10)* Solo `authenticated` y con login reciente: el claim `amr` del JWT tiene que tener un método `otp` o `password` con `timestamp` de menos de 10 minutos (no se usa `iat`, que se renueva en cada refresh); si no, `42501` "reauthentication required". Si era dueño de un grupo no eliminado, llama a `transfer_ownership` aunque tenga saldo (sin heredero, el grupo queda sin dueño). Pone `payment_alias` y `claimed_at` en nulo en sus lugares y borra el usuario de `auth.users`: la cascada borra todo lo personal y las FK `set null` dejan el lugar provisorio con el mismo nombre. Los gastos, partes y pagos de grupo no se tocan, así los saldos de los demás no cambian (T-26) |
 | `private.member_shares` / `private.group_balances` | Internas. Copia en SQL de `shares` y `groupBalances` de core, en centavos, para "al día" y `my_share`. Tienen que dar lo mismo que core: los tests de `supabase/tests/05_group_balances.test.sql` usan los mismos ejemplos. Si cambia la regla en core, cambia acá |
 | `export_account()` | *(T10)* Solo `authenticated`. JSON con `version`, `exported_at`, `user` (id, email y ajustes), cuentas, tarjetas, cierres corregidos, pagos de tarjeta, movimientos, palabras, alertas, avisos y grupos. Montos como texto y sin `user_id` en las filas. Grupos activos: como los ve en la app (`private.group_snapshot`, lo mismo que la web de invitados) más su lugar con su alias; grupos que dejó o eliminados: solo el nombre y su lugar. Nunca trae alias ni `user_id` de los demás |
+| `card_notice_input()` | Solo `service_role` (la leen las Edge Functions `card-closing-notices` y `card-due-notices`). Por usuario con tarjetas no archivadas: `notify_push`, el no molestar y, por tarjeta, días, límite, cierres corregidos, consumos, pagos (con lo descontado en la moneda de la cuenta), las alertas (sin fila: prendidas y vencimiento a 2 días) y lo ya avisado. Montos como texto y fechas en hora de Argentina |
+| `record_card_notices(notices)` | Solo `service_role`. Guarda los avisos que calculó core (`closingNotices`/`dueNotices`): cada uno en su bloque, se saltea entero si alguna tarjeta y resumen ya se avisó o si una tarjeta no es de ese usuario; las fallas van a `private.job_failures`. La notificación lleva `kind`, `data` (`{"card_ids"}`) y `deliver_after` |
+| `private.deliver_after(quiet_from, quiet_to, at)` | Interna. Si `at` cae en el no molestar (horas de Argentina, puede pasar la medianoche), el próximo `quiet_to:00`; si no, `at` |
 | `private.group_snapshot(gid)` | Interna. El grupo como lo ve un integrante: nombre, moneda, integrantes (`id`, `display_name`, `has_account`, `active`), gastos no borrados con partes y pagos no anulados. La usan `get_guest_group` y `export_account` |
 | `ingest_fx_rates(source, payload)` | Solo `service_role` (la llaman las Edge Functions `fx-rates` y `fx-history`). `source` es `dolarapi` o `argentinadatos` (si no, `22023`) y `payload` es la lista que devolvió la API. Mapea las casas, saltea las filas que no se pueden leer (venta nula, ≤ 0 o en texto, fecha inválida), no duplica, y después vuelve a calcular los movimientos con `fx_pending`. Devuelve cuántas filas nuevas guardó |
 | `fx_rate_on(kind, date)` | Solo `authenticated`. La venta de un tipo en una fecha, con la misma ventana de 4 días que el trigger, o nulo. La app la usa con `tarjeta` para proponer `debited_amount` y los pagos de dólares en pesos (02 §2 y §3). Un tipo desconocido da `22023` |

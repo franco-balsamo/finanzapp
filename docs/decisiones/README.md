@@ -16,6 +16,7 @@
 | [2026-10-02-spec-t6-cotizaciones.md](2026-10-02-spec-t6-cotizaciones.md) | /spec de T6: trigger de cotización por fecha del gasto, cron de DolarApi y ArgentinaDatos, Edge Functions y pendientes |
 | [2026-10-04-spec-purga-y-cuenta.md](2026-10-04-spec-purga-y-cuenta.md) | /spec de T7 y T10 (base): purga de tarjetas archivadas, `delete_account` con login reciente (`amr`), `export_account` y `private.job_failures` |
 | [2026-10-04-t9-core-en-edge.md](2026-10-04-t9-core-en-edge.md) | T9: las Edge Functions importan `packages/core` (imports con `.ts`); falta confirmarlo en el primer deploy |
+| [2026-10-04-spec-avisos-de-tarjeta.md](2026-10-04-spec-avisos-de-tarjeta.md) | /spec de avisos de cierre y de vencimiento: textos y agrupado en core, `card_notice_input`, `record_card_notices`, no molestar y cron; el push queda para cuando haya app |
 
 La fuente de verdad es `02-reglas-de-negocio.md` junto con `03-modelo-de-datos.md`.
 
