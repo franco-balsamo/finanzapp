@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ars, cardA, expense, fxCard, payment, usd } from './fixtures';
-import { cardState } from './state';
-import type { CardExpense, StatementPayment } from './types';
+import { ars, cardA, expense, fxCard, payment, usd } from './fixtures.ts';
+import { cardState } from './state.ts';
+import type { CardExpense, StatementPayment } from './types.ts';
 
 function state(
   expenses: CardExpense[],

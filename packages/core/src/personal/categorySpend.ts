@@ -1,10 +1,10 @@
 // Gasto del mes por categoría (02 §6): solo tu parte, y las cuotas en el mes de cierre de su resumen.
 
-import { periodOf, type Period } from '../dates';
-import { add, convert, zero, type Money, type Rate } from '../money';
-import { installmentSchedule } from '../cards/schedule';
-import type { CreditCard, StatementOverride } from '../cards/types';
-import type { FxReference, Movement } from './types';
+import { periodOf, type Period } from '../dates.ts';
+import { add, convert, zero, type Money, type Rate } from '../money.ts';
+import { installmentSchedule } from '../cards/schedule.ts';
+import type { CreditCard, StatementOverride } from '../cards/types.ts';
+import type { FxReference, Movement } from './types.ts';
 
 /** Clave para los gastos sin categoría. */
 export const UNCATEGORIZED = 'none';

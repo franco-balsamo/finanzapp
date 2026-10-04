@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addMonths, clampedDate, daysBetween, lastDayOfMonth, parseDate, periodOf } from './dates';
+import { addMonths, clampedDate, daysBetween, lastDayOfMonth, parseDate, periodOf } from './dates.ts';
 
 describe('dates', () => {
   it('último día del mes, con bisiestos', () => {

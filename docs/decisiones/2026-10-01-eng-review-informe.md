@@ -181,7 +181,7 @@ Salen de los hallazgos de esta revisión. Hay que correrlos con Claude Code o Co
   - Viene de: D13. Verificación: T-19.
 - [ ] **T8 (P1, vos solo: ~1 día / CC: ~1 h):** app. Cola sin conexión con UUID del teléfono y upsert por tandas.
   - Viene de: D6. Verificación: T-20, E-2 y E-3.
-- [ ] **T9 (P1, vos solo: ~0,5 día / CC: ~30 min):** Edge Functions. Verificar que puedan importar `packages/core`; si no pueden, copiarlo al hacer deploy.
+- [ ] **T9 (P1, vos solo: ~0,5 día / CC: ~30 min):** Edge Functions. Verificar que puedan importar `packages/core`; si no pueden, copiarlo al hacer deploy. En local funciona (4/10): falta confirmarlo en el primer deploy.
   - Viene de: D4. Verificación: deploy de prueba.
 - [ ] **T10 (P1, vos solo: ~2 días / CC: ~2 h):** app y base. "Borrar mi cuenta" y "Exportar mis datos". La base está hecha (4/10): falta la app.
   - Viene de: D17. Verificación: T-26.

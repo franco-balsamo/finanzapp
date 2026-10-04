@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { rate } from '../money';
-import { ars, usd } from '../cards/fixtures';
-import { displayBalance, groupBalances, isSettled } from './balances';
-import { shares } from './shares';
-import { simplifyDebts } from './simplify';
-import type { Group, GroupExpense } from './types';
+import { rate } from '../money.ts';
+import { ars, usd } from '../cards/fixtures.ts';
+import { displayBalance, groupBalances, isSettled } from './balances.ts';
+import { shares } from './shares.ts';
+import { simplifyDebts } from './simplify.ts';
+import type { Group, GroupExpense } from './types.ts';
 
 const cabana: Group = {
   id: 'cabana',

@@ -9,7 +9,7 @@ import {
   subtract,
   toDbNumeric,
   zero,
-} from './money';
+} from './money.ts';
 
 describe('convert (T-23: half-up al centavo)', () => {
   it('USD → ARS multiplica y redondea ,005 hacia arriba', () => {

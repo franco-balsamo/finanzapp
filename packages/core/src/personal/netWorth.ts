@@ -1,8 +1,8 @@
 // Patrimonio del inicio (02 §8): cuentas + lo que te deben en grupos − lo que falta pagar de tarjetas.
 // Cada componente se convierte una sola vez a la moneda en que se muestra, nunca de ida y vuelta.
 
-import { add, convert, subtract, zero, type Currency, type Money, type Rate } from '../money';
-import type { ByCurrency } from '../cards/types';
+import { add, convert, subtract, zero, type Currency, type Money, type Rate } from '../money.ts';
+import type { ByCurrency } from '../cards/types.ts';
 
 export interface NetWorthInput {
   display: Currency;

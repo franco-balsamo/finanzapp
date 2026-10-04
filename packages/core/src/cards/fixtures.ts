@@ -1,7 +1,7 @@
 // Datos de prueba compartidos por los tests de tarjetas. No se exporta desde index.ts.
 
-import { money, rate, type Money } from '../money';
-import type { CardExpense, CreditCard, StatementPayment } from './types';
+import { money, rate, type Money } from '../money.ts';
+import type { CardExpense, CreditCard, StatementPayment } from './types.ts';
 
 export const ars = (pesos: number): Money => money(Math.round(pesos * 100), 'ARS');
 export const usd = (dollars: number): Money => money(Math.round(dollars * 100), 'USD');

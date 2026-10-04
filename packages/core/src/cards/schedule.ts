@@ -10,9 +10,9 @@ import {
   periodOf,
   type ISODate,
   type Period,
-} from '../dates';
-import { money } from '../money';
-import type { CardExpense, CreditCard, Installment, StatementOverride } from './types';
+} from '../dates.ts';
+import { money } from '../money.ts';
+import type { CardExpense, CreditCard, Installment, StatementOverride } from './types.ts';
 
 const OVERRIDE_TOLERANCE_DAYS = 10;
 const MAX_INSTALLMENTS = 24;

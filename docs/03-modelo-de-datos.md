@@ -222,7 +222,7 @@ Ejemplos de `params` según el tipo:
 
 ## Cálculos (`packages/core`)
 
-Firmas implementadas en la épica del 2/10 ([spec](specs/2026-10-02-epica-core.md)). Montos con `Money` (centavos enteros), cotizaciones con `Rate` (string decimal), fechas `'YYYY-MM-DD'` y resúmenes `'YYYY-MM'` (mes de cierre).
+Firmas implementadas en la épica del 2/10 ([spec](specs/2026-10-02-epica-core.md)). Los imports relativos dentro de core llevan la extensión `.ts` (`'./money.ts'`), con `allowImportingTsExtensions` en `tsconfig.base.json` y en `apps/mobile`: así la misma fuente la usan Vitest, la app (Metro) y las Edge Functions (Deno), que importan `../../../packages/core/src/index.ts` (T9, 4/10). Montos con `Money` (centavos enteros), cotizaciones con `Rate` (string decimal), fechas `'YYYY-MM-DD'` y resúmenes `'YYYY-MM'` (mes de cierre).
 
 | Función | Entrada | Salida |
 |---|---|---|

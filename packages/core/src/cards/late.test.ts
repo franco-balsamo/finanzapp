@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { rate } from '../money';
-import { ars, cardB, cardC, expense, fxCard, payment, usd } from './fixtures';
-import { lateExpenseImpact, type ProposedPayment } from './late';
-import { cardState } from './state';
-import type { CardExpense, CreditCard, StatementPayment } from './types';
+import { rate } from '../money.ts';
+import { ars, cardB, cardC, expense, fxCard, payment, usd } from './fixtures.ts';
+import { lateExpenseImpact, type ProposedPayment } from './late.ts';
+import { cardState } from './state.ts';
+import type { CardExpense, CreditCard, StatementPayment } from './types.ts';
 
 function impact(
   card: CreditCard,

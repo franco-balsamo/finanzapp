@@ -1,9 +1,9 @@
 // Saldo de una cuenta calculado a partir de los movimientos (02 §2). Nunca se guarda.
 
-import { add, subtract, type Money } from '../money';
-import { isActivePayment } from '../cards/state';
-import type { StatementPayment } from '../cards/types';
-import type { Account, Movement } from './types';
+import { add, subtract, type Money } from '../money.ts';
+import { isActivePayment } from '../cards/state.ts';
+import type { StatementPayment } from '../cards/types.ts';
+import type { Account, Movement } from './types.ts';
 
 /** Lo que el movimiento movió en la moneda de la cuenta (D12). */
 function inAccountCurrency(account: Account, movement: Movement): Money {

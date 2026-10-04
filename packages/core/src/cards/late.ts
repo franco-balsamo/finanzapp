@@ -1,11 +1,11 @@
 // Gastos cargados tarde en un resumen ya cerrado (02 §3, R3-3 y R3-4).
 // Core solo propone: si la persona contesta "Sí", la app guarda los pagos propuestos.
 
-import type { ISODate, Period } from '../dates';
-import { add, convert, money, zero, type Currency, type Money, type Rate } from '../money';
-import { closeDate, installmentSchedule } from './schedule';
-import { assertPayment, cardState, isActivePayment } from './state';
-import type { CardExpense, CreditCard, StatementOverride, StatementPayment } from './types';
+import type { ISODate, Period } from '../dates.ts';
+import { add, convert, money, zero, type Currency, type Money, type Rate } from '../money.ts';
+import { closeDate, installmentSchedule } from './schedule.ts';
+import { assertPayment, cardState, isActivePayment } from './state.ts';
+import type { CardExpense, CreditCard, StatementOverride, StatementPayment } from './types.ts';
 
 export interface LateExpenseInput {
   card: CreditCard;

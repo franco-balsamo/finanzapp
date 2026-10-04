@@ -1,8 +1,8 @@
 // Simplificar deudas (02 §7): el que más debe le paga al que más cobra. Como máximo N−1 transferencias.
 
-import { money } from '../money';
-import { isSettled } from './balances';
-import type { Balances, Group, Transfer } from './types';
+import { money } from '../money.ts';
+import { isSettled } from './balances.ts';
+import type { Balances, Group, Transfer } from './types.ts';
 
 interface Entry {
   memberId: string;

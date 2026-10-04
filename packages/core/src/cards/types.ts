@@ -1,5 +1,5 @@
-import type { ISODate, Period } from '../dates';
-import type { Currency, Money, Rate } from '../money';
+import type { ISODate, Period } from '../dates.ts';
+import type { Currency, Money, Rate } from '../money.ts';
 
 export interface CreditCard {
   id: string;

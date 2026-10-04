@@ -1,4 +1,4 @@
-import type { Currency, Money, Rate } from '../money';
+import type { Currency, Money, Rate } from '../money.ts';
 
 export interface GroupMember {
   id: string;

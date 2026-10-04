@@ -2,10 +2,10 @@
 // El mismo JSON genera supabase/tests/05_group_balances.test.sql (pnpm gen:sql-fixtures).
 import { describe, expect, it } from 'vitest';
 import data from '../../fixtures/group-balances.json' with { type: 'json' };
-import { fromDbNumeric, rate, type Currency } from '../money';
-import { groupBalances, isSettled } from './balances';
-import { shares } from './shares';
-import type { Group, GroupExpense, GroupPayment } from './types';
+import { fromDbNumeric, rate, type Currency } from '../money.ts';
+import { groupBalances, isSettled } from './balances.ts';
+import { shares } from './shares.ts';
+import type { Group, GroupExpense, GroupPayment } from './types.ts';
 
 interface FixtureCase {
   name: string;

@@ -1,14 +1,14 @@
 // T-15: un gasto de grupo pagado con tarjeta impacta distinto en tarjeta, categoría y grupo (02 §7).
 
 import { describe, expect, it } from 'vitest';
-import { ars, cardA, fxCard } from './cards/fixtures';
-import { cardState } from './cards/state';
-import { groupBalances } from './groups/balances';
-import type { Group, GroupExpense } from './groups/types';
-import { categorySpend } from './personal/categorySpend';
-import { expenseFrom } from './personal/fixtures';
-import type { Movement } from './personal/types';
-import { rate } from './money';
+import { ars, cardA, fxCard } from './cards/fixtures.ts';
+import { cardState } from './cards/state.ts';
+import { groupBalances } from './groups/balances.ts';
+import type { Group, GroupExpense } from './groups/types.ts';
+import { categorySpend } from './personal/categorySpend.ts';
+import { expenseFrom } from './personal/fixtures.ts';
+import type { Movement } from './personal/types.ts';
+import { rate } from './money.ts';
 
 const cabana: Group = {
   id: 'cabana',

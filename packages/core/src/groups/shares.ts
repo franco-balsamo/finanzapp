@@ -1,7 +1,7 @@
 // Cómo se divide un gasto de grupo (02 §7, D9). Las partes siempre suman el total exacto.
 
-import { convert, money, type Money } from '../money';
-import type { Balances, Group, GroupExpense } from './types';
+import { convert, money, type Money } from '../money.ts';
+import type { Balances, Group, GroupExpense } from './types.ts';
 
 /** Diferencia máxima entre la suma de los montos exactos y el total: $0,50 o US$ 0,50. */
 const EXACT_TOLERANCE_MINOR = 50;

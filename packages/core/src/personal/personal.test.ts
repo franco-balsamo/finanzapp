@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { rate } from '../money';
-import { ars, cardA, payment, usd } from '../cards/fixtures';
-import { accountBalance } from './accountBalance';
-import { categorySpend } from './categorySpend';
-import { expenseFrom, movement } from './fixtures';
-import { netWorth } from './netWorth';
-import type { StatementPayment } from '../cards/types';
-import type { Account, Movement } from './types';
+import { rate } from '../money.ts';
+import { ars, cardA, payment, usd } from '../cards/fixtures.ts';
+import { accountBalance } from './accountBalance.ts';
+import { categorySpend } from './categorySpend.ts';
+import { expenseFrom, movement } from './fixtures.ts';
+import { netWorth } from './netWorth.ts';
+import type { StatementPayment } from '../cards/types.ts';
+import type { Account, Movement } from './types.ts';
 
 const caja: Account = { id: 'caja', currency: 'ARS', openingBalance: ars(500_000) };
 const cajaUsd: Account = { id: 'caja-usd', currency: 'USD', openingBalance: usd(1_000) };

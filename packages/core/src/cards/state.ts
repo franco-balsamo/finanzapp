@@ -1,8 +1,8 @@
 // Estado de una tarjeta de crédito: resúmenes, saldo pendiente y límite usado (02 §3).
 
-import type { ISODate, Period } from '../dates';
-import { add, convert, subtract, zero, type Currency, type Money, type Rate } from '../money';
-import { closeDate, dueDate, installmentSchedule, statementFor } from './schedule';
+import type { ISODate, Period } from '../dates.ts';
+import { add, convert, subtract, zero, type Currency, type Money, type Rate } from '../money.ts';
+import { closeDate, dueDate, installmentSchedule, statementFor } from './schedule.ts';
 import type {
   ByCurrency,
   CardExpense,
@@ -11,7 +11,7 @@ import type {
   StatementPayment,
   StatementStatus,
   StatementView,
-} from './types';
+} from './types.ts';
 
 export interface CardStateInput {
   card: CreditCard;

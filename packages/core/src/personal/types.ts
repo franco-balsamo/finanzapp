@@ -1,5 +1,5 @@
-import type { ISODate } from '../dates';
-import type { Currency, Money, Rate } from '../money';
+import type { ISODate } from '../dates.ts';
+import type { Currency, Money, Rate } from '../money.ts';
 
 export type FxReference = 'mep' | 'oficial' | 'blue';
 

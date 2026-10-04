@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ars, cardA, expense } from './fixtures';
+import { ars, cardA, expense } from './fixtures.ts';
 import {
   closeDate,
   dueDate,
@@ -7,8 +7,8 @@ import {
   statementFor,
   validateCardDays,
   validateOverride,
-} from './schedule';
-import type { CreditCard } from './types';
+} from './schedule.ts';
+import type { CreditCard } from './types.ts';
 
 describe('statementFor (T-01, 02 §3)', () => {
   it.each([

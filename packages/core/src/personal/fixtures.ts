@@ -1,7 +1,7 @@
 // Datos de prueba de finanzas personales. No se exporta desde index.ts.
 
-import type { Money } from '../money';
-import type { Movement } from './types';
+import type { Money } from '../money.ts';
+import type { Movement } from './types.ts';
 
 export function movement(id: string, fields: Partial<Movement> & Pick<Movement, 'type' | 'date' | 'amount'>): Movement {
   return {

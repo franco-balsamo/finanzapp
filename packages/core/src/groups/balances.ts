@@ -1,8 +1,8 @@
 // Saldo de cada integrante (02 §7). Positivo: le deben. Negativo: debe.
 
-import { add, money, negate, zero, type Money } from '../money';
-import { shares } from './shares';
-import type { Balances, Group, GroupExpense, GroupPayment } from './types';
+import { add, money, negate, zero, type Money } from '../money.ts';
+import { shares } from './shares.ts';
+import type { Balances, Group, GroupExpense, GroupPayment } from './types.ts';
 
 /** Debajo de esto el saldo se muestra como cero: $1 en pesos, US$ 0,01 en dólares (D14). */
 const ZERO_THRESHOLD_MINOR = { ARS: 100, USD: 1 } as const;
