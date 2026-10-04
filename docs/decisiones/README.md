@@ -13,6 +13,7 @@
 | [2026-10-02-spec-t5-supabase.md](2026-10-02-spec-t5-supabase.md) | /spec de T5: migraciones, políticas por fila, FK compuestas, `is_group_member`, `get_guest_group`, `create_group` y tests pgTAP |
 | [2026-10-02-spec-funciones-de-grupo.md](2026-10-02-spec-funciones-de-grupo.md) | /spec de funciones de grupo: reclamar y deshacer, salir, anular pagos, link de invitación y saldos en SQL |
 | [2026-10-02-spec-cierre-de-grupos.md](2026-10-02-spec-cierre-de-grupos.md) | /spec de cierre de grupos: `save_group_expense` validado en la base, quitar a un integrante, eliminar el grupo y ejemplos de saldos compartidos entre core y SQL |
+| [2026-10-02-spec-t6-cotizaciones.md](2026-10-02-spec-t6-cotizaciones.md) | /spec de T6: trigger de cotización por fecha del gasto, cron de DolarApi y ArgentinaDatos, Edge Functions y pendientes |
 
 La fuente de verdad es `02-reglas-de-negocio.md` junto con `03-modelo-de-datos.md`.
 

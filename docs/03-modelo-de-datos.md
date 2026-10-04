@@ -128,7 +128,7 @@ Saldo pendiente de un resumen = total del resumen − Σ pagos no revertidos (po
 | my_share | numeric | Si viene de un grupo: tu parte, en la moneda del movimiento |
 | group_expense_id | uuid | Vínculo con el gasto de grupo |
 | fx_mep, fx_oficial, fx_blue | numeric | Cotizaciones del día; las completa un trigger de la base según la fecha del gasto, en hora de Argentina (eng review, 1/10) |
-| fx_pending | bool | Falta historial de esa fecha; una tarea lo completa después |
+| fx_pending | bool | Falta alguna cotización de esa fecha; `ingest_fx_rates` la completa cuando llega |
 | debited_amount | numeric | Si la moneda del gasto difiere de la cuenta: lo descontado, en la moneda de la cuenta (eng review, 1/10) |
 | receipt_path | text | Imagen del comprobante *(fuera de la v1, fase 2)* |
 | created_at, updated_at | timestamptz | |
@@ -148,11 +148,18 @@ En la beta hay 6 categorías fijas (`is_system`), del sistema (`user_id` nulo) y
 
 ### `fx_rates`
 Cotizaciones que guarda el backend.
-| source | kind (mep, oficial, blue, tarjeta, ccl, cripto) | buy | sell | fetched_at |
+| source (dolarapi, argentinadatos) | kind (mep, oficial, blue, tarjeta, ccl, cripto) | buy | sell | fetched_at | rate_date |
 
-- Un cron (pg_cron y una Edge Function) consulta DolarApi cada 10 minutos.
-- Otro cron diario carga el historial desde ArgentinaDatos.
-- Un trigger `before insert` en `movements` completa `fx_mep`, `fx_oficial` y `fx_blue` con la venta de la fecha del gasto (02 §1).
+- **`fetched_at`** es la hora que informa la fuente, no la del cron: el sábado DolarApi sigue devolviendo la del viernes. El historial de ArgentinaDatos se guarda a las 23:59:59 de Argentina de su fecha, así el cierre le gana a las del día.
+- **`rate_date`** se genera con el día de `fetched_at` en hora de Argentina. Hay un único por (source, kind, fetched_at), así que la misma respuesta dos veces no duplica.
+- **Cron** (pg_cron, T6, migración `20261002150000_fx_rates.sql`):
+  - `fx-rates` cada 10 minutos, que llama a la Edge Function del mismo nombre (DolarApi);
+  - `fx-history` a las 6:00 UTC (3:00 en Argentina), que trae los últimos 30 días de ArgentinaDatos.
+  - Los dos pasan por `private.call_edge`, que lee `functions_url` y `fx_cron_secret` de Vault; si falta alguno, no hace nada. Las Edge Functions solo traen el JSON y llaman a `ingest_fx_rates`.
+- **Casas:** `bolsa` es `mep` y `contadoconliqui` es `ccl`; `mayorista` y `solidario` no se guardan.
+- **Trigger `movements_fx`** (`before insert or update`): completa `fx_mep`, `fx_oficial` y `fx_blue` con la venta de la fecha del gasto (02 §1).
+  - Se calcula al crear, al cambiar la fecha y mientras el movimiento esté pendiente. En cualquier otra edición conserva lo guardado, y lo que mande la app se pisa.
+  - Sin cotización en los 4 días hasta la fecha, la que falta queda nula y `fx_pending = true`.
 
 ### `groups`, `group_members`
 | groups | id, name, currency, owner_member_id (pasa al azar a otro integrante con cuenta si el dueño se va; puede quedar nulo), invite_token_hash (SHA-256 en hex de un token aleatorio de 128 bits; reemplaza a `invite_code`), invite_token_created_at, deleted_at |
@@ -201,6 +208,9 @@ Ejemplos de `params` según el tipo:
 | `delete_account()` | *(T10)* Borra los datos personales; en los grupos, el lugar pasa a provisorio con el mismo nombre y `payment_alias` en nulo. Si era dueño, llama a `transfer_ownership` aunque tenga saldo (02 §10) |
 | `private.member_shares` / `private.group_balances` | Internas. Copia en SQL de `shares` y `groupBalances` de core, en centavos, para "al día" y `my_share`. Tienen que dar lo mismo que core: los tests de `supabase/tests/05_group_balances.test.sql` usan los mismos ejemplos. Si cambia la regla en core, cambia acá |
 | `export_account()` | Devuelve un JSON con todo lo del usuario |
+| `ingest_fx_rates(source, payload)` | Solo `service_role` (la llaman las Edge Functions `fx-rates` y `fx-history`). `source` es `dolarapi` o `argentinadatos` (si no, `22023`) y `payload` es la lista que devolvió la API. Mapea las casas, saltea las filas que no se pueden leer (venta nula, ≤ 0 o en texto, fecha inválida), no duplica, y después vuelve a calcular los movimientos con `fx_pending`. Devuelve cuántas filas nuevas guardó |
+| `private.fx_sell_on(kind, date)` | Interna. La venta más reciente entre `date − 4` y `date` (por `rate_date` y después `fetched_at`), o nulo. Cubre fines de semana y feriados puente |
+| `private.call_edge(fn)` | Interna. La usan los cron: `POST` con `pg_net` a `functions_url/fn` con `Authorization: Bearer fx_cron_secret`, los dos de Vault |
 
 ## Cálculos (`packages/core`)
 

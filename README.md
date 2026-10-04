@@ -10,6 +10,18 @@ Los saldos de grupo se calculan en core (`shares`, `groupBalances`) y en SQL (`p
 
 Corré `pnpm gen:sql-fixtures` cada vez que cambies el JSON, y commiteá el SQL generado junto con el JSON. `pnpm gen:sql-fixtures --check` falla si el SQL quedó viejo. Si cambia una regla de cálculo, cambiala en core y en SQL, y sumá el ejemplo al JSON.
 
+## Cotizaciones (cron y Edge Functions)
+
+Dos cron de la base llaman a las Edge Functions `fx-rates` (DolarApi, cada 10 minutos) y `fx-history` (ArgentinaDatos, todos los días a las 3:00). Sin configurar, los cron no hacen nada. Para activarlos en un entorno:
+
+1. Elegí un secreto largo al azar y cargalo en las Edge Functions: `npx supabase secrets set CRON_SECRET=...`. En local va en `supabase/functions/.env`, que no se commitea.
+2. Cargá en Vault la URL base de las funciones y el mismo secreto (SQL editor):
+   `select vault.create_secret('https://<ref>.supabase.co/functions/v1', 'functions_url');`
+   `select vault.create_secret('<el secreto>', 'fx_cron_secret');`
+   En local, la URL es `http://kong:8000/functions/v1`.
+3. Cargá el historial completo una sola vez:
+   `curl -X POST <functions_url>/fx-history -H "Authorization: Bearer <el secreto>" -d '{"full": true}'`
+
 ## Documentación
 
 | Archivo | Qué tiene | Para qué skill de gstack |

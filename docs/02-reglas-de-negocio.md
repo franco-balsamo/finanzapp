@@ -30,10 +30,11 @@ Las secciones marcadas "Fuera de la v1" quedan para después y no se programan e
 >
 > **Cómo se completa** (eng review, 1/10): la completa la base al guardar, nunca la app.
 > - Se usa la cotización de **venta** de la **fecha del gasto**, en hora de Argentina: la última guardada ese día.
-> - Si ese día no hubo cotización (fin de semana o feriado), se usa la del último día hábil anterior.
+> - Si ese día no hubo cotización (fin de semana o feriado), se usa la del último día hábil anterior, mirando hasta 4 días hacia atrás (T6, 2/10).
 > - Si falta el historial de esa fecha, el gasto se guarda igual, marcado como pendiente, y una tarea completa la cotización después. Nunca se bloquea la carga.
+> - Si se cambia la fecha del gasto, la cotización se vuelve a calcular. Si se edita otra cosa, queda la que estaba.
 >
-> *Ejemplo: un gasto del sábado 4/10 cargado el lunes 6/10 guarda la cotización del viernes 3/10, no la del lunes.*
+> *Ejemplo: un gasto del sábado 3/10/2026 cargado el lunes 5/10 guarda la cotización del viernes 2/10, no la del lunes.*
 
 ## 2. Cuentas
 

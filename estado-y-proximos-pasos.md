@@ -38,6 +38,10 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - `save_group_expense` valida en la base y es la única forma de escribir gastos de grupo y partes; `remove_member` y `delete_group`.
   - Ejemplos de saldos en `packages/core/fixtures/group-balances.json`, compartidos por Vitest y pgTAP (`pnpm gen:sql-fixtures`).
   - 249 tests pgTAP y 139 de Vitest en verde.
+- **T6 hecho** (decisiones en `docs/decisiones/2026-10-02-spec-t6-cotizaciones.md`):
+  - Migración `supabase/migrations/20261002150000_fx_rates.sql`: trigger `movements_fx` (venta de la fecha del gasto, hasta 4 días hacia atrás, si no `fx_pending`), `ingest_fx_rates` y cron `fx-rates` (cada 10 minutos) y `fx-history` (diario).
+  - Edge Functions `fx-rates` (DolarApi) y `fx-history` (ArgentinaDatos), sin dependencias. Para activarlas en un entorno, seguir los pasos del README.
+  - 287 tests pgTAP en verde.
 
 ## Próximos pasos
 1. **Claude:** actualizar el prototipo a la v1:
@@ -47,7 +51,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - toast con "Deshacer";
    - detalle de tarjeta y de grupo en el orden nuevo;
    - sin débito como tipo propio, sin comprobante, sin presupuestos, sin alertas de precio, solo Iguales y Montos.
-2. **T6:** trigger de cotización por fecha del gasto y cron. Después, la prueba T9 (que las Edge Functions importen `packages/core`) y lo que falta de la base: `delete_account` y `export_account` (T10) y la purga (T7).
+2. **Producción de T6:** cargar `CRON_SECRET`, los secretos de Vault y el historial completo (README). Después, la prueba T9 (que las Edge Functions importen `packages/core`) y lo que falta de la base: `delete_account` y `export_account` (T10) y la purga (T7).
 3. **Pendiente de herramientas:** instalar `codex` si se quiere la revisión externa en `/spec` y `/review` (esta vez no corrió) y `gh` si se suben los specs como issues.
 
 ## Commits
