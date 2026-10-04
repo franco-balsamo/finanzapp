@@ -5,6 +5,7 @@ import { accountBalance } from './accountBalance';
 import { categorySpend } from './categorySpend';
 import { expenseFrom, movement } from './fixtures';
 import { netWorth } from './netWorth';
+import type { StatementPayment } from '../cards/types';
 import type { Account, Movement } from './types';
 
 const caja: Account = { id: 'caja', currency: 'ARS', openingBalance: ars(500_000) };
@@ -201,5 +202,55 @@ describe('netWorth (T-16, 02 §8): cada componente se convierte una sola vez', (
       ],
     });
     expect(result.cards).toEqual(ars(288_400));
+  });
+});
+
+describe('purga de tarjetas (T-19, D13)', () => {
+  // Lo mismo que hace private.purge_archived_cards: cada pago no revertido
+  // pasa a ser un card_payment de su cuenta, por lo que restaba.
+  function purgedMovements(payments: StatementPayment[]): Movement[] {
+    return payments
+      .filter((p) => p.revertedAt === null)
+      .map((p) =>
+        movement(`purge-${p.id}`, {
+          type: 'card_payment',
+          date: p.paidAt,
+          amount: p.debitedAmount,
+          accountId: p.fromAccountId,
+        }),
+      );
+  }
+
+  const consumo = expenseFrom('consumo', '2026-09-10', ars(50_000), { cardId: 'A', categoryId: 'super' });
+  const efectivo = expenseFrom('efectivo', '2026-09-12', ars(10_000), { accountId: 'caja', categoryId: 'super' });
+  const pagos = [
+    payment('p1', '2026-08', ars(120_000), 'caja', '2026-09-06'),
+    // US$ 50 pagados en pesos con dólar tarjeta a $2.028.
+    payment('p2', '2026-08', usd(50), 'caja', '2026-09-06', {
+      appliesTo: 'USD',
+      debitedAmount: ars(101_400),
+      fxCardRate: rate('2028.00'),
+    }),
+    payment('p3', '2026-08', ars(30_000), 'caja', '2026-09-07', { revertedAt: '2026-09-08' }),
+    payment('p4', '2026-08', usd(20), 'caja-usd', '2026-09-06', { appliesTo: 'USD', debitedAmount: usd(20) }),
+  ];
+
+  const antes = [consumo, efectivo];
+  const despues = [efectivo, ...purgedMovements(pagos)];
+
+  it('los saldos de las cuentas son iguales antes y después de purgar', () => {
+    expect(accountBalance(caja, despues, [])).toEqual(accountBalance(caja, antes, pagos));
+    expect(accountBalance(cajaUsd, despues, [])).toEqual(accountBalance(cajaUsd, antes, pagos));
+    expect(accountBalance(caja, despues, [])).toEqual(ars(268_600));
+  });
+
+  it('el pago revertido no se convierte', () => {
+    expect(purgedMovements(pagos).map((m) => m.id)).toEqual(['purge-p1', 'purge-p2', 'purge-p4']);
+  });
+
+  it('categorySpend ignora los movimientos de la purga', () => {
+    const sinPurga = [efectivo];
+    expect(spend(despues, '2026-09')).toEqual(spend(sinPurga, '2026-09'));
+    expect(spend(despues, '2026-09').byCategory).toEqual({ super: ars(10_000) });
   });
 });

@@ -44,6 +44,11 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - 287 tests pgTAP en verde.
   - Ajustes del 4/10 (migración `20261004120000_fx_estimated.sql`): la tarea diaria `fx-resolve-stale` estima los pendientes de más de 2 días (`fx_estimated`), y `fx_rate_on(kind, date)` le da a la app el dólar tarjeta de una fecha. 314 tests pgTAP en verde.
 
+- **T7 y la base de T10 hechos** (decisiones en `docs/decisiones/2026-10-04-spec-purga-y-cuenta.md`):
+  - Migración `supabase/migrations/20261004130000_purge_and_account.sql`: `purge_archived_cards` (cron diario, fallas en `private.job_failures`), `delete_account` (pide login de menos de 10 minutos por `amr`) y `export_account`.
+  - Arreglo: borrar una cuenta ya no rompe la FK de `updated_by` en los gastos de grupo.
+  - 356 tests pgTAP y 142 de Vitest en verde.
+
 ## Próximos pasos
 1. **Claude:** actualizar el prototipo a la v1:
    - lista de tarjetas con `CardRow` en vez del carrusel;
@@ -52,7 +57,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - toast con "Deshacer";
    - detalle de tarjeta y de grupo en el orden nuevo;
    - sin débito como tipo propio, sin comprobante, sin presupuestos, sin alertas de precio, solo Iguales y Montos.
-2. **Producción de T6:** cargar `CRON_SECRET`, los secretos de Vault y el historial completo (README). Después, la prueba T9 (que las Edge Functions importen `packages/core`) y lo que falta de la base: `delete_account` y `export_account` (T10) y la purga (T7).
+2. **Producción de T6:** cargar `CRON_SECRET`, los secretos de Vault y el historial completo (README). Después, la prueba T9 (que las Edge Functions importen `packages/core`) y la parte de la app de T10 (Ajustes, volver a pedir el código y descargar el JSON).
 3. **Pendiente de herramientas:** instalar `codex` si se quiere la revisión externa en `/spec` y `/review` (esta vez no corrió) y `gh` si se suben los specs como issues.
 
 ## Commits

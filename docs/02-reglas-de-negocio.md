@@ -142,7 +142,7 @@ La pregunta aparece solo para gastos con fecha anterior al último cierre, así 
 ### Archivar y eliminar
 - Eliminar una tarjeta de crédito la **archiva por 7 días**: deja de verse en la Billetera y en los medios de pago, pero su deuda pendiente sigue contando.
 - Durante esos 7 días se puede **desarchivar** desde Ajustes y vuelve todo como estaba.
-- Pasados los 7 días se **elimina definitivamente**, con todos sus consumos y pagos. **Antes de borrar** (eng review, 1/10), cada pago no revertido pasa a ser un movimiento de la cuenta de la que salió ("Pago de tarjeta Visa ··2337 (eliminada)"), con el mismo monto y fecha, para que el saldo de las cuentas no cambie.
+- Pasados los 7 días se **elimina definitivamente**, con todos sus consumos y pagos. **Antes de borrar** (eng review, 1/10), cada pago no revertido pasa a ser un movimiento de la cuenta de la que salió ("Pago de tarjeta Visa ··2337 (eliminada)"), con el mismo monto y fecha, para que el saldo de las cuentas no cambie. La purga corre todos los días a las 3:30; si una tarjeta no se puede borrar, queda registrada para revisarla y se reintenta al día siguiente (T7, 4/10).
 - Al archivar se avisa cuántos consumos tiene y cuándo se borra.
 
 > **✅ Decidido** (cambios respecto del prototipo):
@@ -381,7 +381,8 @@ Se muestra en pesos o en dólares según el selector de arriba.
 - **Borrar mi cuenta** (Ajustes):
   - Borra las cuentas, tarjetas, movimientos y preferencias del usuario.
   - En cada grupo, su lugar pasa a ser un **integrante sin cuenta con el mismo nombre**, así los saldos de los demás no cambian.
-  - Si era dueño de un grupo, el rol pasa al azar a otro integrante con cuenta, igual que al abandonar, aunque tenga saldo pendiente.
-- **Exportar mis datos:** arma un archivo JSON con todo lo del usuario.
+  - Si era dueño de un grupo, el rol pasa al azar a otro integrante con cuenta, igual que al abandonar, aunque tenga saldo pendiente. Si no queda nadie con cuenta, el grupo queda sin dueño.
+  - Solo se puede borrar habiendo ingresado el código del mail en los últimos 10 minutos; si no, la app lo vuelve a pedir (T10, 4/10).
+- **Exportar mis datos:** arma un archivo JSON con todo lo del usuario. De los grupos donde está, trae lo mismo que ve en la app (nombres, gastos, partes y pagos), sin el alias ni la cuenta de los demás; de los grupos que dejó, solo el nombre y su lugar (T10, 4/10).
 
 **Ejemplo:** Ana borra su cuenta. En "Cabaña" sigue apareciendo "Ana" con su saldo de −$10.000, ahora como integrante sin cuenta, y los demás ven las mismas transferencias en "Cómo saldar".

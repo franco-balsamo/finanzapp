@@ -177,13 +177,13 @@ Salen de los hallazgos de esta revisión. Hay que correrlos con Claude Code o Co
   - Viene de: D5, D12 y D16. Verificación: T-20, T-21 y T-25 con pgTAP.
 - [x] **T6 (P1, vos solo: ~1 día / CC: ~1 h):** base. Trigger de cotización por fecha del gasto y cron cada 10 minutos más el del historial.
   - Viene de: D7 y D3. Verificación: T-17.
-- [ ] **T7 (P1, vos solo: ~0,5 día / CC: ~30 min):** base. Purga en transacción, con los pagos convertidos en movimientos.
+- [x] **T7 (P1, vos solo: ~0,5 día / CC: ~30 min):** base. Purga en transacción, con los pagos convertidos en movimientos.
   - Viene de: D13. Verificación: T-19.
 - [ ] **T8 (P1, vos solo: ~1 día / CC: ~1 h):** app. Cola sin conexión con UUID del teléfono y upsert por tandas.
   - Viene de: D6. Verificación: T-20, E-2 y E-3.
 - [ ] **T9 (P1, vos solo: ~0,5 día / CC: ~30 min):** Edge Functions. Verificar que puedan importar `packages/core`; si no pueden, copiarlo al hacer deploy.
   - Viene de: D4. Verificación: deploy de prueba.
-- [ ] **T10 (P1, vos solo: ~2 días / CC: ~2 h):** app y base. "Borrar mi cuenta" y "Exportar mis datos".
+- [ ] **T10 (P1, vos solo: ~2 días / CC: ~2 h):** app y base. "Borrar mi cuenta" y "Exportar mis datos". La base está hecha (4/10): falta la app.
   - Viene de: D17. Verificación: T-26.
   - `delete_account` pone `payment_alias` en nulo en cada lugar que pasa a provisorio (decisión del 2/10).
 - [ ] **T11 (P1, vos solo: ~2 días / CC: ~4 h):** E2E. Maestro con los flujos E-1 a E-4 contra Supabase local.
