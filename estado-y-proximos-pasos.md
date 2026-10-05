@@ -1,10 +1,10 @@
-# Mangos: estado y próximos pasos (4 de octubre de 2026)
+# Mangos: estado y próximos pasos (5 de octubre de 2026)
 
 Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales de Fran para Argentina; el nombre es provisorio.
 
 ## Para retomar
-- **Dónde quedó (4/10):** el backend de la v1 está terminado, probado y deployado en Supabase (proyecto `mangos`). Falta la app: `apps/mobile` sigue sin pantallas, salvo `/g/[token]`.
-- **Siguiente paso:** las pantallas de la app (ver "Próximos pasos" más abajo). Antes de tomar cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
+- **Dónde quedó (5/10):** el backend de la v1 está terminado, probado y deployado en Supabase (proyecto `mangos`). La primera tanda de pantallas tiene la spec aprobada: `docs/specs/2026-10-05-epica-primeras-pantallas.md` (decisiones en `docs/decisiones/2026-10-05-spec-primeras-pantallas.md`). `apps/mobile` sigue sin pantallas, salvo `/g/[token]`.
+- **Siguiente paso:** implementar la épica en este orden: E1 (base, login y `onboarded_at`) y E2 (lógica de la hoja en core) en paralelo; después E3 (bienvenida y altas); después E4 (Billetera) y E5 (hoja de carga). Antes de tomar cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
 - **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 392 tests pgTAP y 167 de Vitest.
 - **Entorno local:**
   - colima con 6 GiB de memoria (con 2 GiB se colgó);
@@ -78,7 +78,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - cola sin conexión con UUID del teléfono (T8);
    - Ajustes: avisos por tarjeta, no molestar, borrar la cuenta (volver a pedir el código si la base responde "reauthentication required") y exportar el JSON (T10).
 
-   Conviene arrancar con `/spec` o con `/plan-design-review` sobre el orden de las pantallas.
+   La primera tanda (login, bienvenida, altas, Billetera y hoja de carga) ya tiene spec: `docs/specs/2026-10-05-epica-primeras-pantallas.md`. Lo demás (detalles, varias líneas de texto, T8 y Ajustes) va en tandas siguientes, cada una con su `/spec`.
 2. **Prototipo:** actualizarlo a la v1 (los mismos cambios de arriba) solo si hace falta como referencia antes de las pantallas.
 3. **Antes de la beta:**
    - T12: plan pago de Supabase y cómo pausa los proyectos;
