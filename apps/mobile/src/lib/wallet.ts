@@ -1,6 +1,8 @@
 import {
+  cardDetail,
   todayInArgentina,
   wallet,
+  type CardDetail,
   type DbWalletAccount,
   type DbWalletCard,
   type DbWalletGroup,
@@ -100,4 +102,19 @@ export async function loadWalletInput(
 export async function loadWallet(userId: string, settings: UserSettings): Promise<WalletData> {
   const { input, referenceRate } = await loadWalletInput(userId, settings);
   return { ...wallet(input), referenceRate };
+}
+
+export interface CardDetailData {
+  detail: CardDetail;
+  /** Nombre y moneda de cada cuenta, para los pagos ("desde Caja Galicia"). */
+  accounts: Map<string, { name: string; currency: 'ARS' | 'USD' }>;
+}
+
+/** El detalle de una tarjeta (6A), calculado con las mismas filas que la Billetera. */
+export async function loadCardDetail(userId: string, settings: UserSettings, cardId: string): Promise<CardDetailData> {
+  const { input } = await loadWalletInput(userId, settings);
+  return {
+    detail: cardDetail(input, cardId),
+    accounts: new Map(input.accounts.map((a) => [a.id, { name: a.name, currency: a.currency }])),
+  };
 }

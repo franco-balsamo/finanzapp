@@ -21,7 +21,7 @@ import {
   type Rate,
 } from '@mangos/core';
 import { randomUUID } from 'expo-crypto';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
@@ -41,6 +41,7 @@ import {
   type EntryContext,
   type ExpenseDraft,
 } from '../../lib/entry';
+import { CATEGORIES } from '../../lib/categories';
 import { walletChanged } from '../../lib/events';
 import { useSession } from '../../lib/session';
 import { radius, type } from '../../theme/tokens';
@@ -51,14 +52,6 @@ const CURRENCY_OPTIONS = [
   { value: 'USD', label: 'US$' },
 ] as const;
 
-const CATEGORIES = [
-  { id: SYSTEM_CATEGORY_IDS.supermercado, label: 'Supermercado' },
-  { id: SYSTEM_CATEGORY_IDS.salidas, label: 'Salidas' },
-  { id: SYSTEM_CATEGORY_IDS.transporte, label: 'Transporte' },
-  { id: SYSTEM_CATEGORY_IDS.servicios, label: 'Servicios' },
-  { id: SYSTEM_CATEGORY_IDS.suscripciones, label: 'Suscripciones' },
-  { id: SYSTEM_CATEGORY_IDS.otros, label: 'Otros' },
-];
 
 const QUICK_INSTALLMENTS = [1, 3, 6, 12];
 
@@ -100,6 +93,8 @@ export default function AddExpense() {
   const insets = useSafeAreaInsets();
   const toast = useToast();
   const { session, settings } = useSession();
+  // Desde el detalle de una tarjeta, la hoja abre con esa tarjeta elegida (02 §5).
+  const { cardId } = useLocalSearchParams<{ cardId?: string }>();
 
   // El id lo genera el teléfono al abrir la hoja: reintentar nunca duplica (02 §5).
   const id = useRef(randomUUID()).current;
@@ -114,8 +109,8 @@ export default function AddExpense() {
 
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState<Currency>('ARS');
-  const [methodId, setMethodId] = useState<string | null>(null);
-  const [extraChipId, setExtraChipId] = useState<string | null>(null);
+  const [methodId, setMethodId] = useState<string | null>(cardId ?? null);
+  const [extraChipId, setExtraChipId] = useState<string | null>(cardId ?? null);
   const [candidates, setCandidates] = useState<string[]>([]);
   const [installments, setInstallments] = useState('1');
   const [description, setDescription] = useState('');
@@ -229,6 +224,7 @@ export default function AddExpense() {
       methods: ctx.methods,
       uses: ctx.uses,
       keywords: ctx.keywords,
+      defaultCardId: cardId,
     });
     setCurrency(line.currency);
     setAmount(line.amount ? amountText(line.amount.minor) : '');

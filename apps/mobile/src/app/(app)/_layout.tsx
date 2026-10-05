@@ -11,6 +11,7 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
+      <Stack.Screen name="tarjeta/[id]" />
       <Stack.Screen name="cargar" options={sheet} />
       <Stack.Screen name="tarjeta-nueva" options={sheet} />
       <Stack.Screen name="cuenta-nueva" options={sheet} />

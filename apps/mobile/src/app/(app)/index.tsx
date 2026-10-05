@@ -114,7 +114,12 @@ export default function Wallet() {
           data.cards.length ? (
             <View>
               {data.cards.map((c, i) => (
-                <CardRow key={c.id} card={c} last={i === data.cards.length - 1} />
+                <CardRow
+                  key={c.id}
+                  card={c}
+                  last={i === data.cards.length - 1}
+                  onPress={() => router.push({ pathname: '/tarjeta/[id]', params: { id: c.id } })}
+                />
               ))}
               <Button title="Sumar tarjeta" variant="link" onPress={() => router.push('/tarjeta-nueva')} style={styles.add} />
             </View>
