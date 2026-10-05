@@ -86,7 +86,7 @@ En la base es `user_settings`, con `user_id` → `auth.users` (nombre y mail viv
 | is_favorite | bool | Máximo una por usuario (índice único parcial) |
 | account_id | uuid | Solo débito y prepaga |
 | close_day, due_day | smallint | Solo crédito, 1 a 31 (en meses cortos, el último día) |
-| credit_limit | numeric | Solo crédito, en pesos |
+| credit_limit | numeric | Solo crédito, en pesos. Obligatorio y mayor a cero (check `NOT VALID`, 5/10: las tarjetas viejas sin límite no se revisan, pero editarlas obliga a cargarlo) |
 | archived_at | timestamptz | Al "eliminar"; se borra definitivamente a los 7 días |
 
 ### `statement_overrides`
@@ -226,6 +226,8 @@ Ejemplos de `params` según el tipo:
 | `fx_rate_on(kind, date)` | Solo `authenticated`. La venta de un tipo en una fecha, con la misma ventana de 4 días que el trigger, o nulo. La app la usa con `tarjeta` para proponer `debited_amount` y los pagos de dólares en pesos (02 §2 y §3). Un tipo desconocido da `22023` |
 | `private.fx_sell_fallback(kind, date)` / `private.resolve_stale_fx()` | Internas, de la tarea diaria: la última venta anterior sin límite (o la primera del historial) y la resolución de los pendientes de más de 2 días |
 | `private.fx_sell_on(kind, date)` | Interna. La venta más reciente entre `date − 4` y `date` (por `rate_date` y después `fetched_at`), o nulo. Cubre fines de semana y feriados puente |
+| `set_favorite_card(card_id)` | Security invoker. Deja como favorita esa tarjeta activa y le saca la marca a la anterior, en una transacción (con dos updates choca el índice único parcial). Tarjeta inexistente, ajena o archivada: `P0002` |
+| `save_expense_with_payments(expense, payments)` | Security invoker. "¿Ya lo pagaste?" → Sí (02 §3): guarda el gasto (con el id del teléfono) y los pagos propuestos en una transacción. `paid_on` es la fecha en hora de Argentina y se guarda a las 12:00. Si el id ya existe no hace nada y devuelve false; un pago inválido (cuenta ajena) vuelve atrás todo |
 | `cron_secret_matches(token)` | Solo `service_role`. La usan las Edge Functions que llama pg_cron: compara (por SHA-256) el secreto que llegó con `fx_cron_secret` de Vault. El secreto vive solo en Vault |
 | `private.call_edge(fn)` | Interna. La usan los cron: `POST` con `pg_net` a `functions_url/fn` con `Authorization: Bearer fx_cron_secret`, los dos de Vault |
 
@@ -257,7 +259,7 @@ Firmas implementadas en la épica del 2/10 ([spec](specs/2026-10-02-epica-core.m
 | `paymentChips` / `orderedMethods` | medios de pago y usos | las fichas de la hoja (favorita y 2 más usados en 30 días) / la lista de "Otro…" |
 | `savedToastText` | resumen donde entra o cuenta | texto del toast después de guardar (9A) |
 | `parseShortDate(text, today)` | "ayer", "28/09", "28/09/26" | la fecha (la más reciente que no sea futura para `dd/mm`), `invalid` o null; la usan la carga por texto y la hoja |
-| `wallet(input)` / `cardStatementFor(input, cardId, date)` | filas de la base (montos como texto), cotizaciones | tarjetas con lo que viene, cuentas con su saldo y patrimonio / el resumen donde entra un gasto, con su total |
+| `wallet(input)` / `cardStatementFor(input, cardId, date)` / `cardDetail(input, cardId)` | filas de la base (montos como texto), cotizaciones | tarjetas con lo que viene, archivadas (su deuda sigue contando), cuentas con su saldo y patrimonio / el resumen donde entra un gasto, con su total / el detalle de 6A: resúmenes con consumos, pagos vigentes y mínimo, el resumen que se abre, cuotas que siguen y límite |
 | `moneyInWords(money)` | monto | el monto en palabras para el lector de pantalla (12A) |
 
 - Son funciones en **TypeScript puro, sin dependencias ni acceso a la base**: reciben filas y devuelven resultados con `Money`.

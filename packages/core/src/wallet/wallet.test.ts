@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { ars, usd } from '../cards/fixtures.ts';
 import { rate } from '../money.ts';
-import { cardStatementFor, wallet, type DbWalletAccount, type DbWalletCard, type DbWalletGroup, type DbWalletMovement, type WalletInput } from './wallet.ts';
+import { cardDetail, cardStatementFor, wallet, type DbWalletAccount, type DbWalletCard, type DbWalletGroup, type DbWalletMovement, type WalletInput } from './wallet.ts';
 
 // Hoy: lunes 5/10/2026. Visa con cierre 24: el resumen en curso cierra el 24/10.
 const today = '2026-10-05';
 
 const visa: DbWalletCard = {
   id: 'visa', name: 'Visa Galicia', bank: 'Banco Galicia', network: 'VISA', last4: '2337', color: '#23262b',
-  is_favorite: false, close_day: 24, due_day: 6, credit_limit: '2000000.00', created_at: '2026-10-01T10:00:00Z',
+  is_favorite: false, close_day: 24, due_day: 6, credit_limit: '2000000.00', expiry: '07/30', created_at: '2026-10-01T10:00:00Z',
+  archived_at: null,
 };
 const master: DbWalletCard = {
   ...visa, id: 'master', name: 'Master BBVA', network: 'MC', last4: '0763', is_favorite: true, credit_limit: null,
@@ -19,7 +20,7 @@ const dolares: DbWalletAccount = { id: 'dolares', name: 'Caja USD', type: 'bank'
 
 function movement(fields: Partial<DbWalletMovement> & Pick<DbWalletMovement, 'id' | 'amount'>): DbWalletMovement {
   return {
-    type: 'expense', date: '2026-10-02', currency: 'ARS', card_id: null, account_id: null, to_account_id: null,
+    type: 'expense', date: '2026-10-02', description: 'gasto', currency: 'ARS', card_id: null, account_id: null, to_account_id: null,
     installments: 1, category_id: null, my_share: null, group_expense_id: null, fx_mep: null, fx_oficial: null,
     fx_blue: null, fx_pending: false, debited_amount: null, ...fields,
   };
@@ -119,5 +120,72 @@ describe('Billetera', () => {
     it('deuda en dólares sin dólar tarjeta: sin patrimonio en pesos', () => {
       expect(wallet(input({ fxCard: null })).netWorth).toBeNull();
     });
+  });
+
+  describe('tarjetas archivadas (02 §3)', () => {
+    const archived = { ...visa, archived_at: '2026-10-05T15:00:00Z' };
+
+    it('no salen en la lista, pero su deuda sigue contando', () => {
+      const w = wallet(input({ cards: [archived] }));
+      expect(w.cards).toEqual([]);
+      expect(w.netWorth?.total).toEqual(ars(1_711_600));
+      expect(w.archivedCards).toEqual([
+        { id: 'visa', name: 'Visa Galicia', network: 'VISA', last4: '2337', color: '#23262b', deletesOn: '2026-10-12' },
+      ]);
+    });
+  });
+});
+
+describe('detalle de tarjeta (6A)', () => {
+  // Visa con cierre 24 y vencimiento 6. Hoy 5/10: septiembre cerró el 24/9 y vence el 6/10.
+  const payment = (id: string, amount: string, paidAt: string, reverted: string | null = null) => ({
+    id, card_id: 'visa', period: '2026-09-01', applies_to: 'ARS' as const, amount, from_account_id: 'pesos',
+    debited_amount: amount, fx_card_rate: null, paid_at: paidAt, reverted_at: reverted,
+  });
+  const septiembre = movement({ id: 's', amount: '200000.00', card_id: 'visa', date: '2026-09-10', description: 'heladera' });
+
+  it('pago parcial: $200.000 con un pago de $120.000 quedan $80.000 (02 §3)', () => {
+    const d = cardDetail(input({ movements: [septiembre], payments: [payment('p', '120000.00', '2026-10-03T15:00:00Z')] }), 'visa');
+    const sep = d.statements.find((s) => s.period === '2026-09')!;
+    expect(sep).toMatchObject({ status: 'partial', pending: { ARS: ars(80_000), USD: usd(0) }, closeDate: '2026-09-24', dueDate: '2026-10-06' });
+    expect(sep.payments).toEqual([
+      { id: 'p', appliesTo: 'ARS', amount: ars(120_000), fromAccountId: 'pesos', debitedAmount: ars(120_000), paidAt: '2026-10-03' },
+    ]);
+    expect(d.defaultPeriod).toBe('2026-09');
+  });
+
+  it('los pagos deshechos no se listan y el resumen vuelve a "A pagar"', () => {
+    const d = cardDetail(input({ movements: [septiembre], payments: [payment('p', '120000.00', '2026-10-03T15:00:00Z', '2026-10-04T15:00:00Z')] }), 'visa');
+    const sep = d.statements.find((s) => s.period === '2026-09')!;
+    expect(sep.payments).toEqual([]);
+    expect(sep.status).toBe('to_pay');
+  });
+
+  it('sin nada para pagar abre el resumen en curso', () => {
+    expect(cardDetail(input({ movements: [] }), 'visa').defaultPeriod).toBe('2026-10');
+  });
+
+  it('cuotas que siguen: $30.000 en 3 cuotas del 25/9', () => {
+    const d = cardDetail(input({ movements: [movement({ id: 'c', amount: '30000.00', card_id: 'visa', installments: 3, date: '2026-09-25', description: 'tele' })] }), 'visa');
+    expect(d.futureInstallments.map((f) => [f.period, f.total.ARS])).toEqual([
+      ['2026-11', ars(10_000)],
+      ['2026-12', ars(10_000)],
+    ]);
+    const oct = d.statements.find((s) => s.period === '2026-10')!;
+    expect(oct.items).toEqual([
+      { expenseId: 'c', date: '2026-09-25', description: 'tele', categoryId: null, index: 1, of: 3, amount: ars(10_000) },
+    ]);
+  });
+
+  it('pago mínimo: 15% de la parte en pesos', () => {
+    const d = cardDetail(input(), 'visa');
+    expect(d.statements.find((s) => s.period === '2026-10')!.minimumPayment).toEqual(ars(28_050));
+  });
+
+  it('límite usado y disponible, con los dólares a dólar tarjeta', () => {
+    const d = cardDetail(input(), 'visa');
+    expect(d.limitUsed).toEqual(ars(288_400));
+    expect(d.available).toEqual(ars(1_711_600));
+    expect(cardDetail(input({ fxCard: null }), 'visa').limitUsed).toBeNull();
   });
 });

@@ -10,7 +10,7 @@ export interface CardFormValue {
   expiry: string;
   closeDay: string;
   dueDay: string;
-  /** Texto formateado del límite ("2.000.000"). */
+  /** Texto formateado del límite ("2.000.000"). Obligatorio (02 §3). */
   limit: string;
 }
 
@@ -63,6 +63,7 @@ export function validateCard(v: CardFormValue): CardFormErrors | null {
   const due = day(v.dueDay);
   if (close === null) errors.closeDay = 'Va del 1 al 31.';
   if (due === null) errors.dueDay = 'Va del 1 al 31.';
+  if (!formatAmountInput(v.limit).minor) errors.limit = 'Poné el límite de compra.';
   if (close !== null && due !== null && !validateCardDays(close, due).ok) {
     errors.dueDay = 'El vencimiento tiene que quedar al menos 5 días después del cierre.';
   }
@@ -86,7 +87,7 @@ export function cardInsert(v: CardFormValue, opts: { color: string; isFavorite: 
     expiry: v.expiry || null,
     close_day: Number(v.closeDay),
     due_day: Number(v.dueDay),
-    credit_limit: limitMinor === null ? null : toDbNumeric(money(limitMinor, 'ARS')),
+    credit_limit: toDbNumeric(money(limitMinor ?? 0, 'ARS')),
     color: opts.color,
     is_favorite: opts.isFavorite,
   };

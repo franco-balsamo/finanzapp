@@ -12,9 +12,9 @@ insert into auth.users (id, email) values
 insert into public.accounts (id, user_id, name, type, currency) values
   ('a1000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'Caja Ana', 'bank', 'ARS'),
   ('b1000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000002', 'Caja Beto', 'bank', 'ARS');
-insert into public.cards (id, user_id, bank, name, network, last4, close_day, due_day) values
-  ('a2000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'Galicia', 'Visa Ana', 'VISA', '4532', 24, 6),
-  ('b2000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000002', 'Nación', 'Master Beto', 'MC', '1111', 30, 10);
+insert into public.cards (id, user_id, bank, name, network, last4, close_day, due_day, credit_limit) values
+  ('a2000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'Galicia', 'Visa Ana', 'VISA', '4532', 24, 6, 2000000),
+  ('b2000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000002', 'Nación', 'Master Beto', 'MC', '1111', 30, 10, 1000000);
 insert into public.statement_overrides (user_id, card_id, period, close_date, due_date) values
   ('a0000000-0000-4000-8000-000000000001', 'a2000000-0000-4000-8000-000000000001', '2026-10-01', '2026-10-27', '2026-11-08');
 insert into public.statement_payments (user_id, card_id, period, applies_to, amount, from_account_id, debited_amount) values

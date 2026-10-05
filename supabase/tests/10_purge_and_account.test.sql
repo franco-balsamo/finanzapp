@@ -16,11 +16,11 @@ insert into public.accounts (id, user_id, name, type, currency, opening_balance)
 
 -- V: archivada hace 8 días (se purga). M: hace 6 (todavía no). A: activa.
 -- F: hace 10, pero borrarla va a fallar.
-insert into public.cards (id, user_id, bank, name, network, last4, close_day, due_day, archived_at) values
-  ('a2000000-0000-4000-8000-00000000000a', 'a0000000-0000-4000-8000-000000000001', 'Galicia', 'Visa', 'VISA', '2337', 24, 6, now() - interval '8 days'),
-  ('a2000000-0000-4000-8000-00000000000b', 'a0000000-0000-4000-8000-000000000001', 'BBVA', 'Master', 'MC', '1111', 24, 6, now() - interval '6 days'),
-  ('a2000000-0000-4000-8000-00000000000c', 'a0000000-0000-4000-8000-000000000001', 'Santander', 'Amex', 'AMEX', '9999', 24, 6, null),
-  ('a2000000-0000-4000-8000-00000000000d', 'a0000000-0000-4000-8000-000000000001', 'Credicoop', 'Cabal', 'CABAL', '4444', 24, 6, now() - interval '10 days');
+insert into public.cards (id, user_id, bank, name, network, last4, close_day, due_day, archived_at, credit_limit) values
+  ('a2000000-0000-4000-8000-00000000000a', 'a0000000-0000-4000-8000-000000000001', 'Galicia', 'Visa', 'VISA', '2337', 24, 6, now() - interval '8 days', 1000000),
+  ('a2000000-0000-4000-8000-00000000000b', 'a0000000-0000-4000-8000-000000000001', 'BBVA', 'Master', 'MC', '1111', 24, 6, now() - interval '6 days', 1000000),
+  ('a2000000-0000-4000-8000-00000000000c', 'a0000000-0000-4000-8000-000000000001', 'Santander', 'Amex', 'AMEX', '9999', 24, 6, null, 1000000),
+  ('a2000000-0000-4000-8000-00000000000d', 'a0000000-0000-4000-8000-000000000001', 'Credicoop', 'Cabal', 'CABAL', '4444', 24, 6, now() - interval '10 days', 1000000);
 
 insert into public.movements (id, user_id, type, date, description, amount, currency, card_id, account_id, category_id) values
   ('a3000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'expense', '2026-09-10', 'Consumo Visa', 50000, 'ARS',

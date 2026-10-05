@@ -114,7 +114,7 @@ Las dos funciones son `security invoker`: las políticas por fila de siempre sig
 - **Reintento:** llamar dos veces con el mismo id no duplica ni el gasto ni el pago.
 - **Pago con cuenta ajena:** falla y tampoco queda el gasto.
 
-**Core:** `packages/core/src/wallet/cardDetail.ts`, exportado.
+**Core:** `cardDetail` en `packages/core/src/wallet/wallet.ts` (implementado el 5/10 junto a `wallet`, para no exportar sus funciones internas). Los movimientos traen `description`, así que no hace falta el parámetro `movementsMeta` de abajo.
 
 ```ts
 export function cardDetail(input: WalletInput, cardId: string, movementsMeta: ReadonlyMap<string, { description: string; categoryId: string | null }>): CardDetail;

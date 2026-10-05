@@ -16,9 +16,9 @@ insert into public.accounts (id, user_id, name, type, currency) values
   ('a1000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'Caja Ana', 'bank', 'ARS');
 insert into public.cards (id, user_id, bank, name, network, last4, close_day, due_day, credit_limit, archived_at, created_at) values
   ('a2000000-0000-4000-8000-00000000000a', 'a0000000-0000-4000-8000-000000000001', 'Galicia', 'Visa', 'VISA', '2337', 24, 6, 1000000, null, '2026-01-01'),
-  ('a2000000-0000-4000-8000-00000000000b', 'a0000000-0000-4000-8000-000000000001', 'BBVA', 'Master', 'MC', '1111', 25, 7, null, null, '2026-01-02'),
-  ('a2000000-0000-4000-8000-00000000000c', 'a0000000-0000-4000-8000-000000000001', 'Santander', 'Amex', 'AMEX', '9999', 24, 6, null, now(), '2026-01-03'),
-  ('c2000000-0000-4000-8000-00000000000a', 'c0000000-0000-4000-8000-000000000003', 'Nación', 'Cabal', 'CABAL', '4444', 10, 20, null, null, '2026-01-01');
+  ('a2000000-0000-4000-8000-00000000000b', 'a0000000-0000-4000-8000-000000000001', 'BBVA', 'Master', 'MC', '1111', 25, 7, 500000, null, '2026-01-02'),
+  ('a2000000-0000-4000-8000-00000000000c', 'a0000000-0000-4000-8000-000000000001', 'Santander', 'Amex', 'AMEX', '9999', 24, 6, 500000, now(), '2026-01-03'),
+  ('c2000000-0000-4000-8000-00000000000a', 'c0000000-0000-4000-8000-000000000003', 'Nación', 'Cabal', 'CABAL', '4444', 10, 20, 500000, null, '2026-01-01');
 insert into public.movements (user_id, type, date, description, amount, currency, card_id, installments) values
   ('a0000000-0000-4000-8000-000000000001', 'expense', '2026-09-10', 'Súper', 187000, 'ARS', 'a2000000-0000-4000-8000-00000000000a', 1),
   ('a0000000-0000-4000-8000-000000000001', 'expense', '2026-09-12', 'Netflix', 50, 'USD', 'a2000000-0000-4000-8000-00000000000a', 3);
@@ -81,7 +81,7 @@ select is(
 );
 select is(
   (select row(j ->> 'credit_limit', j ->> 'closing_enabled', j ->> 'due_enabled', j ->> 'due_days_before')::text from master),
-  row('0', 'false', 'true', '5')::text,
+  row('500000.00', 'false', 'true', '5')::text,
   'con alertas: respeta las apagadas y los días configurados'
 );
 

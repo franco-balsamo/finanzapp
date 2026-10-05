@@ -15,10 +15,11 @@ import type { UserSettings } from './session';
 import { supabase } from './supabase';
 
 // Los montos se piden como texto (`::text`) para no pasar por number: core los lee exactos.
-const CARD_COLUMNS = 'id, name, bank, network, last4, color, is_favorite, close_day, due_day, credit_limit::text, created_at';
+const CARD_COLUMNS =
+  'id, name, bank, network, last4, color, is_favorite, close_day, due_day, credit_limit::text, expiry, created_at, archived_at';
 const ACCOUNT_COLUMNS = 'id, name, type, currency, opening_balance::text, created_at';
 const MOVEMENT_COLUMNS =
-  'id, type, date, amount::text, currency, card_id, account_id, to_account_id, installments, category_id, ' +
+  'id, type, date, description, amount::text, currency, card_id, account_id, to_account_id, installments, category_id, ' +
   'my_share::text, group_expense_id, fx_mep::text, fx_oficial::text, fx_blue::text, fx_pending, debited_amount::text';
 const PAYMENT_COLUMNS =
   'id, card_id, period, applies_to, amount::text, from_account_id, debited_amount::text, fx_card_rate::text, paid_at, reverted_at';
@@ -69,7 +70,8 @@ export async function loadWalletInput(
   settings: UserSettings,
 ): Promise<{ input: WalletInput; referenceRate: LatestRate | null }> {
   const [cards, accounts, movements, payments, overrides, groups, rates] = await Promise.all([
-    supabase.from('cards').select(CARD_COLUMNS).is('archived_at', null),
+    // También las archivadas: su deuda sigue contando hasta la purga (02 §3).
+    supabase.from('cards').select(CARD_COLUMNS),
     supabase.from('accounts').select(ACCOUNT_COLUMNS).is('deleted_at', null),
     supabase.from('movements').select(MOVEMENT_COLUMNS),
     supabase.from('statement_payments').select(PAYMENT_COLUMNS),

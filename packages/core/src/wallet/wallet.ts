@@ -4,11 +4,11 @@
 import { todayInArgentina } from '../notices/fromDb.ts';
 import { cardState } from '../cards/state.ts';
 import { closeDate, statementFor } from '../cards/schedule.ts';
-import type { ByCurrency, CreditCard, StatementPayment, StatementOverride } from '../cards/types.ts';
-import type { ISODate } from '../dates.ts';
+import type { ByCurrency, CreditCard, StatementOverride, StatementPayment, StatementStatus } from '../cards/types.ts';
+import { addDays, type ISODate, type Period } from '../dates.ts';
 import { groupBalances } from '../groups/balances.ts';
 import type { Group, GroupExpense, GroupPayment } from '../groups/types.ts';
-import { fromDbNumeric, rate, zero, type Currency, type Money, type Rate } from '../money.ts';
+import { fromDbNumeric, money, rate, zero, type Currency, type Money, type Rate } from '../money.ts';
 import { accountBalance } from '../personal/accountBalance.ts';
 import { netWorth, type NetWorth } from '../personal/netWorth.ts';
 import type { Account, Movement, MovementType } from '../personal/types.ts';
@@ -25,7 +25,11 @@ export interface DbWalletCard {
   close_day: number;
   due_day: number;
   credit_limit: string | null;
+  /** MM/AA del plástico. */
+  expiry: string | null;
   created_at: string;
+  /** Archivada: no sale en la lista, pero su deuda sigue contando 7 días (02 §3). */
+  archived_at: string | null;
 }
 
 export interface DbWalletAccount {
@@ -41,6 +45,7 @@ export interface DbWalletMovement {
   id: string;
   type: MovementType;
   date: ISODate;
+  description: string;
   amount: string;
   currency: Currency;
   card_id: string | null;
@@ -133,9 +138,20 @@ export interface WalletAccount {
   balance: Money;
 }
 
+export interface ArchivedCard {
+  id: string;
+  name: string;
+  network: CardNetwork;
+  last4: string;
+  color: string | null;
+  /** Día de la purga: 7 días después de archivarla, en hora de Argentina. */
+  deletesOn: ISODate;
+}
+
 export interface Wallet {
-  /** La favorita primero y después en el orden en que se cargaron. */
+  /** La favorita primero y después en el orden en que se cargaron. Sin las archivadas. */
   cards: WalletCard[];
+  archivedCards: ArchivedCard[];
   accounts: WalletAccount[];
   /** null si hace falta una cotización que todavía no está. */
   netWorth: NetWorth | null;
@@ -281,7 +297,7 @@ export function wallet(input: WalletInput): Wallet {
         currentTotal: current.total,
         closeDate: current.closeDate,
       };
-      return { view, pending: state.pendingTotal };
+      return { view, pending: state.pendingTotal, archivedAt: row.archived_at };
     });
 
   const accounts: WalletAccount[] = [...input.accounts]
@@ -308,7 +324,17 @@ export function wallet(input: WalletInput): Wallet {
   const missing = (needsReference && !input.referenceRate) || (needsCard && !input.fxCard);
 
   return {
-    cards: states.map((s) => s.view),
+    cards: states.filter((s) => !s.archivedAt).map((s) => s.view),
+    archivedCards: states
+      .filter((s) => s.archivedAt)
+      .map(({ view, archivedAt }) => ({
+        id: view.id,
+        name: view.name,
+        network: view.network,
+        last4: view.last4,
+        color: view.color,
+        deletesOn: addDays(todayInArgentina(new Date(archivedAt!)), 7),
+      })),
     accounts,
     netWorth: missing
       ? null
@@ -320,5 +346,149 @@ export function wallet(input: WalletInput): Wallet {
           myGroupBalances: groupBalancesList,
           cardDebts,
         }),
+  };
+}
+
+// ───────────────────────── Detalle de tarjeta (6A) ─────────────────────────
+
+export interface DetailItem {
+  expenseId: string;
+  date: ISODate;
+  description: string;
+  categoryId: string | null;
+  /** "cuota 3/6" cuando `of` > 1. */
+  index: number;
+  of: number;
+  amount: Money;
+}
+
+export interface DetailPayment {
+  id: string;
+  appliesTo: Currency;
+  amount: Money;
+  fromAccountId: string;
+  debitedAmount: Money;
+  paidAt: ISODate;
+}
+
+export interface DetailStatement {
+  period: Period;
+  closeDate: ISODate;
+  dueDate: ISODate;
+  status: StatementStatus;
+  total: ByCurrency;
+  paid: ByCurrency;
+  pending: ByCurrency;
+  /** 15% de lo pendiente en pesos; los dólares no entran (02 §3). Es una aproximación. */
+  minimumPayment: Money;
+  /** Consumos y cuotas de este resumen, del más reciente al más viejo. */
+  items: DetailItem[];
+  /** Los pagos vigentes (sin los deshechos), del más reciente al más viejo. */
+  payments: DetailPayment[];
+}
+
+export interface CardDetail {
+  card: {
+    id: string;
+    name: string;
+    bank: string;
+    network: CardNetwork;
+    last4: string;
+    expiry: string | null;
+    color: string | null;
+    isFavorite: boolean;
+    archivedAt: string | null;
+    closeDay: number;
+    dueDay: number;
+    creditLimit: Money;
+  };
+  /** Del más viejo al más nuevo: resúmenes cerrados, el en curso y las cuotas futuras. */
+  statements: DetailStatement[];
+  currentPeriod: Period;
+  /** El que se abre: el más urgente de "A pagar"; si no hay, el resumen en curso. */
+  defaultPeriod: Period;
+  /** Resúmenes después del en curso con algo cargado ("Cuotas que siguen"). */
+  futureInstallments: { period: Period; closeDate: ISODate; total: ByCurrency }[];
+  /** null si hay deuda en dólares y todavía no hay dólar tarjeta. */
+  limitUsed: Money | null;
+  available: Money | null;
+  overrides: StatementOverride[];
+}
+
+function minimumOf(pending: ByCurrency): Money {
+  return money(Math.round((pending.ARS.minor * 15) / 100), 'ARS');
+}
+
+export function cardDetail(input: WalletInput, cardId: string): CardDetail {
+  const row = input.cards.find((c) => c.id === cardId);
+  if (!row) throw new RangeError(`Tarjeta desconocida: ${cardId}`);
+  const prepared = prepare(input);
+  const { card, overrides } = cardFromDb(row, input);
+  const state = stateOf(row, input, prepared);
+
+  const byId = new Map(input.movements.map((m) => [m.id, m]));
+  const statements: DetailStatement[] = state.statements.map((s) => ({
+    period: s.period,
+    closeDate: s.closeDate,
+    dueDate: s.dueDate,
+    status: s.status,
+    total: s.total,
+    paid: s.paid,
+    pending: s.pending,
+    minimumPayment: minimumOf(s.pending),
+    items: s.items
+      .map((item) => {
+        const m = byId.get(item.expenseId)!;
+        return {
+          expenseId: item.expenseId,
+          date: m.date,
+          description: m.description,
+          categoryId: m.category_id,
+          index: item.index,
+          of: item.of,
+          amount: item.amount,
+        };
+      })
+      .sort((a, b) => b.date.localeCompare(a.date)),
+    payments: prepared.payments
+      .filter((p) => p.cardId === cardId && p.period === s.period && p.revertedAt === null)
+      .map((p) => ({
+        id: p.id,
+        appliesTo: p.appliesTo,
+        amount: p.amount,
+        fromAccountId: p.fromAccountId,
+        debitedAmount: p.debitedAmount,
+        paidAt: p.paidAt,
+      }))
+      .sort((a, b) => b.paidAt.localeCompare(a.paidAt)),
+  }));
+
+  const hasUsdDebt = state.pendingTotal.USD.minor !== 0;
+  const limitKnown = !hasUsdDebt || input.fxCard !== null;
+
+  return {
+    card: {
+      id: row.id,
+      name: row.name,
+      bank: row.bank,
+      network: row.network,
+      last4: row.last4,
+      expiry: row.expiry,
+      color: row.color,
+      isFavorite: row.is_favorite,
+      archivedAt: row.archived_at,
+      closeDay: row.close_day,
+      dueDay: row.due_day,
+      creditLimit: card.creditLimit,
+    },
+    statements,
+    currentPeriod: state.currentPeriod,
+    defaultPeriod: state.toPay[0]?.period ?? state.currentPeriod,
+    futureInstallments: statements
+      .filter((s) => s.period > state.currentPeriod && (s.total.ARS.minor !== 0 || s.total.USD.minor !== 0))
+      .map((s) => ({ period: s.period, closeDate: s.closeDate, total: s.total })),
+    limitUsed: limitKnown ? state.limitUsed : null,
+    available: limitKnown ? state.available : null,
+    overrides,
   };
 }

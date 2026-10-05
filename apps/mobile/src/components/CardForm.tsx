@@ -113,9 +113,10 @@ export function CardForm({ value, onChange, errors }: Props) {
         Los encontrás en tu último resumen. Si el vencimiento es un día menor al de cierre, se toma el mes siguiente.
       </Text>
       <TextField
-        label="Límite de compra (pesos, opcional)"
+        label="Límite de compra (pesos)"
         value={value.limit}
         onChangeText={(t) => set('limit', formatAmountInput(t).text)}
+        error={errors?.limit}
         mono
         keyboardType="decimal-pad"
         placeholder="2.000.000"
