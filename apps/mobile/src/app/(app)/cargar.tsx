@@ -1,4 +1,5 @@
 import {
+  amountInputText,
   closeDate,
   deduceCategory,
   formatAmountInput,
@@ -7,13 +8,11 @@ import {
   orderedMethods,
   parseAmountMinor,
   parseQuickEntryLine,
-  parseShortDate,
   paymentChips,
   paymentMethodLabel,
   statementFor,
   SYSTEM_CATEGORY_IDS,
   convert,
-  addDays,
   type Currency,
   type ISODate,
   type LineWarning,
@@ -28,6 +27,7 @@ import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboa
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { Chip } from '../../components/Chip';
+import { DateChooser, dateLabel } from '../../components/DateChooser';
 import { Segmented } from '../../components/Segmented';
 import { TextField } from '../../components/TextField';
 import { useToast } from '../../components/Toast';
@@ -64,19 +64,6 @@ const WARNING_TEXT: Record<LineWarning, string> = {
   installments_need_credit: 'Las cuotas son solo para tarjetas de crédito.',
 };
 
-/** Texto del campo Monto para un monto en centavos: 1200050 → "12.000,5". */
-function amountText(minor: number): string {
-  const cents = minor % 100;
-  const raw = `${Math.floor(minor / 100)}${cents ? `,${String(cents).padStart(2, '0').replace(/0$/, '')}` : ''}`;
-  return formatAmountInput(raw).text;
-}
-
-function dateLabel(date: ISODate, today: ISODate): string {
-  if (date === today) return 'Hoy';
-  if (date === addDays(today, -1)) return 'Ayer';
-  if (date === addDays(today, -2)) return 'Anteayer';
-  return formatShortDate(date);
-}
 
 interface Errors {
   amount?: string;
@@ -116,7 +103,6 @@ export default function AddExpense() {
   const [description, setDescription] = useState('');
   const [pickedCategory, setPickedCategory] = useState<string | null>(null);
   const [date, setDate] = useState<ISODate | null>(null);
-  const [dateText, setDateText] = useState('');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [debited, setDebited] = useState('');
   const [debitedTouched, setDebitedTouched] = useState(false);
@@ -186,7 +172,7 @@ export default function AddExpense() {
       return;
     }
     const converted = convert(money(amountMinor, currency), cardRate, account.currency);
-    setDebited(amountText(converted.minor));
+    setDebited(amountInputText(converted.minor));
   }, [needsDebited, debitedTouched, cardRate, amountMinor, currency, account]);
 
   function chooseMethod(m: PaymentMethod, fromOther = false) {
@@ -207,7 +193,7 @@ export default function AddExpense() {
         setErrors((e) => ({ ...e, amount: 'Revisá el monto.' }));
         return;
       }
-      setAmount(amountText(parsed.minor));
+      setAmount(amountInputText(parsed.minor));
       return;
     }
     setAmount(formatAmountInput(text).text);
@@ -227,7 +213,7 @@ export default function AddExpense() {
       defaultCardId: cardId,
     });
     setCurrency(line.currency);
-    setAmount(line.amount ? amountText(line.amount.minor) : '');
+    setAmount(line.amount ? amountInputText(line.amount.minor) : '');
     setDescription(line.description.slice(0, 60));
     setPickedCategory(null);
     setDate(line.date === ctx.today ? null : line.date);
@@ -245,18 +231,6 @@ export default function AddExpense() {
     setErrors({
       amount: line.warnings.includes('ambiguous_amount') ? 'Revisá el monto.' : undefined,
     });
-  }
-
-  function onDateText(text: string) {
-    setDateText(text);
-    if (!today) return;
-    const parsed = parseShortDate(text, today);
-    if (parsed && parsed !== 'invalid' && !parsed.future) {
-      setDate(parsed.date);
-      setErrors((e) => ({ ...e, date: undefined }));
-    } else {
-      setErrors((e) => ({ ...e, date: text.trim() ? 'Escribí la fecha como dd/mm, que no sea futura.' : undefined }));
-    }
   }
 
   async function save() {
@@ -471,27 +445,14 @@ export default function AddExpense() {
             {detailsOpen ? '▾' : '▸'} {expenseDate && today ? dateLabel(expenseDate, today) : 'Hoy'}
           </Text>
         </Pressable>
-        {detailsOpen && today ? (
-          <View style={styles.block}>
-            <View style={styles.chips}>
-              {[0, -1, -2].map((d) => {
-                const value = addDays(today, d);
-                return (
-                  <Chip
-                    key={d}
-                    label={dateLabel(value, today)}
-                    selected={expenseDate === value}
-                    onPress={() => {
-                      setDate(value === today ? null : value);
-                      setDateText('');
-                      setErrors((e) => ({ ...e, date: undefined }));
-                    }}
-                  />
-                );
-              })}
-            </View>
-            <TextField label="Otra fecha (dd/mm)" value={dateText} onChangeText={onDateText} error={errors.date} mono keyboardType="numbers-and-punctuation" placeholder="28/09" />
-          </View>
+        {detailsOpen && today && expenseDate ? (
+          <DateChooser
+            today={today}
+            value={expenseDate}
+            onChange={(d) => setDate(d === today ? null : d)}
+            onError={(error) => setErrors((e) => ({ ...e, date: error ?? undefined }))}
+            error={errors.date}
+          />
         ) : null}
 
         {/* 9. En qué resumen entra. */}

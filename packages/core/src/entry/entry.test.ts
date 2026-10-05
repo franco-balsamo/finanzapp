@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { money } from '../money.ts';
 import { ars, usd } from '../cards/fixtures.ts';
-import { formatAmountInput, parseAmount, parseAmountMinor } from './amount.ts';
+import { amountInputText, formatAmountInput, parseAmount, parseAmountMinor } from './amount.ts';
 import { deduceCategory, learnableWord, SYSTEM_CATEGORY_IDS as CAT } from './categories.ts';
 import {
   orderedMethods,
@@ -73,6 +73,14 @@ describe('campo Monto mientras se escribe (11A)', () => {
     expect(formatAmountInput('86.500,')).toEqual({ text: '86.500,', minor: 8_650_000 });
     expect(formatAmountInput('86.500,5')).toEqual({ text: '86.500,5', minor: 8_650_050 });
     expect(formatAmountInput('12,345')).toEqual({ text: '12,34', minor: 1_234 });
+  });
+
+  it('de centavos al texto del campo, ida y vuelta', () => {
+    for (const minor of [0, 5, 50, 1_200_000, 1_200_050, 1_200_005, 8_650_000]) {
+      expect(formatAmountInput(amountInputText(minor)).minor).toBe(minor === 0 ? 0 : minor);
+    }
+    expect(amountInputText(1_200_050)).toBe('12.000,5');
+    expect(amountInputText(1_200_000)).toBe('12.000');
   });
 
   it('un punto recién tecleado al final es la coma decimal', () => {

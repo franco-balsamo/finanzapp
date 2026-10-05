@@ -148,7 +148,7 @@ export function cardDetail(input: WalletInput, cardId: string, movementsMeta: Re
 2. **Plástico (`CreditCard` de DESIGN.md).** Lleva el degradado, el monograma del banco, el banco, la ★, el total del resumen elegido en `moneyCard` con la parte en dólares en `moneySm`, "Vence 6/11", "•••• 2337", la red y el vencimiento del plástico. Las capas de brillo y anillos quedan para cuando esté `react-native-svg`.
 3. **Navegación:** `‹ Resumen de octubre ›` con la pastilla de estado: "En curso" `neutral`, "Cuotas futuras" `neutral`, "A pagar" `warning`, "Pago parcial" `warning`, "Pagado" `success` y "Vencido" `error`. Abajo, "Cierra 24/10 · Vence 6/11" y "Pago mínimo aprox. $28.050", este último solo si hay pendiente en pesos.
 4. **Carga por texto** "¿Te falta cargar algo?": en D-2 lleva al FAB de la hoja con la tarjeta elegida; D-5 la reemplaza por la de varias líneas.
-5. **"Pagar resumen"** (`primary`): solo si el resumen elegido tiene pendiente. Lo implementa D-3.
+5. **"Pagar resumen"** (`primary`): solo si el resumen elegido ya cerró y tiene pendiente (A pagar, Pago parcial o Vencido). Lo implementa D-3.
 6. **Cuotas que siguen:** "nov $120.000 · dic $95.000 · …", con hasta 6 meses y "+N".
 7. **Consumos de este resumen · N:** filas con la grilla de `MovementRow`: descripción, "cuota 3/6", monto y categoría. Muestra 30 y "Ver todos (N)".
 8. **Pagos de este resumen:** monto, cuenta y fecha, con "Deshacer". Lo implementa D-3.
@@ -193,6 +193,8 @@ export function cardDetail(input: WalletInput, cardId: string, movementsMeta: Re
 **Deshacer un pago** desde la lista del detalle o desde el toast:
 - `update set reverted_at = now()`;
 - toast "Pago deshecho · $X volvieron a Caja Galicia".
+
+**Implementado el 5/10.** El selector de fecha de la hoja de carga pasó a un componente (`DateChooser`) que usan las dos hojas. Si lo descontado en pesos se corrige a mano, `fx_card_rate` guarda la cotización que corresponde a ese monto; si no, el dólar tarjeta de la fecha.
 
 **Criterios de aceptación de D-3:**
 1. Ejemplo de 02 §3: un resumen de $200.000 con un pago de $120.000 desde la caja queda "Pago parcial" con $80.000 pendientes, y la caja baja $120.000. Al deshacer, vuelve a $200.000 pendientes y la caja recupera los $120.000. Verificado en la base.

@@ -15,6 +15,7 @@ export default function AppLayout() {
       <Stack.Screen name="cargar" options={sheet} />
       <Stack.Screen name="tarjeta-nueva" options={sheet} />
       <Stack.Screen name="cuenta-nueva" options={sheet} />
+      <Stack.Screen name="pagar/[cardId]/[period]" options={sheet} />
     </Stack>
   );
 }

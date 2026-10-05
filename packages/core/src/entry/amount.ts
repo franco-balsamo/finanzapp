@@ -72,3 +72,10 @@ export function formatAmountInput(raw: string): { text: string; minor: number | 
   const minor = toMinor(intDigits, fracDigits ?? '');
   return { text, minor };
 }
+
+/** El texto del campo Monto para un monto en centavos: 1200050 → "12.000,5"; 1200000 → "12.000". */
+export function amountInputText(minor: number): string {
+  const cents = Math.abs(minor) % 100;
+  const raw = `${Math.floor(Math.abs(minor) / 100)}${cents ? `,${String(cents).padStart(2, '0').replace(/0$/, '')}` : ''}`;
+  return formatAmountInput(raw).text;
+}

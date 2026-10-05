@@ -15,8 +15,10 @@ import { Button } from '../../../components/Button';
 import { CreditCard } from '../../../components/CreditCard';
 import { Pill, type PillVariant } from '../../../components/Pill';
 import { Screen } from '../../../components/Screen';
+import { useToast } from '../../../components/Toast';
 import { categoryLabel } from '../../../lib/categories';
-import { onWalletChanged } from '../../../lib/events';
+import { onWalletChanged, walletChanged } from '../../../lib/events';
+import { revertPayments } from '../../../lib/payments';
 import { useSession } from '../../../lib/session';
 import { loadCardDetail, type CardDetailData } from '../../../lib/wallet';
 import { layout, radius, type } from '../../../theme/tokens';
@@ -51,6 +53,7 @@ export default function CardDetailScreen() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session, settings } = useSession();
+  const toast = useToast();
   const [data, setData] = useState<CardDetailData | null>(null);
   const [failed, setFailed] = useState(false);
   const [period, setPeriod] = useState<Period | null>(null);
@@ -88,6 +91,19 @@ export default function CardDetailScreen() {
         <Button title="Reintentar" onPress={load} />
       </Screen>
     );
+  }
+
+  // Solo los resúmenes cerrados se pagan (A pagar, Pago parcial o Vencido).
+  const canPay = !!statement && hasPending(statement) && statement.status !== 'current' && statement.status !== 'future';
+
+  async function undoPayment(paymentId: string, amount: string, accountName: string) {
+    try {
+      await revertPayments([paymentId]);
+      toast(`Pago deshecho · ${amount} volvieron a ${accountName}`);
+    } catch {
+      toast('No se pudo deshacer el pago. Probá de nuevo.');
+    }
+    walletChanged();
   }
 
   const items = statement?.items ?? [];
@@ -154,6 +170,46 @@ export default function CardDetailScreen() {
         >
           <Text style={[type.body, { color: colors.textMuted }]}>¿Te falta cargar algo?</Text>
         </Pressable>
+      ) : null}
+
+      {canPay && detail && statement ? (
+        <Button
+          title="Pagar resumen"
+          variant="primary"
+          onPress={() =>
+            router.push({ pathname: '/pagar/[cardId]/[period]', params: { cardId: detail.card.id, period: statement.period } })
+          }
+        />
+      ) : null}
+
+      {/* Pagos de este resumen, con Deshacer. */}
+      {statement && statement.payments.length ? (
+        <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <Text style={[type.subtitle, { color: colors.text }]}>Pagos de este resumen</Text>
+          {statement.payments.map((p, i) => {
+            const account = data?.accounts.get(p.fromAccountId)?.name ?? 'una cuenta';
+            const debitedText = formatMoney(p.debitedAmount);
+            return (
+              <View
+                key={p.id}
+                style={[styles.row, i < statement.payments.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.line }]}
+              >
+                <View
+                  style={styles.rowMiddle}
+                  accessible
+                  accessibilityLabel={`Pago de ${moneyInWords(p.amount)} desde ${account}, el ${formatShortDate(p.paidAt)}`}
+                >
+                  <Text style={[type.money, { color: colors.text }]}>{formatMoney(p.amount)}</Text>
+                  <Text style={[type.caption, { color: colors.textMuted }]} numberOfLines={1}>
+                    {formatShortDate(p.paidAt)} · desde {account}
+                    {p.appliesTo !== p.debitedAmount.currency ? ` (${debitedText})` : ''}
+                  </Text>
+                </View>
+                <Button title="Deshacer" variant="ghost" onPress={() => undoPayment(p.id, debitedText, account)} />
+              </View>
+            );
+          })}
+        </View>
       ) : null}
 
       {/* Cuotas que siguen. */}
