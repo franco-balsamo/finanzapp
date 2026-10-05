@@ -19,6 +19,7 @@
 | [2026-10-04-spec-avisos-de-tarjeta.md](2026-10-04-spec-avisos-de-tarjeta.md) | /spec de avisos de cierre y de vencimiento: textos y agrupado en core, `card_notice_input`, `record_card_notices`, no molestar y cron; el push queda para cuando haya app |
 | [2026-10-04-primer-deploy.md](2026-10-04-primer-deploy.md) | Primer deploy al proyecto `mangos`: migraciones verificadas por hash, Edge Functions, historial cargado, T9 confirmado y el secreto de los cron solo en Vault |
 | [2026-10-05-spec-primeras-pantallas.md](2026-10-05-spec-primeras-pantallas.md) | /spec de la primera tanda de pantallas (épica E1 a E5): login con código, `onboarded_at`, bienvenida en 3 pasos, altas, Billetera, hoja de carga con una línea de texto y parser completo en core |
+| [2026-10-05-spec-detalle-de-tarjeta.md](2026-10-05-spec-detalle-de-tarjeta.md) | /spec del detalle de tarjeta (épica D-1 a D-6): pagos y deshacer, corregir cierre, favorita y archivar con "Archivadas", carga por texto de varias líneas, "¿Ya lo pagaste?" con `save_expense_with_payments`, límite obligatorio |
 
 La fuente de verdad es `02-reglas-de-negocio.md` junto con `03-modelo-de-datos.md`.
 
