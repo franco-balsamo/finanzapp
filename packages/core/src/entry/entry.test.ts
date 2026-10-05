@@ -11,7 +11,7 @@ import {
   type PaymentMethod,
   type PaymentUse,
 } from './paymentMethods.ts';
-import { parseQuickEntry, parseQuickEntryLine, type QuickEntryContext } from './quickEntry.ts';
+import { parseQuickEntry, parseQuickEntryLine, parseShortDate, type QuickEntryContext } from './quickEntry.ts';
 import { formatShortDate, savedToastText } from './toast.ts';
 
 // Hoy: lunes 5/10/2026.
@@ -301,8 +301,17 @@ describe('carga por texto (02 §5)', () => {
       expect(parseQuickEntryLine('anteayer 5000 café visa', ctx()).date).toBe('2026-10-03');
     });
 
-    it('sin fecha es hoy', () => {
+    it('sin fecha es hoy; "hoy" no queda en la descripción', () => {
       expect(parseQuickEntryLine('5000 café visa', ctx()).date).toBe(today);
+      expect(parseQuickEntryLine('hoy 5000 café visa', ctx())).toMatchObject({ date: today, description: 'café' });
+    });
+
+    it('campo de fecha de la hoja', () => {
+      expect(parseShortDate('28/09', today)).toEqual({ date: '2026-09-28', future: false });
+      expect(parseShortDate('Ayer', today)).toEqual({ date: '2026-10-04', future: false });
+      expect(parseShortDate('1/1/27', today)).toEqual({ date: '2027-01-01', future: true });
+      expect(parseShortDate('30/02', today)).toBe('invalid');
+      expect(parseShortDate('mañana', today)).toBeNull();
     });
 
     it('dd/mm toma la fecha más reciente que no sea futura', () => {

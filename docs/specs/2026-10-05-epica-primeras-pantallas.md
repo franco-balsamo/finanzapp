@@ -287,6 +287,13 @@ Al tocar "Listo" se guarda la tarjeta, si se cargó, con `is_favorite = true`, y
 - "Deshacer" hace `delete from movements where id = …` y muestra "Gasto borrado".
 - La Billetera se actualiza sin recargar a mano.
 
+**Implementado el 5/10.** Diferencias con lo de arriba:
+- "Otro…" abre un `Modal` dentro de la hoja (no otra ruta), con Tarjetas y Cuentas.
+- El selector de fecha son las fichas Hoy, Ayer y Anteayer más un campo "Otra fecha (dd/mm)", con `parseShortDate` de core (la misma regla que la carga por texto). No se sumó un selector nativo.
+- Las fichas de categoría van sin ícono (falta `react-native-svg` para `CategoryIcon`) y el cambio de categoría deducida no tiene la transición `motion.micro` todavía.
+- Los errores al guardar se muestran dentro de la hoja, no en un toast: en iOS la hoja nativa tapa el toast.
+- El texto del toast sale de `cardStatementFor` de core: el resumen donde entra la primera cuota, con el gasto ya contado.
+
 **Criterios de aceptación de E5:**
 1. Al abrir la hoja, el foco está en Monto, el teclado decimal está abierto y "Guardar gasto" se ve sin bajar, en un iPhone de 390 × 844 y en un Android de 360 × 800.
 2. Ninguna ficha de medio de pago ni de categoría viene marcada al abrir.
@@ -295,7 +302,7 @@ Al tocar "Listo" se guarda la tarjeta, si se cargó, con `is_favorite = true`, y
 5. Un gasto de $ 30.000 en 3 cuotas con la Visa (cierre 24) del 25/9 muestra "Guardado · entra en el resumen del 24/10 (te vienen $ …)", y el total de la fila de la Visa en la Billetera sube $ 10.000.
 6. Un gasto con una cuenta muestra "Guardado · se descontó de Mercado Pago" y el saldo de la cuenta baja ese monto.
 7. "Deshacer" dentro de los 5 segundos borra la fila de `movements` y la Billetera vuelve al total anterior.
-8. Si la categoría deducida se cambia de Otros a Salidas en "birrería La Birra", queda `category_keywords('birrería' → Salidas)`. La próxima "birrería" se deduce como Salidas.
+8. Si la categoría deducida se cambia de Otros a Salidas en "birrería La Birra", queda `category_keywords('birreria' → Salidas)` (la palabra se guarda sin acentos, como la normaliza `learnableWord`). La próxima "birrería" se deduce como Salidas.
 9. Con el modo avión, Guardar muestra "Sin conexión. Probá de nuevo.", la hoja queda abierta y no se pierde nada.
 10. Una carga típica (FAB, monto, ficha, descripción y Guardar) lleva menos de 10 s, cronometrada 5 veces por Fran en su teléfono.
 11. Todo lo que se toca mide al menos 44 × 44 (con `hitSlop`) y las fichas anuncian `selected`.
@@ -334,7 +341,7 @@ Al tocar "Listo" se guarda la tarjeta, si se cargó, con `is_favorite = true`, y
 ## Riesgos
 
 - **El SMTP de Supabase tiene un límite bajo de mails por hora.** Para la beta hace falta SMTP propio (ya está en "Antes de la beta").
-- **`react-native-keyboard-controller` es nativa.** Si Expo Go no la trae en SDK 57, hace falta un build de desarrollo (`npx expo run:ios` o `run:android`). Hay que verificarlo al instalar.
+- **`react-native-keyboard-controller` es nativa.** Verificado el 5/10: viene incluida en Expo Go, no hace falta un build de desarrollo.
 - **Mismo id de movimiento al reintentar:** si se genera un id nuevo por intento, se duplica. Por eso se genera uno solo al abrir la hoja.
 
 ## Definición de terminado

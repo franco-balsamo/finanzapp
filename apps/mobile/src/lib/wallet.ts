@@ -8,6 +8,7 @@ import {
   type DbWalletOverride,
   type DbWalletPayment,
   type Wallet,
+  type WalletInput,
 } from '@mangos/core';
 import { latestRates, type LatestRate } from './fx';
 import type { UserSettings } from './session';
@@ -62,7 +63,11 @@ export interface WalletData extends Wallet {
   referenceRate: LatestRate | null;
 }
 
-export async function loadWallet(userId: string, settings: UserSettings): Promise<WalletData> {
+/** Todas las filas que necesita la Billetera, ya en el formato de core. */
+export async function loadWalletInput(
+  userId: string,
+  settings: UserSettings,
+): Promise<{ input: WalletInput; referenceRate: LatestRate | null }> {
   const [cards, accounts, movements, payments, overrides, groups, rates] = await Promise.all([
     supabase.from('cards').select(CARD_COLUMNS).is('archived_at', null),
     supabase.from('accounts').select(ACCOUNT_COLUMNS).is('deleted_at', null),
@@ -74,7 +79,7 @@ export async function loadWallet(userId: string, settings: UserSettings): Promis
   ]);
   const reference = rates[settings.fx_reference] ?? null;
   return {
-    ...wallet({
+    input: {
       today: todayInArgentina(),
       display: settings.display_currency,
       referenceRate: reference?.sell ?? null,
@@ -85,7 +90,12 @@ export async function loadWallet(userId: string, settings: UserSettings): Promis
       payments: rows<DbWalletPayment>(payments),
       overrides: rows<DbWalletOverride>(overrides),
       groups,
-    }),
+    },
     referenceRate: reference,
   };
+}
+
+export async function loadWallet(userId: string, settings: UserSettings): Promise<WalletData> {
+  const { input, referenceRate } = await loadWalletInput(userId, settings);
+  return { ...wallet(input), referenceRate };
 }

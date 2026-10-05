@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ars, usd } from '../cards/fixtures.ts';
 import { rate } from '../money.ts';
-import { wallet, type DbWalletAccount, type DbWalletCard, type DbWalletGroup, type DbWalletMovement, type WalletInput } from './wallet.ts';
+import { cardStatementFor, wallet, type DbWalletAccount, type DbWalletCard, type DbWalletGroup, type DbWalletMovement, type WalletInput } from './wallet.ts';
 
 // Hoy: lunes 5/10/2026. Visa con cierre 24: el resumen en curso cierra el 24/10.
 const today = '2026-10-05';
@@ -85,6 +85,22 @@ describe('Billetera', () => {
       payments: [{ id: 'gp', from_member_id: 'juan', to_member_id: 'yo', amount: '10000.00' }],
     };
     expect(wallet(input({ movements: [], groups: [group] })).netWorth?.groups).toEqual(ars(50_000));
+  });
+
+  describe('resumen donde entra un gasto (toast, 9A)', () => {
+    it('3 cuotas del 25/9: la primera entra en el resumen del 24/10', () => {
+      const w = input({ movements: [movement({ id: 'm', amount: '30000.00', card_id: 'visa', installments: 3, date: '2026-09-25' })] });
+      expect(cardStatementFor(w, 'visa', '2026-09-25')).toEqual({ closeDate: '2026-10-24', total: { ARS: ars(10_000), USD: usd(0) } });
+    });
+
+    it('un gasto del 20/9 entra en el resumen que cerró el 24/9', () => {
+      const w = input({ movements: [movement({ id: 'm', amount: '5000.00', card_id: 'visa', date: '2026-09-20' })] });
+      expect(cardStatementFor(w, 'visa', '2026-09-20')).toEqual({ closeDate: '2026-09-24', total: { ARS: ars(5_000), USD: usd(0) } });
+    });
+
+    it('sin consumos en ese resumen: total cero', () => {
+      expect(cardStatementFor(input({ movements: [] }), 'visa', '2026-12-01').total).toEqual({ ARS: ars(0), USD: usd(0) });
+    });
   });
 
   describe('sin cotizaciones', () => {

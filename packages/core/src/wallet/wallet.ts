@@ -3,6 +3,7 @@
 
 import { todayInArgentina } from '../notices/fromDb.ts';
 import { cardState } from '../cards/state.ts';
+import { closeDate, statementFor } from '../cards/schedule.ts';
 import type { ByCurrency, CreditCard, StatementPayment, StatementOverride } from '../cards/types.ts';
 import type { ISODate } from '../dates.ts';
 import { groupBalances } from '../groups/balances.ts';
@@ -188,7 +189,10 @@ function myGroupBalance(g: DbWalletGroup): Money {
 // cardState igual calcula los resúmenes.
 const UNUSED_RATE = rate('1');
 
-export function wallet(input: WalletInput): Wallet {
+type CardPayment = StatementPayment & { cardId: string };
+
+/** Movimientos y pagos en los tipos de core, con lo descontado en la moneda de cada cuenta. */
+function prepare(input: WalletInput): { movements: Movement[]; payments: CardPayment[] } {
   const accountCurrency = new Map(input.accounts.map((a) => [a.id, a.currency]));
 
   const movements = input.movements.map((row) => {
@@ -199,7 +203,7 @@ export function wallet(input: WalletInput): Wallet {
       : m;
   });
 
-  const payments: (StatementPayment & { cardId: string })[] = input.payments.map((p) => ({
+  const payments: CardPayment[] = input.payments.map((p) => ({
     id: p.id,
     cardId: p.card_id,
     period: period(p.period),
@@ -212,28 +216,60 @@ export function wallet(input: WalletInput): Wallet {
     revertedAt: p.reverted_at === null ? null : todayInArgentina(new Date(p.reverted_at)),
   }));
 
+  return { movements, payments };
+}
+
+function cardFromDb(row: DbWalletCard, input: WalletInput): { card: CreditCard; overrides: StatementOverride[] } {
+  return {
+    card: {
+      id: row.id,
+      closeDay: row.close_day,
+      dueDay: row.due_day,
+      creditLimit: row.credit_limit === null ? zero('ARS') : fromDbNumeric(row.credit_limit, 'ARS'),
+    },
+    overrides: input.overrides
+      .filter((o) => o.card_id === row.id)
+      .map((o) => ({ period: period(o.period), closeDate: o.close_date, dueDate: o.due_date })),
+  };
+}
+
+function stateOf(row: DbWalletCard, input: WalletInput, prepared: ReturnType<typeof prepare>) {
+  const { card, overrides } = cardFromDb(row, input);
+  return cardState({
+    card,
+    expenses: prepared.movements
+      .filter((m) => m.cardId === row.id && m.type === 'expense')
+      .map((m) => ({ id: m.id, date: m.date, amount: m.amount, installments: m.installments })),
+    payments: prepared.payments.filter((p) => p.cardId === row.id),
+    overrides,
+    today: input.today,
+    fxCard: input.fxCard ?? UNUSED_RATE,
+  });
+}
+
+/**
+ * El resumen donde entra un gasto con esa fecha (la primera cuota): su cierre y su total, con los
+ * gastos ya guardados. Lo usa el toast después de guardar (9A).
+ */
+export function cardStatementFor(input: WalletInput, cardId: string, date: ISODate): { closeDate: ISODate; total: ByCurrency } {
+  const row = input.cards.find((c) => c.id === cardId);
+  if (!row) throw new RangeError(`Tarjeta desconocida: ${cardId}`);
+  const { card, overrides } = cardFromDb(row, input);
+  const target = statementFor(card, date, overrides);
+  const statement = stateOf(row, input, prepare(input)).statements.find((s) => s.period === target);
+  return statement
+    ? { closeDate: statement.closeDate, total: statement.total }
+    : { closeDate: closeDate(card, target, overrides), total: { ARS: zero('ARS'), USD: zero('USD') } };
+}
+
+export function wallet(input: WalletInput): Wallet {
+  const prepared = prepare(input);
+  const { movements, payments } = prepared;
+
   const states = [...input.cards]
     .sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite) || a.created_at.localeCompare(b.created_at))
     .map((row) => {
-      const card: CreditCard = {
-        id: row.id,
-        closeDay: row.close_day,
-        dueDay: row.due_day,
-        creditLimit: row.credit_limit === null ? zero('ARS') : fromDbNumeric(row.credit_limit, 'ARS'),
-      };
-      const overrides: StatementOverride[] = input.overrides
-        .filter((o) => o.card_id === row.id)
-        .map((o) => ({ period: period(o.period), closeDate: o.close_date, dueDate: o.due_date }));
-      const state = cardState({
-        card,
-        expenses: movements
-          .filter((m) => m.cardId === row.id && m.type === 'expense')
-          .map((m) => ({ id: m.id, date: m.date, amount: m.amount, installments: m.installments })),
-        payments: payments.filter((p) => p.cardId === row.id),
-        overrides,
-        today: input.today,
-        fxCard: input.fxCard ?? UNUSED_RATE,
-      });
+      const state = stateOf(row, input, prepared);
       const current = state.statements.find((s) => s.period === state.currentPeriod)!;
       const view: WalletCard = {
         id: row.id,

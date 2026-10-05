@@ -3,11 +3,11 @@
 Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales de Fran para Argentina; el nombre es provisorio.
 
 ## Para retomar
-- **Dónde quedó (5/10):** de la épica de las primeras pantallas (`docs/specs/2026-10-05-epica-primeras-pantallas.md`, decisiones en `docs/decisiones/2026-10-05-spec-primeras-pantallas.md`) están hechas E1 (login con código, sesión, tema, fuentes y `onboarded_at`), E2 (lógica de la hoja en core) E3 (bienvenida en 3 pasos y alta de tarjeta y de cuenta) y E4 (Billetera con patrimonio, tarjetas y cuentas; el cálculo está en core, `wallet`).
-- **Siguiente paso:** E5 (hoja de carga, con el FAB "+ Gasto" en la Billetera). Antes de tomar cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
+- **Dónde quedó (5/10):** de la épica de las primeras pantallas (`docs/specs/2026-10-05-epica-primeras-pantallas.md`, decisiones en `docs/decisiones/2026-10-05-spec-primeras-pantallas.md`) están hechas E1 (login con código, sesión, tema, fuentes y `onboarded_at`), E2 (lógica de la hoja en core) E3 (bienvenida en 3 pasos y alta de tarjeta y de cuenta) E4 (Billetera con patrimonio, tarjetas y cuentas; el cálculo está en core, `wallet`) y E5 (hoja de carga con una línea de texto, fichas, cuotas, categoría que aprende, lo descontado, toast con Deshacer y el FAB). La épica está completa en código.
+- **Siguiente paso:** probar la épica en el teléfono contra `mangos` (criterios de E1 a E5, sobre todo el de los 10 segundos) y después elegir la tanda siguiente con `/spec`: detalle de tarjeta (con pagos y "¿Ya lo pagaste?"), varias líneas de texto, cola sin conexión (T8) o Ajustes (T10). Antes de tomar cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
 - **Pendiente de Fran:** cargar en el panel de `mangos` (Authentication → Email Templates) la plantilla `supabase/templates/codigo.html` en "Magic Link" y en "Confirm signup", con el asunto "Tu código para entrar a Mangos". `onboarded_at` ya está aplicada en `mangos`.
-- **Sin verificar:** el recorrido en el navegador o el teléfono (la extensión de Chrome no estaba conectada). Las consultas de E1, E3 y E4 se probaron contra la base local con un usuario real (E4 da el ejemplo de 02 §8: $1.711.600).
-- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 396 tests pgTAP y 256 de Vitest.
+- **Sin verificar:** el recorrido en el navegador o el teléfono (la extensión de Chrome no estaba conectada). Las consultas de E1 a E5 se probaron contra la base local con un usuario real (E4 da el ejemplo de 02 §8: $1.711.600; E5: id repetido, toast, dólar tarjeta, palabra aprendida y Deshacer).
+- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 396 tests pgTAP y 260 de Vitest.
 - **Entorno local:**
   - colima con 6 GiB de memoria (con 2 GiB se colgó; el 5/10 se cayó una vez igual, hay contenedores de otros proyectos);
   - para que Docker apunte a colima: `export DOCKER_HOST=unix://$HOME/.config/colima/default/docker.sock`;

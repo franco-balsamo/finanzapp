@@ -9,6 +9,7 @@ import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { ToastProvider } from '../components/Toast';
 import { SessionProvider, useSession } from '../lib/session';
 import { useTheme } from '../theme/useTheme';
 
@@ -26,7 +27,9 @@ export default function RootLayout() {
   return (
     <KeyboardProvider>
       <SessionProvider>
-        <RootNavigator fontsLoaded={fontsLoaded} />
+        <ToastProvider>
+          <RootNavigator fontsLoaded={fontsLoaded} />
+        </ToastProvider>
       </SessionProvider>
     </KeyboardProvider>
   );

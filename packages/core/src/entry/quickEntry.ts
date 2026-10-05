@@ -85,32 +85,43 @@ function validDate(year: number, month: number, day: number): ISODate | null {
   }
 }
 
-/** `dd/mm` toma la fecha más reciente que no sea futura; `dd/mm/aa` es esa fecha. */
+/**
+ * `ayer`, `anteayer`, `dd/mm` (la fecha más reciente que no sea futura) o `dd/mm/aa` (esa fecha,
+ * marcada si es futura). null si no es una fecha; `invalid` si tiene forma de fecha pero no existe.
+ * La usan la carga por texto y el campo de fecha de la hoja.
+ */
+export function parseShortDate(text: string, today: ISODate): { date: ISODate; future: boolean } | 'invalid' | null {
+  const norm = normalizeWord(text.trim());
+  if (norm === 'hoy') return { date: today, future: false };
+  if (norm === 'ayer' || norm === 'anteayer') return { date: addDays(today, norm === 'ayer' ? -1 : -2), future: false };
+  const match = DATE_PATTERN.exec(norm);
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const { year: thisYear } = parseDate(today);
+  if (match[3]) {
+    const year = match[3].length === 2 ? 2000 + Number(match[3]) : Number(match[3]);
+    const date = validDate(year, month, day);
+    return date ? { date, future: date > today } : 'invalid';
+  }
+  const date = validDate(thisYear, month, day);
+  if (!date) return 'invalid';
+  return { date: date > today ? (validDate(thisYear - 1, month, day) ?? date) : date, future: false };
+}
+
 function readDate(tokens: Token[], today: ISODate, warnings: LineWarning[]): ISODate {
   for (const t of tokens) {
     if (t.used) continue;
-    if (t.norm === 'ayer' || t.norm === 'anteayer') {
-      t.used = true;
-      return addDays(today, t.norm === 'ayer' ? -1 : -2);
-    }
-    const match = DATE_PATTERN.exec(t.norm);
-    if (!match) continue;
+    const parsed = parseShortDate(t.norm, today);
+    if (parsed === null) continue;
     t.used = true;
-    const day = Number(match[1]);
-    const month = Number(match[2]);
-    const { year: thisYear } = parseDate(today);
-    if (match[3]) {
-      const year = match[3].length === 2 ? 2000 + Number(match[3]) : Number(match[3]);
-      const date = validDate(year, month, day);
-      if (!date) break;
-      if (date > today) warnings.push('future_date');
-      return date;
+    if (parsed === 'invalid') {
+      warnings.push('invalid_date');
+      return today;
     }
-    const date = validDate(thisYear, month, day);
-    if (!date) break;
-    return date > today ? (validDate(thisYear - 1, month, day) ?? date) : date;
+    if (parsed.future) warnings.push('future_date');
+    return parsed.date;
   }
-  if (tokens.some((t) => t.used && DATE_PATTERN.test(t.norm))) warnings.push('invalid_date');
   return today;
 }
 
