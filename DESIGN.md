@@ -277,7 +277,7 @@ export const fonts = {
   monoMedium: 'IBMPlexMono_500Medium',
 } as const;
 
-const mono = { fontVariant: ['tabular-nums'] as const };
+const mono = { fontVariant: ['tabular-nums'] as ('tabular-nums')[] };
 
 export const type = {
   display: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 29, letterSpacing: -0.24 },

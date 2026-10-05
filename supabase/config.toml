@@ -244,6 +244,16 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
+# Mangos entra con mail y código: las dos plantillas mandan {{ .Token }}, no un link
+# (spec de las primeras pantallas, 5/10). En el proyecto mangos se cargan las mismas.
+[auth.email.template.magic_link]
+subject = "Tu código para entrar a Mangos"
+content_path = "./supabase/templates/codigo.html"
+
+[auth.email.template.confirmation]
+subject = "Tu código para entrar a Mangos"
+content_path = "./supabase/templates/codigo.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"
