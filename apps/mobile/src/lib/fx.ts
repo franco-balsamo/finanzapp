@@ -15,7 +15,7 @@ export interface LatestRate {
 export async function latestRates(): Promise<Partial<Record<FxKind, LatestRate>>> {
   const { data, error } = await supabase
     .from('fx_rates')
-    .select('kind, sell, fetched_at')
+    .select('kind, sell::text, fetched_at')
     .in('kind', ['mep', 'oficial', 'blue', 'tarjeta'])
     .order('fetched_at', { ascending: false })
     .limit(40);
@@ -23,8 +23,8 @@ export async function latestRates(): Promise<Partial<Record<FxKind, LatestRate>>
   const result: Partial<Record<FxKind, LatestRate>> = {};
   for (const row of data ?? []) {
     const kind = row.kind as FxKind;
-    // `sell` llega como número de PostgREST; se pasa a string sin perder decimales (numeric(14,4)).
-    if (!result[kind]) result[kind] = { sell: rate(String(row.sell)), fetchedAt: row.fetched_at };
+    // `sell` se pide como texto: numeric(14,4) exacto, sin pasar por number.
+    if (!result[kind]) result[kind] = { sell: rate(row.sell), fetchedAt: row.fetched_at };
   }
   return result;
 }

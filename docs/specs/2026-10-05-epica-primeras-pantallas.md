@@ -210,7 +210,7 @@ Al tocar "Listo" se guarda la tarjeta, si se cargó, con `is_favorite = true`, y
 
 ### E4. Billetera
 
-**Rutas:** `(app)/(tabs)/_layout.tsx`, con la barra de pestañas y por ahora solo "Billetera", y `(app)/(tabs)/billetera.tsx`.
+**Rutas:** `(app)/index.tsx`. Implementado el 5/10 sin barra de pestañas: con una sola pestaña no aporta, y se suma con `(tabs)` cuando lleguen Inicio, Grupos y Ajustes. El cálculo está en core (`wallet`), con el ejemplo de 02 §8 como test.
 
 **Encabezado:**
 - Patrimonio en `moneyHero`, en la moneda de `display_currency` y calculado con `netWorth`.
@@ -228,7 +228,7 @@ Al tocar "Listo" se guarda la tarjeta, si se cargó, con `is_favorite = true`, y
 
 **Pestaña Cuentas:** una fila por cuenta con nombre, tipo y saldo en su moneda, y el botón "Sumar cuenta".
 
-**FAB "+ Gasto"** abajo a la derecha, que abre `/cargar`.
+**FAB "+ Gasto"** abajo a la derecha, que abre `/cargar`. Se suma en E5, junto con la ruta.
 
 **Estados (8A):**
 
