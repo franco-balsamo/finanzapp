@@ -123,38 +123,49 @@ E2 Core (en paralelo con E1) ──────────┘
 
 Todo va en `packages/core/src/entry/`, con imports relativos con `.ts`, exportado desde `index.ts` y con tests Vitest.
 
+Implementado el 5/10 (las firmas reales están en el código; acá va lo que cada una decide):
+
 ```ts
 // entry/amount.ts
-export function formatAmountInput(raw: string): { text: string; value: Money | null; error?: 'ambiguous' | 'too_many_decimals' };
-// Teclado: "86500" → "86.500"; "86500,5" → "86.500,5"; como máximo 2 decimales.
+export function parseAmountMinor(text: string): { minor: number } | { error: 'ambiguous' | 'invalid' };
 export function parseAmount(text: string, currency: Currency): { value: Money } | { error: 'ambiguous' | 'invalid' };
-// Reglas de 02 §5: "12.000" y "12.000,50" están bien; "12.5" es ambiguo; sufijos k, mil y M.
+// Reglas de 02 §5: "12.000" y "12.000,50" están bien; "12.5" es ambiguo; sufijos k, mil y M. Para lo pegado en Monto.
+export function formatAmountInput(raw: string): { text: string; minor: number | null };
+// Teclado: "86500" → "86.500"; como máximo 2 decimales (el tercero se descarta); un "." recién tecleado al final es la coma.
 
 // entry/categories.ts
-export const SYSTEM_CATEGORY_IDS: Record<'supermercado'|'salidas'|'transporte'|'servicios'|'suscripciones'|'otros', string>;
-export function deduceCategory(description: string, userKeywords: ReadonlyMap<string, string>): string; // category_id; si no coincide, "Otros"
-export function learnableWord(description: string, paymentMethodWords: readonly string[]): string | null; // R3-5
+export const SYSTEM_CATEGORY_IDS; // supermercado … otros, con los UUID de la base
+export function deduceCategory(description: string, userKeywords?: ReadonlyMap<string, string>): string;
+// La primera palabra que coincide; la corrección del usuario manda sobre la lista inicial. Sin coincidencia, "Otros".
+export function learnableWord(description: string, paymentWords: readonly string[]): string | null; // R3-5, normalizada sin acentos
 
-// entry/paymentChips.ts
-export interface PaymentMethod { kind: 'card' | 'account'; id: string; label: string; last4?: string; isFavorite?: boolean }
-export function paymentChips(methods: readonly PaymentMethod[], recent: readonly { methodId: string; date: ISODate }[], today: ISODate): PaymentMethod[];
-// Favorita, después los 2 más usados en 30 días sin repetir, máximo 3. "Otro…" lo suma la UI.
+// entry/paymentMethods.ts
+export type PaymentMethod =
+  | { kind: 'card'; id; bank; network: 'VISA' | 'MC' | 'AMEX' | 'CABAL'; last4; isFavorite }
+  | { kind: 'account'; id; name };
+export function paymentChips(methods, uses: { methodId; date }[], today): PaymentMethod[];
+// La favorita y los 2 más usados en 30 días (con empate, el más reciente). Si no llegan a 3, se completan
+// con el orden de `orderedMethods` (favorita, tarjetas, cuentas). "Otro…" lo suma la pantalla.
+export function orderedMethods(methods): PaymentMethod[];      // lista de "Otro…"
+export function paymentMethodLabel(method): string;            // "Master ·· 0763" o "Mercado Pago"
+export function paymentMethodWords(methods): string[];         // para learnableWord
 
 // entry/quickEntry.ts
-export type LineStatus = 'ready' | 'review' | 'incomplete' | 'no_amount';
-export interface ParsedLine { status: LineStatus; date: ISODate; amount: Money | null; installments: number; methodId: string | null; candidates: string[]; description: string; categoryId: string; warnings: ('future_date'|'ambiguous_amount'|'several_amounts'|'installments_need_credit')[] }
-export function parseQuickEntry(text: string, ctx: { today: ISODate; methods: readonly PaymentMethod[]; banks: Record<string,string>; networks: Record<string,string>; recent: readonly { methodId: string; date: ISODate }[]; keywords: ReadonlyMap<string,string>; defaultCardId?: string }): ParsedLine[];
-// Una línea, un gasto. Implementa 02 §5 "Carga por texto" completo: fecha, cuotas, últimos 4, monto, moneda, medio de pago (el texto manda; favorita > más usada > incompleta), descripción y categoría.
+export function parseQuickEntry(text: string, ctx: QuickEntryContext): ParsedLine[];
+export function parseQuickEntryLine(text: string, ctx: QuickEntryContext): ParsedLine;
+// ctx: { today, methods, uses, keywords, defaultCardId? }. Implementa 02 §5 "Carga por texto" completo.
+// ParsedLine: status (ready | review | incomplete | no_amount), date, amount, currency, installments,
+// requestedInstallments, methodId, candidates, description, categoryId y warnings.
 
 // entry/toast.ts
-export function savedToastText(input: { kind: 'card'; closeDate: ISODate; pending: Money[] } | { kind: 'account'; accountName: string }): string;
-// "Guardado · entra en el resumen del 24/10 (te vienen $ 273.500)" / "Guardado · se descontó de Mercado Pago"
+export function savedToastText(input: { kind: 'card'; closeDate; statementTotal: ByCurrency } | { kind: 'account'; accountName }): string;
+// "Guardado · entra en el resumen del 24/10 (te vienen $273.500)" / "Guardado · se descontó de Mercado Pago"
 ```
 
 **Criterios de aceptación de E2:**
 1. Todos los ejemplos de 02 §5 son tests: "28/09 4532 12000 súper x3", "4532 súper visa", "súper master" con favorita Visa, "12000 visa" incompleta, "12.5" para revisar, "3 cuotas" con una cuenta y "visa" con dos Visa (favorita, más usada o empate).
-2. `formatAmountInput("86500")` da `"86.500"` y `formatAmountInput("12,345")` da el error `too_many_decimals`.
-3. `paymentChips` nunca devuelve una ficha marcada, no repite la favorita entre las más usadas y devuelve como máximo 3.
+2. `formatAmountInput("86500")` da `"86.500"` y `formatAmountInput("12,345")` da `"12,34"`.
+3. `paymentChips` no repite la favorita entre las más usadas y devuelve como máximo 3.
 4. `learnableWord("compra coto", ["visa"])` da `"coto"`; `learnableWord("pago visa", ["visa"])` da `null`.
 5. `pnpm test` y `pnpm typecheck` en verde, y las Edge Functions siguen importando core (sin imports sin `.ts`).
 

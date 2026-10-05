@@ -251,6 +251,11 @@ Firmas implementadas en la épica del 2/10 ([spec](specs/2026-10-02-epica-core.m
 | `accountBalance(account, movements, payments)` | cuenta, movimientos, pagos de tarjeta | saldo actual |
 | `categorySpend({movements, cards, month, reference, todayRate})` | movimientos y tarjetas | gasto por categoría en pesos: tu parte; con tarjeta, cada cuota en el mes de cierre de su resumen |
 | `netWorth({display, referenceRate, fxCard, accountBalances, myGroupBalances, cardDebts})` | saldos ya calculados; `cardDebts` = `pendingTotal` de cada tarjeta | cuentas, grupos, tarjetas y total en pesos o en dólares, cada componente convertido una sola vez (02 §8) |
+| `parseQuickEntry(text, ctx)` | líneas de la carga por texto, medios de pago, usos de 30 días, palabras del usuario | por línea: estado (lista, revisar, incompleta, sin monto), fecha, monto, cuotas, medio, descripción, categoría y avisos (02 §5) |
+| `parseAmount` / `formatAmountInput` | texto del monto | monto exacto o "ambiguo" / el campo formateado mientras se escribe (11A) |
+| `deduceCategory` / `learnableWord` | descripción, `category_keywords` | categoría deducida ("Otros" si no coincide) / la palabra que se guarda al corregir (R3-5) |
+| `paymentChips` / `orderedMethods` | medios de pago y usos | las fichas de la hoja (favorita y 2 más usados en 30 días) / la lista de "Otro…" |
+| `savedToastText` | resumen donde entra o cuenta | texto del toast después de guardar (9A) |
 
 - Son funciones en **TypeScript puro, sin dependencias ni acceso a la base**: reciben filas y devuelven resultados con `Money`.
 - Las usan la app (incluso sin conexión) y las Edge Functions (aviso de cierre y vencimientos), así que los números siempre coinciden.
