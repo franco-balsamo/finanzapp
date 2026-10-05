@@ -3,13 +3,16 @@
 Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales de Fran para Argentina; el nombre es provisorio.
 
 ## Para retomar
-- **Dónde quedó (5/10):** el backend de la v1 está terminado, probado y deployado en Supabase (proyecto `mangos`). La primera tanda de pantallas tiene la spec aprobada: `docs/specs/2026-10-05-epica-primeras-pantallas.md` (decisiones en `docs/decisiones/2026-10-05-spec-primeras-pantallas.md`). `apps/mobile` sigue sin pantallas, salvo `/g/[token]`.
-- **Siguiente paso:** implementar la épica en este orden: E1 (base, login y `onboarded_at`) y E2 (lógica de la hoja en core) en paralelo; después E3 (bienvenida y altas); después E4 (Billetera) y E5 (hoja de carga). Antes de tomar cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
-- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 392 tests pgTAP y 167 de Vitest.
+- **Dónde quedó (5/10):** de la épica de las primeras pantallas (`docs/specs/2026-10-05-epica-primeras-pantallas.md`, decisiones en `docs/decisiones/2026-10-05-spec-primeras-pantallas.md`) están hechas E1 (login con código, sesión, tema, fuentes y `onboarded_at`), E2 (lógica de la hoja en core) y E3 (bienvenida en 3 pasos y alta de tarjeta y de cuenta). La Billetera (`src/app/(app)/index.tsx`) es provisoria.
+- **Siguiente paso:** E4 (Billetera) y después E5 (hoja de carga). Antes de tomar cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
+- **Pendiente de Fran:** cargar en el panel de `mangos` (Authentication → Email Templates) la plantilla `supabase/templates/codigo.html` en "Magic Link" y en "Confirm signup", con el asunto "Tu código para entrar a Mangos". `onboarded_at` ya está aplicada en `mangos`.
+- **Sin verificar:** el recorrido en el navegador o el teléfono (la extensión de Chrome no estaba conectada). Las consultas de E1 y E3 se probaron por REST con un usuario real en local.
+- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 396 tests pgTAP y 223 de Vitest.
 - **Entorno local:**
-  - colima con 6 GiB de memoria (con 2 GiB se colgó);
+  - colima con 6 GiB de memoria (con 2 GiB se colgó; el 5/10 se cayó una vez igual, hay contenedores de otros proyectos);
   - para que Docker apunte a colima: `export DOCKER_HOST=unix://$HOME/.config/colima/default/docker.sock`;
-  - Supabase local: `npx supabase start`, `npx supabase db reset` y `npx supabase test db`.
+  - Supabase local: `npx supabase start -x vector,logflare,studio,imgproxy,realtime,storage-api,postgres-meta,supavisor` (el contenedor `vector` no levanta), `npx supabase db reset` y `npx supabase test db`. Si cambia `config.toml`, hace falta `stop` y `start`;
+  - la app: `apps/mobile/.env` (copiar de `.env.example`) y `npx expo start --web` en `apps/mobile`. El código del login llega a Mailpit (http://127.0.0.1:54324). El teléfono no ve la base local (colima publica solo en 127.0.0.1): para el teléfono, apuntar `.env` a `mangos`.
 
 ## Dónde está cada cosa
 - **Repo de Fran (fuente de verdad):** `CLAUDE.md`, `DESIGN.md`, `docs/01-alcance-v1.md`, `docs/02-reglas-de-negocio.md`, `docs/03-modelo-de-datos.md`, `docs/04-guia-gstack.md`, `docs/05-plan-tecnico.md`, `docs/producto-y-lanzamiento.md`, `docs/diseno-pantallas-v1.md`, `docs/decisiones/` y `prototipo/mangos.html`. Para revisar algo, Fran pasa los archivos como adjuntos.
