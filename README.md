@@ -10,17 +10,17 @@ Los saldos de grupo se calculan en core (`shares`, `groupBalances`) y en SQL (`p
 
 Corré `pnpm gen:sql-fixtures` cada vez que cambies el JSON, y commiteá el SQL generado junto con el JSON. `pnpm gen:sql-fixtures --check` falla si el SQL quedó viejo. Si cambia una regla de cálculo, cambiala en core y en SQL, y sumá el ejemplo al JSON.
 
-## Cotizaciones (cron y Edge Functions)
+## Backend en Supabase (cron y Edge Functions)
 
-Dos cron de la base llaman a las Edge Functions `fx-rates` (DolarApi, cada 10 minutos) y `fx-history` (ArgentinaDatos, todos los días a las 3:00). Sin configurar, los cron no hacen nada. Para activarlos en un entorno:
+Proyecto: `mangos` (`pkhjsrknnijjygzwvtkn`, sa-east-1). Los cron de la base llaman a las Edge Functions `fx-rates` (DolarApi, cada 10 minutos), `fx-history` (ArgentinaDatos, 3:00), `card-due-notices` (10:00) y `card-closing-notices` (20:00), con la URL y el secreto que viven en Vault. Las funciones le preguntan a la base si el secreto es correcto (`cron_secret_matches`), así no hay otra copia. Sin los secretos en Vault, los cron no hacen nada.
 
-1. Elegí un secreto largo al azar y cargalo en las Edge Functions: `npx supabase secrets set CRON_SECRET=...`. En local va en `supabase/functions/.env`, que no se commitea.
-2. Cargá en Vault la URL base de las funciones y el mismo secreto (SQL editor):
-   `select vault.create_secret('https://<ref>.supabase.co/functions/v1', 'functions_url');`
-   `select vault.create_secret('<el secreto>', 'fx_cron_secret');`
-   En local, la URL es `http://kong:8000/functions/v1`.
-3. Cargá el historial completo una sola vez:
-   `curl -X POST <functions_url>/fx-history -H "Authorization: Bearer <el secreto>" -d '{"full": true}'`
+- **Funciones:** `npx supabase functions deploy --project-ref pkhjsrknnijjygzwvtkn`.
+- **Migraciones:** `npx supabase db push --project-ref pkhjsrknnijjygzwvtkn` (pide la contraseña de la base; se resetea desde el panel). El historial remoto usa las mismas versiones que los archivos.
+- **Vault en un entorno nuevo** (SQL editor), con el secreto generado en la base para que no pase por ningún lado:
+  `select vault.create_secret('https://<ref>.supabase.co/functions/v1', 'functions_url');`
+  `select vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'), 'fx_cron_secret');`
+  En local, la URL es `http://kong:8000/functions/v1`.
+- **Historial completo de cotizaciones, una sola vez:** desde el SQL editor, un `net.http_post` a `functions_url || '/fx-history'` con el secreto de Vault en `Authorization: Bearer` y el body `{"full": true}` (el paso está en `docs/decisiones/2026-10-04-primer-deploy.md`).
 
 ## Documentación
 

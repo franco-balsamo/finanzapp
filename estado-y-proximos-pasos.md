@@ -56,6 +56,10 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - Migración `supabase/migrations/20261004140000_card_notices.sql`. El push no se manda todavía: queda en `notifications` con `deliver_after`.
   - 386 tests pgTAP y 167 de Vitest en verde.
 
+- **Primer deploy hecho** (decisiones en `docs/decisiones/2026-10-04-primer-deploy.md`):
+  - Proyecto `mangos` (`pkhjsrknnijjygzwvtkn`, plan gratis, sa-east-1) con las 8 migraciones (verificadas por hash contra la base local), las 4 Edge Functions, Vault y el historial de cotizaciones desde 2011. Los cron ya corren.
+  - T9 confirmado en producción. El secreto de los cron vive solo en Vault (`cron_secret_matches`); 392 tests pgTAP.
+
 ## Próximos pasos
 1. **Claude:** actualizar el prototipo a la v1:
    - lista de tarjetas con `CardRow` en vez del carrusel;
@@ -64,7 +68,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - toast con "Deshacer";
    - detalle de tarjeta y de grupo en el orden nuevo;
    - sin débito como tipo propio, sin comprobante, sin presupuestos, sin alertas de precio, solo Iguales y Montos.
-2. **Producción de T6:** cargar `CRON_SECRET`, los secretos de Vault y el historial completo (README). En ese primer deploy, confirmar que las Edge Functions llevan `packages/core` (T9). Después, el envío del push de los avisos (cuando la app registre tokens) y la parte de la app de T10 (Ajustes, volver a pedir el código y descargar el JSON).
+2. **Antes de la beta:** T12 (plan pago de Supabase), índices de las claves foráneas que marcó el advisor, el envío del push de los avisos (cuando la app registre tokens) y la parte de la app de T10 (Ajustes, volver a pedir el código y descargar el JSON).
 3. **Pendiente de herramientas:** instalar `codex` si se quiere la revisión externa en `/spec` y `/review` (esta vez no corrió) y `gh` si se suben los specs como issues.
 
 ## Commits

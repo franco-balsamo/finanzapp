@@ -414,7 +414,7 @@ enabled = true
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
 
-# T6: las llama pg_cron con un secreto propio (CRON_SECRET), no con un JWT.
+# Las llama pg_cron con el secreto de Vault (fx_cron_secret), no con un JWT.
 [functions.fx-rates]
 verify_jwt = false
 

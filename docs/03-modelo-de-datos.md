@@ -226,6 +226,7 @@ Ejemplos de `params` según el tipo:
 | `fx_rate_on(kind, date)` | Solo `authenticated`. La venta de un tipo en una fecha, con la misma ventana de 4 días que el trigger, o nulo. La app la usa con `tarjeta` para proponer `debited_amount` y los pagos de dólares en pesos (02 §2 y §3). Un tipo desconocido da `22023` |
 | `private.fx_sell_fallback(kind, date)` / `private.resolve_stale_fx()` | Internas, de la tarea diaria: la última venta anterior sin límite (o la primera del historial) y la resolución de los pendientes de más de 2 días |
 | `private.fx_sell_on(kind, date)` | Interna. La venta más reciente entre `date − 4` y `date` (por `rate_date` y después `fetched_at`), o nulo. Cubre fines de semana y feriados puente |
+| `cron_secret_matches(token)` | Solo `service_role`. La usan las Edge Functions que llama pg_cron: compara (por SHA-256) el secreto que llegó con `fx_cron_secret` de Vault. El secreto vive solo en Vault |
 | `private.call_edge(fn)` | Interna. La usan los cron: `POST` con `pg_net` a `functions_url/fn` con `Authorization: Bearer fx_cron_secret`, los dos de Vault |
 
 ## Cálculos (`packages/core`)
