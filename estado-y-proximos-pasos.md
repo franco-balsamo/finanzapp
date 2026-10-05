@@ -1,6 +1,15 @@
-# Mangos: estado y próximos pasos (2 de octubre de 2026)
+# Mangos: estado y próximos pasos (4 de octubre de 2026)
 
 Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales de Fran para Argentina; el nombre es provisorio.
+
+## Para retomar
+- **Dónde quedó (4/10):** el backend de la v1 está terminado, probado y deployado en Supabase (proyecto `mangos`). Falta la app: `apps/mobile` sigue sin pantallas, salvo `/g/[token]`.
+- **Siguiente paso:** las pantallas de la app (ver "Próximos pasos" más abajo). Antes de tomar cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
+- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 392 tests pgTAP y 167 de Vitest.
+- **Entorno local:**
+  - colima con 6 GiB de memoria (con 2 GiB se colgó);
+  - para que Docker apunte a colima: `export DOCKER_HOST=unix://$HOME/.config/colima/default/docker.sock`;
+  - Supabase local: `npx supabase start`, `npx supabase db reset` y `npx supabase test db`.
 
 ## Dónde está cada cosa
 - **Repo de Fran (fuente de verdad):** `CLAUDE.md`, `DESIGN.md`, `docs/01-alcance-v1.md`, `docs/02-reglas-de-negocio.md`, `docs/03-modelo-de-datos.md`, `docs/04-guia-gstack.md`, `docs/05-plan-tecnico.md`, `docs/producto-y-lanzamiento.md`, `docs/diseno-pantallas-v1.md`, `docs/decisiones/` y `prototipo/mangos.html`. Para revisar algo, Fran pasa los archivos como adjuntos.
@@ -49,7 +58,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - Arreglo: borrar una cuenta ya no rompe la FK de `updated_by` en los gastos de grupo.
   - 356 tests pgTAP y 142 de Vitest en verde.
 
-- **T9 en local** (decisiones en `docs/decisiones/2026-10-04-t9-core-en-edge.md`): una Edge Function importa `packages/core` directo. Core pasó a importar con la extensión `.ts`; Vitest, los dos typecheck y el export web de Expo siguen andando. Falta confirmarlo en el primer deploy.
+- **T9 hecho** (decisiones en `docs/decisiones/2026-10-04-t9-core-en-edge.md`): las Edge Functions importan `packages/core` directo. Core importa con la extensión `.ts` (regla: todo import relativo de core lleva `.ts`). Confirmado en producción con el primer deploy.
 
 - **Avisos de cierre y de vencimiento** (decisiones en `docs/decisiones/2026-10-04-spec-avisos-de-tarjeta.md`):
   - Core calcula qué avisar y el texto (`closingNotices`, `dueNotices`, `formatMoney`); las Edge Functions `card-closing-notices` (20:00) y `card-due-notices` (10:00) leen con `card_notice_input` y guardan con `record_card_notices`, una vez por tarjeta y ciclo.
@@ -61,15 +70,23 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - T9 confirmado en producción. El secreto de los cron vive solo en Vault (`cron_secret_matches`); 392 tests pgTAP.
 
 ## Próximos pasos
-1. **Claude:** actualizar el prototipo a la v1:
-   - lista de tarjetas con `CardRow` en vez del carrusel;
-   - fichas de medio de pago (favorita, 2 más usados y "Otro…", sin preselección);
-   - hoja de carga en el orden nuevo, con carga por texto;
-   - toast con "Deshacer";
-   - detalle de tarjeta y de grupo en el orden nuevo;
-   - sin débito como tipo propio, sin comprobante, sin presupuestos, sin alertas de precio, solo Iguales y Montos.
-2. **Antes de la beta:** T12 (plan pago de Supabase), índices de las claves foráneas que marcó el advisor, el envío del push de los avisos (cuando la app registre tokens) y la parte de la app de T10 (Ajustes, volver a pedir el código y descargar el JSON).
-3. **Pendiente de herramientas:** instalar `codex` si se quiere la revisión externa en `/spec` y `/review` (esta vez no corrió) y `gh` si se suben los specs como issues.
+1. **Pantallas de la app** (`apps/mobile`, Expo Router), siguiendo `DESIGN.md`, `docs/diseno-pantallas-v1.md` y el prototipo:
+   - login por mail con código (Supabase Auth) y onboarding;
+   - Billetera: lista de tarjetas con `CardRow` (sin carrusel), cuentas y patrimonio;
+   - hoja de carga en el orden nuevo, con fichas de medio de pago (favorita, 2 más usados y "Otro…", sin preselección), carga por texto y toast con "Deshacer". Cargar un gasto tiene que llevar menos de 10 segundos;
+   - detalle de tarjeta (con la carga por texto que abre el aviso de cierre) y de grupo;
+   - cola sin conexión con UUID del teléfono (T8);
+   - Ajustes: avisos por tarjeta, no molestar, borrar la cuenta (volver a pedir el código si la base responde "reauthentication required") y exportar el JSON (T10).
+
+   Conviene arrancar con `/spec` o con `/plan-design-review` sobre el orden de las pantallas.
+2. **Prototipo:** actualizarlo a la v1 (los mismos cambios de arriba) solo si hace falta como referencia antes de las pantallas.
+3. **Antes de la beta:**
+   - T12: plan pago de Supabase y cómo pausa los proyectos;
+   - los índices de las claves foráneas que marcó el advisor (están en `docs/decisiones/2026-10-04-primer-deploy.md`);
+   - el envío del push de los avisos, cuando la app registre tokens;
+   - Maestro (T11);
+   - la Auth de producción: URL, plantilla del mail con el código y SMTP.
+4. **Herramientas:** instalar `codex` (revisión externa en `/spec` y `/review`) y `gh` (subir los specs como issues).
 
 ## Commits
 Sin la línea "Co-Authored-By" de Claude. Se usa la identidad global de git.
