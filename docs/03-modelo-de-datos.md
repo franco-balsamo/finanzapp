@@ -256,6 +256,9 @@ Firmas implementadas en la épica del 2/10 ([spec](specs/2026-10-02-epica-core.m
 | `deduceCategory` / `learnableWord` | descripción, `category_keywords` | categoría deducida ("Otros" si no coincide) / la palabra que se guarda al corregir (R3-5) |
 | `paymentChips` / `orderedMethods` | medios de pago y usos | las fichas de la hoja (favorita y 2 más usados en 30 días) / la lista de "Otro…" |
 | `savedToastText` | resumen donde entra o cuenta | texto del toast después de guardar (9A) |
+| `parseShortDate(text, today)` | "ayer", "28/09", "28/09/26" | la fecha (la más reciente que no sea futura para `dd/mm`), `invalid` o null; la usan la carga por texto y la hoja |
+| `wallet(input)` / `cardStatementFor(input, cardId, date)` | filas de la base (montos como texto), cotizaciones | tarjetas con lo que viene, cuentas con su saldo y patrimonio / el resumen donde entra un gasto, con su total |
+| `moneyInWords(money)` | monto | el monto en palabras para el lector de pantalla (12A) |
 
 - Son funciones en **TypeScript puro, sin dependencias ni acceso a la base**: reciben filas y devuelven resultados con `Money`.
 - Las usan la app (incluso sin conexión) y las Edge Functions (aviso de cierre y vencimientos), así que los números siempre coinciden.
