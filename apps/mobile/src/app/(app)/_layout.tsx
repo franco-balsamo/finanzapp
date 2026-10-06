@@ -10,7 +10,7 @@ const sheet = {
 export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
+      <Stack.Screen name="(tabs)" />
       <Stack.Screen name="tarjeta/[id]" />
       <Stack.Screen name="cargar" options={sheet} />
       <Stack.Screen name="tarjeta-nueva" options={sheet} />
@@ -18,6 +18,7 @@ export default function AppLayout() {
       <Stack.Screen name="pagar/[cardId]/[period]" options={sheet} />
       <Stack.Screen name="cierre/[cardId]/[period]" options={sheet} />
       <Stack.Screen name="tarjeta-editar/[id]" options={sheet} />
+      <Stack.Screen name="grupo-nuevo" options={sheet} />
     </Stack>
   );
 }

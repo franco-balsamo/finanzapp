@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ars, usd } from '../cards/fixtures.ts';
 import { savedToastText } from '../entry/toast.ts';
-import { rate } from '../money.ts';
 import { groupDetail, groupList } from './groups.ts';
-import type { DbWalletGroup, WalletInput } from './wallet.ts';
+import type { DbWalletGroup } from './wallet.ts';
 
 type Member = DbWalletGroup['members'][number];
 type Expense = DbWalletGroup['expenses'][number];
@@ -48,12 +47,7 @@ function cabana(fields: Partial<DbWalletGroup> = {}): DbWalletGroup {
   };
 }
 
-function input(groups: DbWalletGroup[]): WalletInput {
-  return {
-    today: '2026-10-06', display: 'ARS', referenceRate: rate('1500'), fxCard: rate('2028'),
-    cards: [], accounts: [], movements: [], payments: [], overrides: [], groups,
-  };
-}
+const input = (groups: DbWalletGroup[]) => groups;
 
 describe('detalle de grupo (1A, 02 §7)', () => {
   it('ejemplo de 02 §7: +$60.000, total $120.000 y 2 transferencias', () => {

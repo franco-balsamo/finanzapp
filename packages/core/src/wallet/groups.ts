@@ -9,7 +9,7 @@ import { simplifyDebts } from '../groups/simplify.ts';
 import type { Group, GroupExpense, GroupPayment } from '../groups/types.ts';
 import { add, fromDbNumeric, rate, zero, type Currency, type Money } from '../money.ts';
 import { todayInArgentina } from '../notices/fromDb.ts';
-import type { DbWalletGroup, WalletInput } from './wallet.ts';
+import type { DbWalletGroup } from './wallet.ts';
 
 /** Las filas de un grupo en los tipos de core. Los pagos anulados quedan con `deletedAt`. */
 export function coreGroupFromDb(g: DbWalletGroup): { group: Group; expenses: GroupExpense[]; payments: GroupPayment[] } {
@@ -56,17 +56,18 @@ export interface GroupList {
   owe: ByCurrency;
 }
 
-export function groupList(input: WalletInput): GroupList {
+/** Tus grupos activos (`loadGroups` de la app o `WalletInput.groups`). */
+export function groupList(groups: readonly DbWalletGroup[]): GroupList {
   const owed: ByCurrency = { ARS: zero('ARS'), USD: zero('USD') };
   const owe: ByCurrency = { ARS: zero('ARS'), USD: zero('USD') };
-  const groups = input.groups.map((g): GroupListItem => {
+  const items = groups.map((g): GroupListItem => {
     const { group, expenses, payments } = coreGroupFromDb(g);
     const mine = displayBalance(groupBalances(group, expenses, payments)[g.my_member_id] ?? zero(g.currency));
     if (mine.minor > 0) owed[g.currency] = add(owed[g.currency], mine);
     if (mine.minor < 0) owe[g.currency] = add(owe[g.currency], { minor: -mine.minor, currency: g.currency });
     return { id: g.id, name: g.name, currency: g.currency, memberCount: activeMembers(g).length, myBalance: mine };
   });
-  return { groups, owed, owe };
+  return { groups: items, owed, owe };
 }
 
 export interface GroupMemberView {
@@ -141,8 +142,8 @@ export interface GroupDetail {
 }
 
 /** El detalle de un grupo (diseño 1A). */
-export function groupDetail(input: WalletInput, groupId: string): GroupDetail {
-  const g = input.groups.find((x) => x.id === groupId);
+export function groupDetail(groups: readonly DbWalletGroup[], groupId: string): GroupDetail {
+  const g = groups.find((x) => x.id === groupId);
   if (!g) throw new RangeError(`Grupo desconocido: ${groupId}`);
   const { group, expenses, payments } = coreGroupFromDb(g);
   const balances = groupBalances(group, expenses, payments);

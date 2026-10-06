@@ -1,21 +1,21 @@
 import { daysBetween, formatMoney, moneyInWords, todayInArgentina } from '@mangos/core';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AccountRow } from '../../components/AccountRow';
-import { Button } from '../../components/Button';
-import { CardRow } from '../../components/CardRow';
-import { Pill } from '../../components/Pill';
-import { Screen } from '../../components/Screen';
-import { Tabs } from '../../components/Tabs';
-import { useToast } from '../../components/Toast';
-import { unarchiveCard } from '../../lib/cardActions';
-import { onWalletChanged, walletChanged } from '../../lib/events';
-import { useSession } from '../../lib/session';
-import { loadWallet, type WalletData } from '../../lib/wallet';
-import { layout, radius, shadow, type } from '../../theme/tokens';
-import { useTheme } from '../../theme/useTheme';
+import { StyleSheet, Text, View } from 'react-native';
+import { AccountRow } from '../../../components/AccountRow';
+import { Button } from '../../../components/Button';
+import { CardRow } from '../../../components/CardRow';
+import { Fab, FAB_SPACE } from '../../../components/Fab';
+import { Pill } from '../../../components/Pill';
+import { Screen } from '../../../components/Screen';
+import { Tabs } from '../../../components/Tabs';
+import { useToast } from '../../../components/Toast';
+import { unarchiveCard } from '../../../lib/cardActions';
+import { onWalletChanged, walletChanged } from '../../../lib/events';
+import { useSession } from '../../../lib/session';
+import { loadWallet, type WalletData } from '../../../lib/wallet';
+import { layout, radius, type } from '../../../theme/tokens';
+import { useTheme } from '../../../theme/useTheme';
 
 type Tab = 'cards' | 'accounts';
 const TABS = [
@@ -35,8 +35,7 @@ function rateTime(fetchedAt: string): string {
 
 /** Billetera (E4): patrimonio, tarjetas con lo que viene y cuentas con su saldo. */
 export default function Wallet() {
-  const { name: theme, colors } = useTheme();
-  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const { session, settings, signOut } = useSession();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>('cards');
@@ -184,23 +183,10 @@ export default function Wallet() {
           </View>
         ) : null}
         {/* Lugar para que el FAB no tape la última fila. */}
-        <View style={styles.fabSpace} />
+        <View style={{ height: FAB_SPACE }} />
       </Screen>
 
-      {/* FAB "+ Gasto" (DESIGN.md, Botón fab). */}
-      <Pressable
-        onPress={() => router.push('/cargar')}
-        accessibilityRole="button"
-        accessibilityLabel="Cargar gasto"
-        style={({ pressed }) => [
-          styles.fab,
-          { backgroundColor: colors.primary, bottom: 24 + insets.bottom },
-          theme === 'dark' ? shadow.floatDark : shadow.float,
-          pressed && { opacity: 0.9 },
-        ]}
-      >
-        <Text style={[type.button, { color: colors.onPrimary, fontSize: 15 }]}>+ Gasto</Text>
-      </Pressable>
+      <Fab />
     </View>
   );
 }
@@ -214,9 +200,7 @@ const styles = StyleSheet.create({
   skeletonRow: { height: 46, borderRadius: radius.md, marginVertical: 6 },
   state: { gap: 12, paddingVertical: 16, paddingHorizontal: 4 },
   add: { alignSelf: 'flex-start', marginTop: 4 },
-  fabSpace: { height: 64 },
   archived: { gap: 6, marginTop: 8 },
   archivedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   archivedText: { flex: 1, minWidth: 0 },
-  fab: { position: 'absolute', right: layout.gutter, paddingVertical: 12, paddingHorizontal: 18, borderRadius: radius.full, minHeight: 48, justifyContent: 'center' },
 });

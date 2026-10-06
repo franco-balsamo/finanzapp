@@ -206,6 +206,14 @@ export function groupDetail(input: WalletInput, groupId: string): GroupDetail;
 - guardar: `create_group(nombre, moneda, user_settings.name)` (si está vacío, pide "¿Cómo te llaman en el grupo?") y un `insert` en `group_members` con los provisorios, con ids del teléfono (reintento sin duplicar);
 - al terminar abre el detalle del grupo nuevo.
 
+**Implementado el 6/10.**
+- `groupList` y `groupDetail` reciben la lista de grupos (`loadGroups`), no todo el `WalletInput`: la pestaña Grupos no carga la Billetera entera.
+- Íconos de la barra dibujados con `View` (billetera y dos personas), sin glifos de texto, hasta que esté `react-native-svg`. El FAB pasó a `components/Fab.tsx` y está en las dos pestañas, 16 por encima de la barra.
+- Tu nombre se pide solo si `user_settings.name` está vacío, y queda guardado ahí para el próximo grupo.
+- Validación en core (`newGroupErrors`, `packages/core/src/groups/form.ts`): repetidos sin importar mayúsculas ni tildes, contando tu nombre.
+- Al crear, la hoja vuelve a la lista con el toast "Creaste Cabaña". Abrir el detalle (criterio 2) y tocar una fila de la lista llegan con G-4, que crea la ruta.
+- Si el grupo se creó y falla al sumar a alguien, reintentar no crea otro grupo (el id queda guardado en la hoja). Si se pierde la respuesta de `create_group`, un reintento sí puede crear un grupo repetido.
+
 **Criterios de aceptación de G-3:**
 1. La app abre en la Billetera con la barra de pestañas; "Grupos" muestra la lista y volver a "Billetera" conserva su estado.
 2. Crear "Cabaña" en pesos con Ana y Juan deja un grupo con 3 integrantes (vos dueño, Ana y Juan provisorios) y abre su detalle.

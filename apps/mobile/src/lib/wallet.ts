@@ -32,7 +32,7 @@ function rows<T>(result: { data: unknown; error: unknown }): T[] {
 }
 
 /** Los grupos donde sos integrante activo, con lo necesario para el saldo, la lista y el detalle. */
-async function loadGroups(userId: string): Promise<DbWalletGroup[]> {
+export async function loadGroups(userId: string): Promise<DbWalletGroup[]> {
   const mine = rows<{ id: string; group_id: string }>(
     await supabase.from('group_members').select('id, group_id').eq('user_id', userId).is('left_at', null),
   );

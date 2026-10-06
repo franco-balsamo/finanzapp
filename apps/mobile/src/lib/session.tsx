@@ -3,6 +3,8 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { supabase } from './supabase';
 
 export interface UserSettings {
+  /** Cómo te llaman en los grupos. null hasta que se carga (al crear el primer grupo). */
+  name: string | null;
   display_currency: 'ARS' | 'USD';
   fx_reference: 'mep' | 'oficial' | 'blue';
   theme: 'system' | 'light' | 'dark';
@@ -10,7 +12,7 @@ export interface UserSettings {
   onboarded_at: string | null;
 }
 
-const SETTINGS_COLUMNS = 'display_currency, fx_reference, theme, goal, onboarded_at';
+const SETTINGS_COLUMNS = 'name, display_currency, fx_reference, theme, goal, onboarded_at';
 
 interface SessionState {
   /** true hasta saber si hay sesión y, si la hay, hasta traer los ajustes. */
