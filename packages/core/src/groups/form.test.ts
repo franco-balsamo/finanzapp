@@ -15,4 +15,8 @@ describe('Nuevo grupo (G-3)', () => {
   it('un nombre repetido (sin importar mayúsculas ni tildes, y contando el tuyo) se marca en el segundo', () => {
     expect(newGroupErrors({ name: 'Cabaña', myName: 'Fran', people: ['Ana', 'ána', 'fran'] }).people).toEqual([null, 'duplicate', 'duplicate']);
   });
+
+  it('al editar, tampoco se repite alguien que ya está en el grupo', () => {
+    expect(newGroupErrors({ name: 'Cabaña', myName: 'Fran', people: ['Juan', 'Lu'], taken: ['Ana', 'juan'] }).people).toEqual(['duplicate', null]);
+  });
 });

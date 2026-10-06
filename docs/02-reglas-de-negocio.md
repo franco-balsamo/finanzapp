@@ -318,6 +318,12 @@ Si pagaste vos y elegiste con qué, el gasto se registra **una sola vez** y afec
 - Al **registrar un pago** entre integrantes baja el saldo. Opcionalmente puede mover el saldo de una de tus cuentas (por defecto, "No mover saldos"). En la v1 Mangos solo **registra** pagos; no mueve plata (procesar pagos exige registrarse ante el BCRA).
 - Un pago **nunca se edita**. Si estaba mal, cualquier integrante lo **anula** y se registra de nuevo. Los saldos no cuentan los pagos anulados (decisión del 2/10).
 
+> **✅ Decidido** (spec de grupos en la app, 6/10):
+> - **Editar un gasto de grupo:** cualquier integrante cambia la descripción, la fecha, la categoría y la división, y tu parte se recalcula sola. El **monto, la moneda y quién pagó** los cambia solo quien pagó, si tiene el gasto en sus finanzas: así nadie cambia lo que figura en tu tarjeta. Si quien pagó pasa a ser otro, el gasto sale de las finanzas de quien pagaba.
+> - **Borrar un gasto de grupo:** cualquier integrante. El gasto personal de quien pagó **queda** y vuelve a contar completo en la categoría, como al eliminar el grupo. Solo el "Deshacer", justo después de cargarlo, borra los dos.
+> - **Mover el saldo al registrar un pago:** solo si sos el que paga o el que cobra, con una cuenta tuya en la moneda del grupo. Si cobrás, entra como ingreso; si pagás, como un ajuste negativo. Ninguno cuenta en el gasto por categoría. Anular el pago revierte el movimiento.
+> - **Gasto en otra moneda que el grupo:** se propone tu dólar de referencia (MEP por defecto) de la fecha del gasto, y se puede corregir. *Ejemplo: US$ 120 en un grupo en pesos con MEP a $1.500 → $180.000 de deuda en pesos, que no cambia si después sube el dólar.*
+
 ### Permisos
 
 | Acción | Integrante | Dueño |

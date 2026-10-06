@@ -1,4 +1,4 @@
-// Formulario "Nuevo grupo" (G-3): nombre, tu nombre y las personas que se suman como provisorias.
+// Formulario "Nuevo grupo" (G-3) y "Editar grupo" (G-7): nombre, tu nombre y las personas que se suman como provisorias.
 
 import { normalizeWord } from '../entry/categories.ts';
 
@@ -8,6 +8,8 @@ export interface NewGroupInput {
   myName: string;
   /** Una por campo, en el orden en que se escribieron. Los campos vacíos se ignoran. */
   people: readonly string[];
+  /** Al editar un grupo: los nombres que ya están (sin el tuyo). */
+  taken?: readonly string[];
 }
 
 export type NewGroupError = 'required' | 'duplicate';
@@ -27,7 +29,7 @@ const key = (name: string) => normalizeWord(name.trim());
 export function newGroupErrors(input: NewGroupInput): NewGroupErrors {
   const name = input.name.trim() ? undefined : 'required';
   const myName = input.myName.trim() ? undefined : 'required';
-  const seen = new Set<string>(input.myName.trim() ? [key(input.myName)] : []);
+  const seen = new Set<string>([...(input.myName.trim() ? [input.myName] : []), ...(input.taken ?? [])].map(key));
   const people = input.people.map((person): NewGroupError | null => {
     if (!person.trim()) return null;
     const k = key(person);

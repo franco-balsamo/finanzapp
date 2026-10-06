@@ -118,6 +118,15 @@ describe('detalle de grupo (1A, 02 §7)', () => {
     expect(d.transfers).toEqual([{ fromId: 'ana', fromName: 'Ana', toId: 'vos', toName: 'Vos', amount: ars(10_000), involvesMe: true }]);
   });
 
+  it('participó: pagó, tuvo parte o estuvo en un pago (también anulado)', () => {
+    const lu = member('lu', 'Lu', { user_id: null });
+    const caro = member('caro', 'Caro', { user_id: null });
+    const g = cabana({ members: [vos, ana, juan, lu, caro], payments: [payment('p', 'caro', 'vos', '10.00', { deleted_at: '2026-10-06T12:00:00Z' })] });
+    expect(groupDetail(input([g]), 'cabana').members.map((m) => [m.name, m.participated])).toEqual([
+      ['Vos', true], ['Ana', true], ['Juan', true], ['Lu', false], ['Caro', true],
+    ]);
+  });
+
   it('los que se fueron: al final si participaron; si no, no salen', () => {
     const caro = member('caro', 'Caro', { left_at: '2026-10-04T12:00:00Z' });
     const lu = member('lu', 'Lu', { left_at: '2026-10-04T12:00:00Z' });

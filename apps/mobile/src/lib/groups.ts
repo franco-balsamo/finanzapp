@@ -86,3 +86,33 @@ export async function loadAccountsIn(currency: Currency): Promise<{ id: string; 
   if (error) throw error;
   return (data ?? []) as { id: string; name: string }[];
 }
+
+/** Cambia el nombre del grupo (cualquier integrante, 02 §7). */
+export async function renameGroup(groupId: string, name: string): Promise<void> {
+  const { error } = await supabase.from('groups').update({ name: name.trim() }).eq('id', groupId);
+  if (error) throw error;
+}
+
+export type GroupActionError = 'not_allowed' | 'failed';
+
+async function rpcAction(fn: string, args: Record<string, string>): Promise<GroupActionError | null> {
+  const { error } = await supabase.rpc(fn, args);
+  if (!error) return null;
+  // 55000: no se cumple la regla (participó, no está al día); 42501: no sos el dueño.
+  return error.code === '55000' || error.code === '42501' ? 'not_allowed' : 'failed';
+}
+
+/** Solo el dueño, y solo a quien nunca participó y está al día (`remove_member`). */
+export function removeMember(memberId: string): Promise<GroupActionError | null> {
+  return rpcAction('remove_member', { member_id: memberId });
+}
+
+/** Salir estando al día. Si eras el dueño, el rol pasa a otra persona con cuenta (`leave_group`). */
+export function leaveGroup(groupId: string): Promise<GroupActionError | null> {
+  return rpcAction('leave_group', { gid: groupId });
+}
+
+/** Solo el dueño, para todos (`delete_group`). Los gastos personales del grupo vuelven a contar completos. */
+export function deleteGroup(groupId: string): Promise<GroupActionError | null> {
+  return rpcAction('delete_group', { gid: groupId });
+}

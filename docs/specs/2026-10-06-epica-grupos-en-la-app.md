@@ -1,6 +1,6 @@
 ---
 spec_kind: epic
-status: approved
+status: done
 date: 2026-10-06
 ---
 
@@ -338,6 +338,12 @@ export function groupDetail(input: WalletInput, groupId: string): GroupDetail;
 - **Quitar a alguien** (solo el dueño): "Quitar" en la fila de quien nunca participó y tiene saldo cero (`remove_member`). Si no se puede, el botón no aparece.
 - **Abandonar el grupo:** si estás al día, confirmación "Dejás de ver el grupo. Para volver hace falta otra invitación." y `leave_group`; vuelve a la lista con el toast "Saliste de Cabaña". Si no estás al día: "Para irte tenés que estar al día (debés $X)." y sin botón. Si eras el dueño, el aviso suma "El rol de dueño pasa a otra persona con cuenta.".
 - **Eliminar el grupo** (solo el dueño): confirmación con el aviso de saldos pendientes si los hay ("Hay saldos sin saldar: Juan debe $50.000.") y `delete_group`; vuelve a la lista con el toast "Eliminaste Cabaña".
+
+**Implementado el 6/10.**
+- `renameGroup`, `removeMember`, `leaveGroup` y `deleteGroup` en `apps/mobile/src/lib/groups.ts`. "Quitar" se ofrece con `participated` de `groupDetail` (pagó, tuvo parte o estuvo en un pago, también anulado); si participó en un gasto borrado, que la app no ve, la base lo rechaza y la hoja dice "ya participó en un gasto o un pago".
+- `newGroupErrors` acepta `taken`: al sumar personas no se repite nadie que ya esté en el grupo.
+- Abandonar y eliminar piden confirmación en la misma hoja y vuelven a la lista con `router.dismissAll()`.
+- El "Quitar" de los que se sumaron en esta edición es el "✕" del campo, antes de guardar.
 
 **Criterios de aceptación de G-7:**
 1. Cambiar el nombre se ve en el detalle y en la lista.

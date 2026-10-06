@@ -30,7 +30,7 @@ function balanceInWords(m: Money): string {
 
 const nameOf = (m: Pick<GroupMemberView, 'isMe' | 'name'>) => (m.isMe ? 'Vos' : m.name);
 
-/** Detalle de grupo (G-4, diseño 1A). "+ Gasto" y editar un gasto abren la hoja de carga (G-5). */
+/** Detalle de grupo (G-4, diseño 1A): "+ Gasto" (G-5), "Registrar" y "Anular" (G-6) y ⋯ = Editar grupo (G-7). */
 export default function GroupDetailScreen() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -62,6 +62,19 @@ export default function GroupDetailScreen() {
   useEffect(() => onWalletChanged(load), [load]);
 
   const back = <Button title="‹ Grupos" variant="ghost" onPress={() => router.back()} style={styles.start} />;
+  const header = (
+    <View style={styles.topBar}>
+      {back}
+      {data ? (
+        <Button
+          title="⋯"
+          variant="ghost"
+          onPress={() => router.push({ pathname: '/grupo-editar/[id]', params: { id: data.id } })}
+          accessibilityLabel="Editar grupo"
+        />
+      ) : null}
+    </View>
+  );
 
   if (failed && !data) {
     return (
@@ -97,7 +110,7 @@ export default function GroupDetailScreen() {
 
   return (
     <Screen>
-      {back}
+      {header}
 
       {/* Encabezado: personas y moneda, nombre, caritas, tu saldo y el total. */}
       <View style={styles.block}>
@@ -361,6 +374,7 @@ export default function GroupDetailScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
+  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   start: { alignSelf: 'flex-start' },
   block: { gap: 6 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

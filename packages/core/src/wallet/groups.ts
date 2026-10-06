@@ -84,6 +84,11 @@ export interface GroupMemberView {
   balance: Money;
   /** Al día (02 §7): puede abandonar el grupo. */
   settled: boolean;
+  /**
+   * Pagó, tuvo parte o estuvo en un pago visible. Si es false (y está al día), el dueño lo puede
+   * quitar. Los gastos borrados no llegan a la app: la base igual rechaza a quien participó en uno.
+   */
+  participated: boolean;
 }
 
 export interface GroupTransferView {
@@ -154,8 +159,8 @@ export function groupDetail(groups: readonly DbWalletGroup[], groupId: string): 
     participated.add(e.payer_member_id);
     e.parts.forEach((p) => participated.add(p.member_id));
   }
+  // Los pagos anulados también cuentan: la base no deja quitar a quien estuvo en uno.
   for (const p of g.payments) {
-    if (p.deleted_at !== null) continue;
     participated.add(p.from_member_id);
     participated.add(p.to_member_id);
   }
@@ -171,6 +176,7 @@ export function groupDetail(groups: readonly DbWalletGroup[], groupId: string): 
       leftOn: dayOf(m.left_at),
       balance: displayBalance(balance),
       settled: isSettled(balance),
+      participated: participated.has(m.id),
     };
   };
 
