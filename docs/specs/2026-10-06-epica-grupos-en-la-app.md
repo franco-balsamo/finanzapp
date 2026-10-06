@@ -280,6 +280,17 @@ export function groupDetail(input: WalletInput, groupId: string): GroupDetail;
 
 **"¿Ya lo pagaste?"** (D-6) aplica igual cuando pagaste vos con tarjeta: el movimiento es el mismo.
 
+**Implementado el 6/10.**
+- Core: `checkSplit`, `splitRemainder` y `splitParts` (`groups/expenseForm.ts`), `expenseShareFor` para el toast y `recentGroups` para las fichas (`wallet/groups.ts`). La app: `lib/groupExpense.ts` y `components/GroupSplit.tsx`.
+- Los grupos se traen solo si viene `groupId` o se abre la línea plegada: la carga común no espera nada más.
+- En la línea plegada, las fichas son "Sin grupo", los 3 grupos con actividad más reciente y "Otro…" (si hay más de 3). Al editar, el grupo no cambia.
+- "No sumarlo a mis finanzas" es una ficha más del medio de pago; al editar un gasto que tenías en tus finanzas, manda `{"remove": true}`.
+- La cotización usa `fx_rate_on(user_settings.fx_reference, fecha)` y se edita como un monto ("1.500").
+- D5 en la hoja: el monto, la moneda y quién pagó se deshabilitan si el que pagó tiene cuenta y no sos vos. La app no puede ver los movimientos de otros, así que se deshabilitan aunque esa persona no lo haya sumado a sus finanzas. La base igual rechaza el cambio con "only the payer" si corresponde.
+- **Pendiente:** "¿Ya lo pagaste?" (D-6) no se combina con el gasto de grupo. La función de grupo no registra pagos de resumen, y hacerlo aparte no sería atómico. Un gasto de grupo pagado con tarjeta en un resumen ya pagado queda como "Pago parcial" hasta registrar el pago.
+- La carga por texto no aparece al editar un gasto de grupo.
+- Criterio 2 (la carga sin grupo sigue igual) verificado por código: el camino sin grupo no cambió. Falta verlo en el teléfono.
+
 **Criterios de aceptación de G-5:**
 1. Ejemplo de 02 §7: desde el detalle, "Vos pagás $90.000 con la Visa, iguales" y "Ana paga $30.000, montos: Ana $10.000, Juan $20.000" dejan los saldos del criterio 1 de G-4. La Visa suma $90.000 y tu gasto por categoría suma $30.000.
 2. Desde el FAB, cargar un gasto sin tocar "Grupo" sigue igual que hoy (mismos pasos, mismo toast).

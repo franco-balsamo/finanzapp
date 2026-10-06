@@ -15,13 +15,14 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - **Épica de grupos en la app** (`docs/specs/2026-10-06-epica-grupos-en-la-app.md`, decisiones en `docs/decisiones/2026-10-06-spec-grupos-en-la-app.md`): spec aprobada el 6/10. G-1 (base, migración `20261006130000_group_app` aplicada en `mangos`) y G-2 (core: `groupDetail` y `groupList` en `packages/core/src/wallet/groups.ts`) hechas.
 - G-3 hecha: pestañas Billetera y Grupos (`(app)/(tabs)/`), lista de grupos y "Nuevo grupo".
 - G-4 hecha: detalle de grupo de lectura (`(app)/grupo/[id].tsx`).
-- **Siguiente paso: G-5**, el gasto de grupo en la hoja de carga (alta desde el detalle y desde la línea plegada, edición y borrado). Suma "+ Gasto" al detalle. Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
+- G-5 hecha: gasto de grupo en la hoja de carga (alta, edición y borrado). Pendiente: "¿Ya lo pagaste?" no se combina con un gasto de grupo (ver la spec).
+- **Siguiente paso: G-6**, registrar y anular pagos (`(app)/grupo-pago/[groupId].tsx`), con "Mover saldo de…". Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
   - Antes de cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
 - **Pendiente de Fran:**
   - Cargar en el panel de `mangos` (Authentication → Email Templates) la plantilla `supabase/templates/codigo.html` en "Magic Link" y en "Confirm signup", con el asunto "Tu código para entrar a Mangos". Sin esto, en `mangos` llega un link y no un código.
   - Probar las dos épicas en el teléfono contra `mangos`: apuntar `apps/mobile/.env` a `mangos`, correr `npx expo start` y abrir con Expo Go. Lo más importante es la carga en menos de 10 segundos.
 - **Sin verificar en pantalla:** nada se vio todavía en el navegador ni en el teléfono, porque la extensión de Chrome no estaba conectada. Cada parte se probó contra la base local con scripts de supabase-js y un usuario real, usando las mismas consultas que la app.
-- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 436 tests pgTAP y 305 de Vitest, el typecheck y el export web.
+- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 436 tests pgTAP y 311 de Vitest, el typecheck y el export web.
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.
   2. Consultas de la app en `apps/mobile/src/lib/`.

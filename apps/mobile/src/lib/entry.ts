@@ -109,11 +109,16 @@ export async function loadEntryContext(): Promise<EntryContext> {
   };
 }
 
-/** Dólar tarjeta de una fecha (02 §2), para proponer lo descontado de una cuenta en otra moneda. */
-export async function cardRateOn(date: ISODate): Promise<Rate | null> {
-  const { data, error } = await supabase.rpc('fx_rate_on', { kind: 'tarjeta', on_date: date });
+/** Venta de un dólar en una fecha (`fx_rate_on`, con la ventana de 4 días de 02 §1). null si no hay. */
+export async function rateOn(kind: 'tarjeta' | 'mep' | 'oficial' | 'blue', date: ISODate): Promise<Rate | null> {
+  const { data, error } = await supabase.rpc('fx_rate_on', { kind, on_date: date });
   if (error || data === null || data === undefined) return null;
   return rate(String(data));
+}
+
+/** Dólar tarjeta de una fecha (02 §2), para proponer lo descontado de una cuenta en otra moneda. */
+export function cardRateOn(date: ISODate): Promise<Rate | null> {
+  return rateOn('tarjeta', date);
 }
 
 export interface ExpenseDraft {
@@ -131,7 +136,7 @@ export interface ExpenseDraft {
 
 export type SaveError = 'offline' | 'failed';
 
-function isNetworkError(error: unknown): boolean {
+export function isNetworkError(error: unknown): boolean {
   const message = String((error as { message?: string })?.message ?? error);
   return /network request failed|failed to fetch|fetch failed|load failed|networkerror/i.test(message);
 }

@@ -29,7 +29,7 @@ function balanceInWords(m: Money): string {
 
 const nameOf = (m: Pick<GroupMemberView, 'isMe' | 'name'>) => (m.isMe ? 'Vos' : m.name);
 
-/** Detalle de grupo (G-4, diseño 1A). De lectura: gastos, pagos y edición llegan en G-5 a G-7. */
+/** Detalle de grupo (G-4, diseño 1A). "+ Gasto" y editar un gasto abren la hoja de carga (G-5). */
 export default function GroupDetailScreen() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -139,6 +139,12 @@ export default function GroupDetailScreen() {
             {data.ownerName ? `Dueño: ${data.ownerName}` : 'El grupo no tiene dueño.'}
           </Text>
         ) : null}
+        <Button
+          title="+ Gasto"
+          variant="primary"
+          onPress={() => router.push({ pathname: '/cargar', params: { groupId: data.id } })}
+          style={styles.start}
+        />
       </View>
 
       {/* Cómo saldar. */}
@@ -213,16 +219,22 @@ export default function GroupDetailScreen() {
       <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.line }]}>
         <Text style={[type.subtitle, { color: colors.text }]}>Gastos · {data.expenses.length}</Text>
         {data.expenses.length === 0 ? (
-          <Text style={[type.body, { color: colors.textMuted }]}>Todavía no hay gastos. Cargá el primero.</Text>
+          <Text style={[type.body, { color: colors.textMuted }]}>Todavía no hay gastos. Cargá el primero con "+ Gasto".</Text>
         ) : (
           expenses.map((e, i) => {
             const payer = name(e.payerId, e.payerName);
             return (
-              <View
+              <Pressable
                 key={e.id}
-                accessible
+                onPress={() => router.push({ pathname: '/cargar', params: { groupId: data.id, groupExpenseId: e.id } })}
+                accessibilityRole="button"
+                accessibilityHint="Abre el gasto para editarlo"
                 accessibilityLabel={`${e.description}, ${formatShortDate(e.date)}, pagó ${payer}, ${moneyInWords(e.amount)}, tu parte ${moneyInWords(e.myShare)}`}
-                style={[styles.row, i < expenses.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.line }]}
+                style={({ pressed }) => [
+                  styles.row,
+                  i < expenses.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.line },
+                  pressed && { opacity: 0.7 },
+                ]}
               >
                 <View style={styles.flex}>
                   <Text style={[type.bodyStrong, { color: colors.text }]} numberOfLines={1}>
@@ -240,7 +252,7 @@ export default function GroupDetailScreen() {
                     {e.myShare.minor ? `tu parte ${formatMoney(e.myShare)}` : 'no participás'}
                   </Text>
                 </View>
-              </View>
+              </Pressable>
             );
           })
         )}

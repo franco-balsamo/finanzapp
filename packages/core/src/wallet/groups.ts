@@ -230,3 +230,27 @@ export function groupDetail(groups: readonly DbWalletGroup[], groupId: string): 
     ),
   };
 }
+
+/**
+ * Para el toast de un gasto de grupo (9A): tu parte y, si pagaste vos, lo que te deben de ese gasto.
+ * En la moneda del grupo.
+ */
+export function expenseShareFor(g: DbWalletGroup, expense: GroupExpense): { myShare: Money; owedToMe: Money | null } {
+  const { group } = coreGroupFromDb(g);
+  const parts = shares(group, expense);
+  const myShare = parts[g.my_member_id] ?? zero(g.currency);
+  if (expense.payerMemberId !== g.my_member_id) return { myShare, owedToMe: null };
+  const total = Object.values(parts).reduce(add, zero(g.currency));
+  return { myShare, owedToMe: { minor: total.minor - myShare.minor, currency: g.currency } };
+}
+
+/** Los grupos para las fichas de la hoja de carga: los de actividad más reciente (gastos o pagos) primero. */
+export function recentGroups(groups: readonly DbWalletGroup[], limit = 3): DbWalletGroup[] {
+  const last = (g: DbWalletGroup) =>
+    [...g.expenses.map((e) => e.date), ...g.payments.map((p) => p.date)].reduce((a, b) => (b > a ? b : a), '');
+  return groups
+    .map((g, i) => ({ g, i, at: last(g) }))
+    .sort((a, b) => (a.at === b.at ? a.i - b.i : a.at < b.at ? 1 : -1))
+    .slice(0, limit)
+    .map((x) => x.g);
+}

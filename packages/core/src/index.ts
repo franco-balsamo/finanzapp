@@ -7,6 +7,7 @@ export * from './cards/late.ts';
 export * from './groups/types.ts';
 export * from './groups/shares.ts';
 export * from './groups/balances.ts';
+export * from './groups/expenseForm.ts';
 export * from './groups/form.ts';
 export * from './groups/simplify.ts';
 export * from './personal/types.ts';

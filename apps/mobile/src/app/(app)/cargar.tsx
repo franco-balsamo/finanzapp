@@ -1,11 +1,19 @@
 import {
   alreadyPaidQuestion,
   amountInputText,
+  checkSplit,
+  expenseShareFor,
+  rate as toRate,
+  recentGroups,
+  savedToastText,
+  splitParts,
+  splitRemainder,
   closeDate,
   deduceCategory,
   formatAmountInput,
   formatMoney,
   formatShortDate,
+  fromDbNumeric,
   money,
   orderedMethods,
   parseAmountMinor,
@@ -16,8 +24,11 @@ import {
   proposedPaymentText,
   statementFor,
   SYSTEM_CATEGORY_IDS,
+  toDbNumeric,
   convert,
   type Currency,
+  type DbWalletGroup,
+  type GroupExpense,
   type ISODate,
   type PaymentMethod,
   type Rate,
@@ -31,6 +42,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { Chip } from '../../components/Chip';
 import { DateChooser, dateLabel } from '../../components/DateChooser';
+import { GroupSplit } from '../../components/GroupSplit';
 import { Segmented } from '../../components/Segmented';
 import { TextField } from '../../components/TextField';
 import { useToast } from '../../components/Toast';
@@ -42,6 +54,7 @@ import {
   loadEntryContext,
   loadLateImpacts,
   mayBeLate,
+  rateOn,
   saveExpense,
   toastFor,
   withIds,
@@ -52,6 +65,14 @@ import {
 } from '../../lib/entry';
 import { CATEGORIES } from '../../lib/categories';
 import { walletChanged } from '../../lib/events';
+import {
+  deleteGroupExpense,
+  loadMyGroupMovement,
+  saveGroupExpense,
+  type MovementChange,
+  type MyGroupMovement,
+} from '../../lib/groupExpense';
+import { loadGroups } from '../../lib/wallet';
 import { revertPayments } from '../../lib/payments';
 import { useSession } from '../../lib/session';
 import { radius, type } from '../../theme/tokens';
@@ -62,10 +83,24 @@ const CURRENCY_OPTIONS = [
   { value: 'USD', label: 'US$' },
 ] as const;
 
-
 const QUICK_INSTALLMENTS = [1, 3, 6, 12];
 
+const FX_LABEL = { mep: 'MEP', oficial: 'oficial', blue: 'blue' } as const;
 
+/** "1.500" a partir de una cotización ("1500.0000"); se edita como un monto. */
+const rateText = (r: Rate) => amountInputText(Math.round(Number(r) * 100));
+function textToRate(text: string): Rate | null {
+  const minor = formatAmountInput(text).minor;
+  return minor ? toRate(`${Math.floor(minor / 100)}.${String(minor % 100).padStart(2, '0')}`) : null;
+}
+const parseMinor = (text: string) => formatAmountInput(text).minor ?? 0;
+
+/** Al editar un gasto de grupo: lo que no se puede cambiar y tu gasto personal vinculado. */
+interface EditState {
+  memberIds: string[];
+  payerLocked: boolean;
+  movement: MyGroupMovement | null;
+}
 
 interface Errors {
   amount?: string;
@@ -74,6 +109,8 @@ interface Errors {
   installments?: string;
   date?: string;
   debited?: string;
+  split?: string;
+  fx?: string;
 }
 
 /** Hoja de carga (E5, diseño 2A): monto, medio de pago, descripción y Guardar en menos de 10 segundos. */
@@ -83,10 +120,18 @@ export default function AddExpense() {
   const toast = useToast();
   const { session, settings } = useSession();
   // Desde el detalle de una tarjeta, la hoja abre con esa tarjeta elegida (02 §5).
-  const { cardId } = useLocalSearchParams<{ cardId?: string }>();
+  // Desde el detalle de un grupo, abre con ese grupo; con `groupExpenseId`, edita ese gasto (G-5).
+  const { cardId, groupId: groupParam, groupExpenseId } = useLocalSearchParams<{
+    cardId?: string;
+    groupId?: string;
+    groupExpenseId?: string;
+  }>();
 
   // El id lo genera el teléfono al abrir la hoja: reintentar nunca duplica (02 §5).
-  const id = useRef(randomUUID()).current;
+  const newId = useRef(randomUUID()).current;
+  const id = groupExpenseId ?? newId;
+  // Tu gasto personal cuando el gasto es de grupo y pagaste vos: otro id, también estable.
+  const movementId = useRef(randomUUID()).current;
   const amountRef = useRef<TextInput>(null);
 
   const [ctx, setCtx] = useState<EntryContext | null>(null);
@@ -105,7 +150,7 @@ export default function AddExpense() {
   const [description, setDescription] = useState('');
   const [pickedCategory, setPickedCategory] = useState<string | null>(null);
   const [date, setDate] = useState<ISODate | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(!!groupParam);
   const [debited, setDebited] = useState('');
   const [debitedTouched, setDebitedTouched] = useState(false);
   const [cardRate, setCardRate] = useState<Rate | null>(null);
@@ -118,6 +163,23 @@ export default function AddExpense() {
   const [question, setQuestion] = useState<{ draft: ExpenseDraft; payments: LatePayment[] } | null>(null);
   const [paidAmount, setPaidAmount] = useState('');
   const [paidError, setPaidError] = useState<string | null>(null);
+
+  // Gasto de grupo (G-5). Los grupos se traen solo si se abre la línea plegada o viene un grupo.
+  const [groups, setGroups] = useState<DbWalletGroup[] | null>(null);
+  const [groupsFailed, setGroupsFailed] = useState(false);
+  const [groupId, setGroupId] = useState<string | null>(groupParam ?? null);
+  const [groupsOpen, setGroupsOpen] = useState(false);
+  const [payerId, setPayerId] = useState<string | null>(null);
+  const [splitMode, setSplitMode] = useState<'equal' | 'exact'>('equal');
+  const [included, setIncluded] = useState<string[]>([]);
+  const [exact, setExact] = useState<Record<string, string>>({});
+  const [addToMine, setAddToMine] = useState(true);
+  const [fxText, setFxText] = useState('');
+  const [fxTouched, setFxTouched] = useState(false);
+  const [fxFound, setFxFound] = useState<boolean | null>(null);
+  const [editing, setEditing] = useState<EditState | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const defaultsFor = useRef<string | null>(null);
 
   const load = useCallback(() => {
     setLoadFailed(false);
@@ -181,7 +243,112 @@ export default function AddExpense() {
     setDebited(amountInputText(converted.minor));
   }, [needsDebited, debitedTouched, cardRate, amountMinor, currency, account]);
 
+  // ── Gasto de grupo (G-5) ──
+  const wantsGroups = !!groupParam || detailsOpen;
+  const loadGroupsList = useCallback(() => {
+    if (!session) return;
+    setGroupsFailed(false);
+    loadGroups(session.user.id).then(setGroups, () => setGroupsFailed(true));
+  }, [session]);
+  useEffect(() => {
+    if (wantsGroups && !groups) loadGroupsList();
+  }, [wantsGroups, groups, loadGroupsList]);
+
+  const group = groups?.find((g) => g.id === groupId) ?? null;
+  const myMemberId = group?.my_member_id ?? null;
+  const iPay = !group || payerId === myMemberId;
+  // El medio de pago se pide sin grupo, o si pagaste vos y lo sumás a tus finanzas.
+  const needsMethod = !group || (iPay && addToMine);
+  const groupNeedsFx = !!group && currency !== group.currency;
+  const activeIds = useMemo(() => (group ? group.members.filter((m) => !m.left_at).map((m) => m.id) : []), [group]);
+  const memberIds = editing?.memberIds ?? activeIds;
+  const exactMinor = useMemo(
+    () => Object.fromEntries(Object.entries(exact).map(([k, v]) => [k, parseMinor(v)])),
+    [exact],
+  );
+  const splitDraft = { amountMinor: amountMinor ?? 0, currency, mode: splitMode, included, exactMinor };
+
+  // Al elegir un grupo (no al editar): pagaste vos y se divide en partes iguales entre todos.
+  useEffect(() => {
+    if (!group || groupExpenseId || defaultsFor.current === group.id) return;
+    defaultsFor.current = group.id;
+    setPayerId(group.my_member_id);
+    setSplitMode('equal');
+    setIncluded(group.members.filter((m) => !m.left_at).map((m) => m.id));
+    setExact({});
+    setFxTouched(false);
+  }, [group, groupExpenseId]);
+
+  // Editar: la hoja abre con el gasto de grupo y, si lo tenés en tus finanzas, con tu medio de pago.
+  useEffect(() => {
+    if (!groupExpenseId || !groups || !ctx || editing) return;
+    const g = groups.find((x) => x.id === groupParam);
+    const e = g?.expenses.find((x) => x.id === groupExpenseId);
+    if (!g || !e) return;
+    loadMyGroupMovement(e.id).then(
+      (mine) => {
+        const payer = g.members.find((m) => m.id === e.payer_member_id);
+        const ids = [...new Set([...g.members.filter((m) => !m.left_at).map((m) => m.id), ...e.parts.map((p) => p.member_id), e.payer_member_id])];
+        setEditing({
+          memberIds: g.members.map((m) => m.id).filter((m) => ids.includes(m)),
+          payerLocked: !!payer?.user_id && e.payer_member_id !== g.my_member_id,
+          movement: mine,
+        });
+        defaultsFor.current = g.id;
+        setGroupId(g.id);
+        setAmount(amountInputText(fromDbNumeric(e.amount, e.currency).minor));
+        setCurrency(e.currency);
+        setDescription(e.description);
+        setPickedCategory(e.category_id);
+        setDate(e.date === ctx.today ? null : e.date);
+        setPayerId(e.payer_member_id);
+        setSplitMode(e.split_mode);
+        setIncluded(e.parts.map((p) => p.member_id));
+        setExact(
+          e.split_mode === 'exact'
+            ? Object.fromEntries(e.parts.map((p) => [p.member_id, amountInputText(fromDbNumeric(p.value, e.currency).minor)]))
+            : {},
+        );
+        if (e.fx_rate) {
+          setFxText(rateText(toRate(e.fx_rate)));
+          setFxTouched(true);
+        }
+        setAddToMine(!!mine);
+        if (mine) {
+          setMethodId(mine.card_id ?? mine.account_id);
+          setExtraChipId(mine.card_id ?? mine.account_id);
+          setInstallments(String(mine.installments));
+          if (mine.debited_amount) {
+            setDebited(amountInputText(fromDbNumeric(mine.debited_amount, 'ARS').minor));
+            setDebitedTouched(true);
+          }
+        }
+      },
+      () => setGroupsFailed(true),
+    );
+  }, [groupExpenseId, groupParam, groups, ctx, editing]);
+
+  // Gasto en otra moneda que el grupo: se propone tu dólar de referencia de la fecha (D8), editable.
+  useEffect(() => {
+    if (!groupNeedsFx || fxTouched || !expenseDate || !settings) return;
+    let cancelled = false;
+    rateOn(settings.fx_reference, expenseDate).then((r) => {
+      if (cancelled) return;
+      setFxFound(!!r);
+      setFxText(r ? rateText(r) : '');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [groupNeedsFx, fxTouched, expenseDate, settings]);
+
+  function chooseGroup(next: string | null) {
+    setGroupId(next);
+    setErrors((e) => ({ ...e, split: undefined, fx: undefined, method: undefined }));
+  }
+
   function chooseMethod(m: PaymentMethod, fromOther = false) {
+    setAddToMine(true);
     setMethodId(m.id);
     setCandidates([]);
     setDebitedTouched(false);
@@ -245,15 +412,26 @@ export default function AddExpense() {
     const ambiguous = errors.amount === 'Revisá el monto.';
     if (ambiguous) found.amount = errors.amount;
     else if (!amountMinor) found.amount = 'Poné un monto mayor a cero.';
-    if (!method) found.method = 'Elegí con qué pagaste.';
+    if (needsMethod && !method) found.method = 'Elegí con qué pagaste.';
     if (!description.trim()) found.description = 'Escribí una descripción.';
     const n = Number(installments);
-    if (method?.kind === 'card' && !(Number.isInteger(n) && n >= 1 && n <= 24)) found.installments = 'Las cuotas van de 1 a 24.';
+    if (needsMethod && method?.kind === 'card' && !(Number.isInteger(n) && n >= 1 && n <= 24)) found.installments = 'Las cuotas van de 1 a 24.';
     const debitedMinor = needsDebited ? formatAmountInput(debited).minor : null;
-    if (needsDebited && !debitedMinor) found.debited = 'Poné cuánto se descontó de la cuenta.';
+    if (needsMethod && needsDebited && !debitedMinor) found.debited = 'Poné cuánto se descontó de la cuenta.';
     if (errors.date) found.date = errors.date;
+    if (group && amountMinor) {
+      const split = checkSplit(splitDraft);
+      if (!split.ok && split.error === 'nobody') found.split = 'Elegí al menos una persona.';
+      if (!split.ok && split.error === 'mismatch') {
+        const assigned = money(amountMinor - split.diffMinor, currency);
+        found.split = `Los montos suman ${formatMoney(assigned)} y el gasto es ${formatMoney(money(amountMinor, currency))}.`;
+      }
+      if (groupNeedsFx && !textToRate(fxText)) found.fx = 'Escribí la cotización.';
+    }
     setErrors(found);
-    if (Object.keys(found).length || !method || !amountMinor) return;
+    if (Object.keys(found).length || !amountMinor) return;
+    if (group) return saveGroup(group, n, debitedMinor);
+    if (!method) return;
 
     const draft: ExpenseDraft = {
       id,
@@ -284,6 +462,97 @@ export default function AddExpense() {
       }
     }
     await commit(draft, []);
+  }
+
+  /** Gasto de grupo (G-5): el gasto, las partes y, si pagaste vos, tu gasto personal en una transacción. */
+  async function saveGroup(g: DbWalletGroup, n: number, debitedMinor: number | null) {
+    if (!ctx || !expenseDate || !payerId || !amountMinor) return;
+    const amountMoney = money(amountMinor, currency);
+    const fxRate = groupNeedsFx ? textToRate(fxText) : null;
+    const parts = splitParts(splitDraft, memberIds);
+    let movement: MovementChange = null;
+    if (iPay && addToMine && method) {
+      movement = {
+        id: editing?.movement?.id ?? movementId,
+        origin: quick.trim() ? 'text' : 'manual',
+        ...(method.kind === 'card' ? { card_id: method.id } : { account_id: method.id }),
+        installments: method.kind === 'card' ? n : 1,
+        ...(needsDebited && account && debitedMinor ? { debited_amount: toDbNumeric(money(debitedMinor, account.currency)) } : {}),
+      };
+    } else if (iPay && editing?.movement) {
+      movement = { remove: true };
+    }
+
+    setSaving(true);
+    setSaveError(null);
+    const failure = await saveGroupExpense({
+      id,
+      groupId: g.id,
+      date: expenseDate,
+      description,
+      amount: amountMoney,
+      fxRate,
+      payerMemberId: payerId,
+      splitMode,
+      categoryId: categoryId ?? SYSTEM_CATEGORY_IDS.otros,
+      parts,
+      movement,
+    });
+    if (failure) {
+      setSaving(false);
+      setSaveError(
+        failure === 'payer_only'
+          ? 'El monto, la moneda y quién pagó los puede cambiar solo quien pagó.'
+          : failure === 'offline'
+            ? 'Sin conexión. Probá de nuevo.'
+            : 'No pudimos guardar el gasto. Probá de nuevo.',
+      );
+      return;
+    }
+
+    if (pickedCategory && pickedCategory !== deduced) {
+      learnCategory(description, pickedCategory, ctx.methods).catch(() => {});
+    }
+    walletChanged();
+    router.back();
+
+    if (groupExpenseId) {
+      toast('Gasto actualizado');
+      return;
+    }
+    const expense: GroupExpense = {
+      id,
+      amount: amountMoney,
+      fxRate,
+      payerMemberId: payerId,
+      splitMode,
+      parts: parts.map((p) => ({ memberId: p.member_id, value: p.value ? fromDbNumeric(p.value, currency) : null })),
+    };
+    const createdMovement = movement && 'id' in movement ? movement.id : null;
+    toast(savedToastText({ kind: 'group', ...expenseShareFor(g, expense) }), {
+      label: 'Deshacer',
+      onPress: async () => {
+        // Justo después de guardar, "Deshacer" borra los dos (D6).
+        let ok = await deleteGroupExpense(id);
+        if (ok && createdMovement) ok = await deleteExpense(createdMovement);
+        walletChanged();
+        toast(ok ? 'Gasto borrado' : 'No se pudo borrar el gasto. Probá de nuevo.');
+      },
+    });
+  }
+
+  /** Borrar un gasto de grupo desde la edición (D6): tu gasto personal, si había, queda completo. */
+  async function deleteFromGroup() {
+    setSaving(true);
+    const ok = await deleteGroupExpense(id);
+    if (!ok) {
+      setSaving(false);
+      setSaveError('No pudimos borrar el gasto. Probá de nuevo.');
+      return;
+    }
+    walletChanged();
+    router.back();
+    toast(editing?.movement ? 'Borraste el gasto del grupo · en tus finanzas cuenta completo' : 'Borraste el gasto del grupo');
   }
 
   /** "Sí": con el monto corregido si hay un solo pago. */
@@ -338,7 +607,7 @@ export default function AddExpense() {
     <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
       <View style={styles.head}>
         <Text style={[type.title, { color: colors.text }]} accessibilityRole="header">
-          Cargar gasto
+          {groupExpenseId ? 'Editar gasto' : group ? 'Gasto de grupo' : 'Cargar gasto'}
         </Text>
         <Button title="✕" variant="ghost" onPress={() => router.back()} accessibilityLabel="Cerrar" />
       </View>
@@ -349,8 +618,8 @@ export default function AddExpense() {
         keyboardShouldPersistTaps="handled"
         bottomOffset={90}
       >
-        {/* 1. Carga por texto, plegada: no se lleva el foco. */}
-        {quickOpen ? (
+        {/* 1. Carga por texto, plegada: no se lleva el foco. Al editar un gasto de grupo no va. */}
+        {groupExpenseId ? null : quickOpen ? (
           <View style={styles.block}>
             <TextField
               label="Carga por texto"
@@ -388,14 +657,21 @@ export default function AddExpense() {
               placeholder="0"
               style={type.moneyInput}
               maxFontSizeMultiplier={1.3}
+              editable={!editing?.payerLocked}
             />
           </View>
-          <View style={styles.currency}>
-            <Segmented options={CURRENCY_OPTIONS} value={currency} onChange={(c) => { setCurrency(c); setDebitedTouched(false); }} accessibilityLabel="Moneda" />
-          </View>
+          {editing?.payerLocked ? null : (
+            <View style={styles.currency}>
+              <Segmented options={CURRENCY_OPTIONS} value={currency} onChange={(c) => { setCurrency(c); setDebitedTouched(false); }} accessibilityLabel="Moneda" />
+            </View>
+          )}
         </View>
+        {editing?.payerLocked ? (
+          <Text style={[type.caption, { color: colors.textMuted }]}>El monto y la moneda los puede cambiar solo quien pagó.</Text>
+        ) : null}
 
-        {/* 3. Medio de pago: ninguna ficha marcada al abrir. */}
+        {/* 3. Medio de pago: ninguna ficha marcada al abrir. En un gasto de grupo, solo si pagaste vos. */}
+        {iPay ? (
         <View style={styles.block}>
           <Text style={[type.caption, { color: errors.method ? colors.error : colors.textMuted }]}>Medio de pago</Text>
           {!ctx ? (
@@ -412,18 +688,29 @@ export default function AddExpense() {
                 <Chip
                   key={m.id}
                   label={`${m.kind === 'card' && m.isFavorite ? '★ ' : ''}${paymentMethodLabel(m)}`}
-                  selected={m.id === methodId}
+                  selected={addToMine && m.id === methodId}
                   onPress={() => chooseMethod(m)}
                 />
               ))}
               <Chip label="Otro…" onPress={() => setOtherOpen(true)} />
+              {group ? (
+                <Chip
+                  label="No sumarlo a mis finanzas"
+                  selected={!addToMine}
+                  onPress={() => {
+                    setAddToMine(!addToMine);
+                    setErrors((e) => ({ ...e, method: undefined }));
+                  }}
+                />
+              ) : null}
             </View>
           )}
           {errors.method ? <Text style={[type.caption, { color: colors.error }]}>{errors.method}</Text> : null}
         </View>
+        ) : null}
 
         {/* 4. Cuotas, solo con tarjeta de crédito. */}
-        {cardSelected ? (
+        {cardSelected && needsMethod ? (
           <View style={styles.block}>
             <Text style={[type.caption, { color: errors.installments ? colors.error : colors.textMuted }]}>Cuotas</Text>
             <View style={styles.chips}>
@@ -467,8 +754,60 @@ export default function AddExpense() {
           </View>
         </View>
 
+        {/* Gasto de grupo: quién pagó, cómo se divide y la cotización si la moneda es otra. */}
+        {group && payerId ? (
+          <GroupSplit
+            group={group}
+            memberIds={memberIds}
+            payerId={payerId}
+            onPayer={(m) => {
+              setPayerId(m);
+              setErrors((e) => ({ ...e, method: undefined }));
+            }}
+            payerLocked={!!editing?.payerLocked}
+            mode={splitMode}
+            onMode={(m) => {
+              setSplitMode(m);
+              setErrors((e) => ({ ...e, split: undefined }));
+            }}
+            included={included}
+            onToggle={(m) => {
+              setIncluded((list) => (list.includes(m) ? list.filter((x) => x !== m) : memberIds.filter((x) => x === m || list.includes(x))));
+              setErrors((e) => ({ ...e, split: undefined }));
+            }}
+            exact={exact}
+            onExact={(m, t) => {
+              setExact((v) => ({ ...v, [m]: formatAmountInput(t).text }));
+              setErrors((e) => ({ ...e, split: undefined }));
+            }}
+            remainderMinor={splitRemainder(splitDraft)}
+            currency={currency}
+            error={errors.split}
+          />
+        ) : null}
+        {groupNeedsFx && group ? (
+          <TextField
+            label={`Cotización (${FX_LABEL[settings?.fx_reference ?? 'mep']}${expenseDate ? ` del ${formatShortDate(expenseDate)}` : ''})`}
+            value={fxText}
+            onChangeText={(t) => {
+              setFxTouched(true);
+              setFxText(formatAmountInput(t).text);
+              setErrors((e) => ({ ...e, fx: undefined }));
+            }}
+            error={errors.fx}
+            mono
+            keyboardType="decimal-pad"
+            placeholder={fxFound === false ? 'Escribí la cotización.' : '0'}
+          />
+        ) : null}
+        {groupNeedsFx && group ? (
+          <Text style={[type.caption, { color: colors.textMuted }]}>
+            Pesos por dólar. La deuda del grupo queda en {group.currency === 'ARS' ? 'pesos' : 'dólares'} con esta cotización.
+          </Text>
+        ) : null}
+
         {/* 8. Lo descontado de una cuenta en otra moneda. */}
-        {needsDebited && account ? (
+        {needsMethod && needsDebited && account ? (
           <TextField
             label={`Se descuentan de ${account.name} (${account.currency === 'ARS' ? '$' : 'US$'})`}
             value={debited}
@@ -492,7 +831,7 @@ export default function AddExpense() {
           style={styles.details}
         >
           <Text style={[type.small, { color: errors.date ? colors.error : colors.textMuted }]}>
-            {detailsOpen ? '▾' : '▸'} {expenseDate && today ? dateLabel(expenseDate, today) : 'Hoy'}
+            {detailsOpen ? '▾' : '▸'} {expenseDate && today ? dateLabel(expenseDate, today) : 'Hoy'} · {group ? group.name : 'Sin grupo'}
           </Text>
         </Pressable>
         {detailsOpen && today && expenseDate ? (
@@ -504,14 +843,50 @@ export default function AddExpense() {
             error={errors.date}
           />
         ) : null}
+        {/* Grupo: fichas de los 3 grupos con actividad más reciente. Al editar, el grupo no cambia. */}
+        {detailsOpen && !groupExpenseId ? (
+          <View style={styles.block}>
+            <Text style={[type.caption, { color: colors.textMuted }]}>Grupo</Text>
+            {groupsFailed ? (
+              <Button title="No pudimos traer tus grupos. Reintentar" variant="link" onPress={loadGroupsList} style={styles.start} />
+            ) : !groups ? (
+              <View style={[styles.skeleton, { backgroundColor: colors.surface2 }]} />
+            ) : (
+              <View style={styles.chips}>
+                <Chip label="Sin grupo" selected={!group} onPress={() => chooseGroup(null)} />
+                {[...recentGroups(groups), ...(group && !recentGroups(groups).includes(group) ? [group] : [])].map((g) => (
+                  <Chip key={g.id} label={g.name} selected={g.id === groupId} onPress={() => chooseGroup(g.id)} />
+                ))}
+                {groups.length > 3 ? <Chip label="Otro…" onPress={() => setGroupsOpen(true)} /> : null}
+              </View>
+            )}
+          </View>
+        ) : null}
 
         {/* 9. En qué resumen entra. */}
-        {statementHint ? <Text style={[type.caption, { color: colors.textMuted }]}>{statementHint}</Text> : null}
+        {statementHint && needsMethod ? <Text style={[type.caption, { color: colors.textMuted }]}>{statementHint}</Text> : null}
 
         {saveError ? (
           <Text style={[type.caption, { color: colors.error }]} accessibilityLiveRegion="polite">
             {saveError}
           </Text>
+        ) : null}
+
+        {/* Borrar un gasto de grupo (D6), con confirmación en la misma hoja. */}
+        {groupExpenseId && editing ? (
+          confirmDelete ? (
+            <View style={[styles.confirm, { borderColor: colors.line }]} accessibilityLiveRegion="polite">
+              <Text style={[type.body, { color: colors.text }]}>
+                ¿Borrás este gasto del grupo?{editing.movement ? ' En tus finanzas queda y vuelve a contar completo.' : ''}
+              </Text>
+              <View style={styles.questionButtons}>
+                <Button title="Cancelar" onPress={() => setConfirmDelete(false)} disabled={saving} />
+                <Button title="Borrar" variant="primary" onPress={deleteFromGroup} loading={saving} />
+              </View>
+            </View>
+          ) : (
+            <Button title="Borrar gasto" variant="link" onPress={() => setConfirmDelete(true)} style={styles.start} />
+          )
         ) : null}
       </KeyboardAwareScrollView>
 
@@ -599,6 +974,33 @@ export default function AddExpense() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* "Otro…" de grupos: todos tus grupos. */}
+      <Modal visible={groupsOpen} transparent animationType="fade" onRequestClose={() => setGroupsOpen(false)}>
+        <Pressable style={[styles.scrim, { backgroundColor: colors.scrim }]} onPress={() => setGroupsOpen(false)} accessibilityLabel="Cerrar">
+          <Pressable style={[styles.picker, { backgroundColor: colors.surface, paddingBottom: 20 + insets.bottom }]}>
+            <Text style={[type.title, { color: colors.text }]} accessibilityRole="header">
+              ¿De qué grupo?
+            </Text>
+            <ScrollView contentContainerStyle={styles.pickerList}>
+              {(groups ?? []).map((g) => (
+                <Pressable
+                  key={g.id}
+                  onPress={() => {
+                    chooseGroup(g.id);
+                    setGroupsOpen(false);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: g.id === groupId }}
+                  style={({ pressed }) => [styles.pickerRow, { borderBottomColor: colors.line }, pressed && { backgroundColor: colors.surface2 }]}
+                >
+                  <Text style={[type.bodyStrong, { color: g.id === groupId ? colors.primary : colors.text }]}>{g.name}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -617,6 +1019,8 @@ const styles = StyleSheet.create({
   otherInstallments: { minWidth: 56, minHeight: 32, borderWidth: 1, borderRadius: radius.full, paddingHorizontal: 11, textAlign: 'center' },
   details: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   frozen: { opacity: 0.45 },
+  start: { alignSelf: 'flex-start' },
+  confirm: { borderWidth: 1, borderRadius: radius.md, padding: 12, gap: 10 },
   question: { gap: 10, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
   questionButtons: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
   footer: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },

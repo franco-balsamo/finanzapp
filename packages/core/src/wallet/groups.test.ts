@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ars, usd } from '../cards/fixtures.ts';
 import { savedToastText } from '../entry/toast.ts';
-import { groupDetail, groupList } from './groups.ts';
+import { expenseShareFor, groupDetail, groupList, recentGroups } from './groups.ts';
+import { money } from '../money.ts';
 import type { DbWalletGroup } from './wallet.ts';
 
 type Member = DbWalletGroup['members'][number];
@@ -185,5 +186,21 @@ describe('toast de un gasto de grupo (9A)', () => {
 
   it('si pagó otro, solo tu parte', () => {
     expect(savedToastText({ kind: 'group', myShare: ars(30_000), owedToMe: null })).toBe('Guardado · tu parte $30.000');
+  });
+});
+
+describe('gasto de grupo en la hoja (G-5)', () => {
+  it('el toast: tu parte y lo que te deben si pagaste vos', () => {
+    const vosPaga = { id: 'n', amount: money(9_000_000, 'ARS'), fxRate: null, payerMemberId: 'vos', splitMode: 'equal' as const,
+      parts: [{ memberId: 'vos', value: null }, { memberId: 'ana', value: null }, { memberId: 'juan', value: null }] };
+    expect(expenseShareFor(cabana(), vosPaga)).toEqual({ myShare: ars(30_000), owedToMe: ars(60_000) });
+    expect(expenseShareFor(cabana(), { ...vosPaga, payerMemberId: 'ana' })).toEqual({ myShare: ars(30_000), owedToMe: null });
+  });
+
+  it('las fichas: los grupos con actividad más reciente primero', () => {
+    const viejo = cabana({ id: 'viejo', expenses: [expense('x', '2026-09-01', '100.00', 'vos', { parts: [{ member_id: 'vos', value: '1' }] })] });
+    const nuevo = cabana({ id: 'nuevo', expenses: [], payments: [payment('p', 'juan', 'vos', '10.00', { date: '2026-10-05' })] });
+    const vacio = cabana({ id: 'vacio', expenses: [] });
+    expect(recentGroups([vacio, viejo, cabana(), nuevo]).map((g) => g.id)).toEqual(['nuevo', 'cabana', 'viejo']);
   });
 });
