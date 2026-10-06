@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
 import { Screen } from '../../../components/Screen';
-import { onWalletChanged } from '../../../lib/events';
-import { loadGroupDetail } from '../../../lib/groups';
+import { useToast } from '../../../components/Toast';
+import { onWalletChanged, walletChanged } from '../../../lib/events';
+import { loadGroupDetail, voidGroupPayment } from '../../../lib/groups';
 import { useSession } from '../../../lib/session';
 import { layout, radius, type } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
@@ -38,6 +39,18 @@ export default function GroupDetailScreen() {
   const [failed, setFailed] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [paymentsOpen, setPaymentsOpen] = useState(false);
+  const [confirmVoid, setConfirmVoid] = useState<string | null>(null);
+  const [voiding, setVoiding] = useState(false);
+  const toast = useToast();
+
+  async function voidPayment(paymentId: string) {
+    setVoiding(true);
+    const ok = await voidGroupPayment(paymentId);
+    setVoiding(false);
+    setConfirmVoid(null);
+    walletChanged();
+    toast(ok ? 'Pago anulado · si estaba mal, registralo de nuevo' : 'No se pudo anular el pago. Probá de nuevo.');
+  }
 
   const load = useCallback(() => {
     if (!session || !id) return;
@@ -171,10 +184,27 @@ export default function GroupDetailScreen() {
                 <Text style={[type.money, { color: colors.text }]} maxFontSizeMultiplier={1.3}>
                   {formatMoney(t.amount)}
                 </Text>
+                <Button
+                  title="Registrar"
+                  variant="ghost"
+                  onPress={() =>
+                    router.push({
+                      pathname: '/grupo-pago/[groupId]',
+                      params: { groupId: data.id, from: t.fromId, to: t.toId, amount: String(t.amount.minor) },
+                    })
+                  }
+                  accessibilityLabel={`Registrar que ${from} le pagó a ${to} ${moneyInWords(t.amount)}`}
+                />
               </View>
             );
           })
         )}
+        <Button
+          title="+ Registrar pago"
+          variant="link"
+          onPress={() => router.push({ pathname: '/grupo-pago/[groupId]', params: { groupId: data.id } })}
+          style={styles.start}
+        />
       </View>
 
       {/* Integrantes. */}
@@ -275,6 +305,15 @@ export default function GroupDetailScreen() {
               {paymentsOpen ? '▾' : '▸'} Pagos registrados ({activePayments})
             </Text>
           </Pressable>
+          {confirmVoid ? (
+            <View style={[styles.confirm, { borderColor: colors.line }]} accessibilityLiveRegion="polite">
+              <Text style={[type.body, { color: colors.text }]}>¿Anulás este pago? Si estaba mal, se registra de nuevo.</Text>
+              <View style={styles.confirmButtons}>
+                <Button title="Cancelar" onPress={() => setConfirmVoid(null)} disabled={voiding} />
+                <Button title="Anular" variant="primary" onPress={() => voidPayment(confirmVoid)} loading={voiding} />
+              </View>
+            </View>
+          ) : null}
           {paymentsOpen
             ? data.payments.map((p, i) => {
                 const from = name(p.fromId, p.fromName);
@@ -302,6 +341,14 @@ export default function GroupDetailScreen() {
                     <Text style={[type.money, { color: colors.text }, p.voided && styles.voided]} maxFontSizeMultiplier={1.3}>
                       {formatMoney(p.amount)}
                     </Text>
+                    {!p.voided ? (
+                      <Button
+                        title="Anular"
+                        variant="ghost"
+                        onPress={() => setConfirmVoid(p.id)}
+                        accessibilityLabel={`Anular el pago de ${from} a ${to}`}
+                      />
+                    ) : null}
                   </View>
                 );
               })
@@ -327,6 +374,8 @@ const styles = StyleSheet.create({
   balance: { flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
   left: { opacity: 0.5 },
   voided: { textDecorationLine: 'line-through' },
+  confirm: { borderWidth: 1, borderRadius: radius.md, padding: 12, gap: 10 },
+  confirmButtons: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
   toggle: { minHeight: layout.minTouch, justifyContent: 'center' },
   skeletonTitle: { height: 22, width: 200, borderRadius: radius.sm },
   skeletonHero: { height: 35, width: 240, borderRadius: radius.sm },

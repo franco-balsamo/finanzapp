@@ -16,7 +16,8 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - G-3 hecha: pestañas Billetera y Grupos (`(app)/(tabs)/`), lista de grupos y "Nuevo grupo".
 - G-4 hecha: detalle de grupo de lectura (`(app)/grupo/[id].tsx`).
 - G-5 hecha: gasto de grupo en la hoja de carga (alta, edición y borrado). Pendiente: "¿Ya lo pagaste?" no se combina con un gasto de grupo (ver la spec).
-- **Siguiente paso: G-6**, registrar y anular pagos (`(app)/grupo-pago/[groupId].tsx`), con "Mover saldo de…". Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
+- G-6 hecha: registrar y anular pagos, con "Mover saldo de…".
+- **Siguiente paso: G-7**, editar, abandonar y eliminar el grupo (`(app)/grupo-editar/[id].tsx`, desde el `⋯` del detalle). Es la última hija de la épica. Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
   - Antes de cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
 - **Pendiente de Fran:**
   - Cargar en el panel de `mangos` (Authentication → Email Templates) la plantilla `supabase/templates/codigo.html` en "Magic Link" y en "Confirm signup", con el asunto "Tu código para entrar a Mangos". Sin esto, en `mangos` llega un link y no un código.

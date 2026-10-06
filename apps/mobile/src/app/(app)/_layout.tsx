@@ -20,6 +20,7 @@ export default function AppLayout() {
       <Stack.Screen name="cierre/[cardId]/[period]" options={sheet} />
       <Stack.Screen name="tarjeta-editar/[id]" options={sheet} />
       <Stack.Screen name="grupo-nuevo" options={sheet} />
+      <Stack.Screen name="grupo-pago/[groupId]" options={sheet} />
     </Stack>
   );
 }

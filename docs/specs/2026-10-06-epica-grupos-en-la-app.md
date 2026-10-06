@@ -317,6 +317,11 @@ export function groupDetail(input: WalletInput, groupId: string): GroupDetail;
 
 **Anular** desde "Pagos registrados": confirmación en la fila ("¿Anulás este pago? Se registra de nuevo si estaba mal.") y `void_group_payment`. Si había movido el saldo de una cuenta, el movimiento se borra.
 
+**Implementado el 6/10.**
+- `registerGroupPayment`, `voidGroupPayment` y `loadAccountsIn` en `apps/mobile/src/lib/groups.ts`.
+- "Mover saldo de…" se rotula según el caso: "Mover saldo: entra en" si cobrás y "Mover saldo: sale de" si pagás, con "No mover saldos" marcado por defecto. Solo aparece si sos el que paga o el que cobra.
+- "Anular" pide confirmación en la misma sección de pagos, no en un diálogo del sistema. El toast de "Registrar" trae "Deshacer", que anula el pago.
+
 **Criterios de aceptación de G-6:**
 1. Con el ejemplo de 02 §7, registrar "Juan → Vos $50.000" y "Ana → Vos $10.000" deja a todos al día y "Cómo saldar" dice "Están todos al día.".
 2. Registrar Juan → Vos $50.000 moviendo el saldo a Caja Galicia sube la caja $50.000; anularlo la devuelve y Juan vuelve a deber $50.000.
