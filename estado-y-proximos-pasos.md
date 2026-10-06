@@ -12,7 +12,8 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
     - D-4: corregir cierre, editar, favorita, archivar y "Archivadas".
     - D-5: carga por texto de varias líneas en el detalle (`QuickEntry`, lógica en `packages/core/src/entry/quickBatch.ts`).
     - D-6: "¿Ya lo pagaste?" en la hoja y en la tanda (`lateImpacts` en core). Migración `20261006120000_expense_payment_ids` aplicada en `mangos`.
-- **Siguiente paso:** probar las dos épicas en el teléfono contra `mangos` (pendiente de Fran, abajo). Después, elegir la próxima tanda de pantallas con su `/spec`: detalle de grupo, T8 (cola sin conexión) o Ajustes (T10).
+- **Épica de grupos en la app** (`docs/specs/2026-10-06-epica-grupos-en-la-app.md`, decisiones en `docs/decisiones/2026-10-06-spec-grupos-en-la-app.md`): spec aprobada el 6/10, sin empezar.
+- **Siguiente paso: G-1** (base: `save_group_expense_with_movement`, `delete_group_expense`, `register_group_payment`) y **G-2** (core: `groupDetail`, `groupList`), que pueden ir en paralelo. Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
   - Antes de cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
 - **Pendiente de Fran:**
   - Cargar en el panel de `mangos` (Authentication → Email Templates) la plantilla `supabase/templates/codigo.html` en "Magic Link" y en "Confirm signup", con el asunto "Tu código para entrar a Mangos". Sin esto, en `mangos` llega un link y no un código.
