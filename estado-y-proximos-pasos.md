@@ -32,6 +32,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - Supabase local: `npx supabase start -x vector,logflare,studio,imgproxy,realtime,storage-api,postgres-meta,supavisor` (el contenedor `vector` no levanta), `npx supabase db reset` y `npx supabase test db`. Si cambia `config.toml`, hace falta `stop` y `start`;
   - la app: `apps/mobile/.env` (copiar de `.env.example`) y `npx expo start --web` en `apps/mobile`. El código del login llega a Mailpit (http://127.0.0.1:54324). El teléfono no ve la base local (colima publica solo en 127.0.0.1);
   - **rutas tipadas:** al sumar una ruta, `tsc` falla hasta que Expo regenera `.expo/types/router.d.ts`. Para eso hay que levantar `npx expo start` unos segundos (con `CI=1` no lo regenera). No usar `pkill -f "expo start…"`, porque mata a la propia shell: usar `timeout`;
+  - los scripts de prueba contra la base local dejan datos (grupos, cuentas) que rompen tests pgTAP con `update` sin `where` (por ejemplo `03_guest`): antes de `npx supabase test db`, correr `npx supabase db reset`;
   - el sistema anda justo de memoria: el servidor de Expo en segundo plano lo cortó Claude Code una vez.
 - **Migraciones en `mangos`:** se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. La última es `20261006130000_group_app`.
 
