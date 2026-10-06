@@ -68,7 +68,8 @@ export default function NewGroup() {
       createdId.current ??= await createGroup(name, currency, myName);
       await addProvisionalMembers(createdId.current, people.filter((p) => p.name.trim()));
       walletChanged();
-      router.back();
+      // La hoja se reemplaza por el detalle del grupo nuevo: "‹ Grupos" vuelve a la lista.
+      router.replace({ pathname: '/grupo/[id]', params: { id: createdId.current } });
       toast(`Creaste ${name.trim()}`);
     } catch {
       setSaving(false);

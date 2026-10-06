@@ -243,6 +243,13 @@ export function groupDetail(input: WalletInput, groupId: string): GroupDetail;
 - error: "No pudimos traer el grupo." con "Reintentar";
 - 12 integrantes: caritas en "+8", nombres largos con "…".
 
+**Implementado el 6/10.**
+- De lectura: "+ Gasto", "⋯", "Registrar" y "Anular" no aparecen hasta G-5, G-6 y G-7, para que nadie cargue un gasto personal creyendo que es del grupo.
+- Tu saldo va en `moneyLg` y "te deben" / "debés" al lado en `body`; al día, "Estás al día" en `title`. Si no sos el dueño, abajo dice "Dueño: Ana" (o "El grupo no tiene dueño.").
+- Tu lugar se muestra como "Vos" en las caritas, los integrantes, "Cómo saldar", los gastos y los pagos.
+- "Nuevo grupo" reemplaza la hoja por el detalle del grupo creado, y tocar una fila de la lista abre su detalle (criterio 2 de G-3).
+- Sin verificar en pantalla (la extensión de Chrome no conecta): el criterio 3 de G-4 (12 integrantes y nombre largo en 320 de ancho) queda para la prueba en el teléfono.
+
 **Criterios de aceptación de G-4:**
 1. Con el ejemplo de 02 §7 cargado, el detalle muestra +$60.000, 2 transferencias y los saldos +$60.000, −$10.000 y −$50.000, iguales a `groupDetail`.
 2. Cada monto tiene `accessibilityLabel` en palabras, y cada fila se lee como una unidad.

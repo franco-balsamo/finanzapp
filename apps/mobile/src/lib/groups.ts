@@ -1,10 +1,15 @@
-import { groupList, type Currency, type GroupList } from '@mangos/core';
+import { groupDetail, groupList, type Currency, type GroupDetail, type GroupList } from '@mangos/core';
 import { supabase } from './supabase';
 import { loadGroups } from './wallet';
 
 /** La lista de Grupos: tus grupos activos con tu saldo, y lo que te deben y debés en total. */
 export async function loadGroupList(userId: string): Promise<GroupList> {
   return groupList(await loadGroups(userId));
+}
+
+/** El detalle de un grupo (1A). Falla si ya no sos integrante o el grupo se eliminó. */
+export async function loadGroupDetail(userId: string, groupId: string): Promise<GroupDetail> {
+  return groupDetail(await loadGroups(userId), groupId);
 }
 
 /** Te suma como integrante y dueño (`create_group`). Devuelve el id del grupo. */

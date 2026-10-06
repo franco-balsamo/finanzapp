@@ -1,7 +1,7 @@
 import { formatMoney, formatTotal, moneyInWords, type GroupList, type Money } from '@mangos/core';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
 import { Fab, FAB_SPACE } from '../../../components/Fab';
 import { Screen } from '../../../components/Screen';
@@ -84,13 +84,18 @@ export default function Groups() {
               const color = balance.minor > 0 ? colors.success : balance.minor < 0 ? colors.error : colors.textMuted;
               const status = balance.minor > 0 ? 'te deben' : balance.minor < 0 ? 'debés' : 'estás al día';
               return (
-                <View
+                <Pressable
                   key={g.id}
-                  accessible
+                  onPress={() => router.push({ pathname: '/grupo/[id]', params: { id: g.id } })}
+                  accessibilityRole="button"
                   accessibilityLabel={`${g.name}, ${g.memberCount} personas, ${
                     balance.minor === 0 ? status : `${status} ${moneyInWords({ minor: Math.abs(balance.minor), currency: balance.currency })}`
                   }`}
-                  style={[styles.row, i < data.groups.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.line }]}
+                  style={({ pressed }) => [
+                    styles.row,
+                    i < data.groups.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.line },
+                    pressed && { opacity: 0.7 },
+                  ]}
                 >
                   <View style={[styles.initial, { backgroundColor: colors.primarySoft }]}>
                     <Text style={[type.bodyStrong, { color: colors.primary }]}>{g.name.trim().charAt(0).toUpperCase()}</Text>
@@ -106,7 +111,7 @@ export default function Groups() {
                   <Text style={[type.money, { color }]} maxFontSizeMultiplier={1.3}>
                     {balance.minor === 0 ? 'Al día' : signed(balance)}
                   </Text>
-                </View>
+                </Pressable>
               );
             })
           )}
