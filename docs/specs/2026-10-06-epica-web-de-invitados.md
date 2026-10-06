@@ -91,6 +91,11 @@ create or replace function public.revoke_invite_token(gid uuid) returns void …
 
 **Core** (`packages/core/src/wallet/groups.ts`): `guestGroupDetail(json)` pasa la respuesta de `get_guest_group` a `GroupDetail`, sin lugar propio (`isMe` siempre false, `myBalance` en cero, `isOwner` false). `isProvisional` sale de `!has_account`. Así la web usa los mismos saldos y "Cómo saldar" que la app.
 
+**Implementado el 7/10.**
+- Migración `20261007120000_invite_token.sql`, aplicada en `mangos`. Solo se redefine `rotate_invite_token`: un trigger (`groups_clear_invite_token`) borra el token cuando la huella queda en nulo, así `revoke_invite_token` y `delete_group` no cambian.
+- `guestGroupDetail` y `GuestGroupJson` en `packages/core/src/wallet/groups.ts`. La web no recibe cuándo se fue alguien: `GroupMemberView` suma `left` (se fue) y en la web `leftOn` queda en nulo. La app pasó a usar `left`.
+- 8 tests pgTAP en `supabase/tests/16_invite_token.test.sql` y 4 de Vitest.
+
 **Criterios de aceptación de W-1:**
 1. Pasan `npx supabase test db` y `db lint`, y la migración queda en `mangos` con la versión del archivo.
 2. `guestGroupDetail` con el ejemplo de 02 §7 da los saldos +60.000, −10.000 y −50.000 y las 2 transferencias, igual que `groupDetail`.

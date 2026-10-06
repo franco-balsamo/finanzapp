@@ -101,7 +101,7 @@ export default function GroupDetailScreen() {
     );
   }
 
-  const active = data.members.filter((m) => !m.leftOn);
+  const active = data.members.filter((m) => !m.left);
   const faces = active.slice(0, MAX_FACES);
   const balanceColor = data.myBalance.minor > 0 ? colors.success : data.myBalance.minor < 0 ? colors.error : colors.textMuted;
   const expenses = showAll ? data.expenses : data.expenses.slice(0, MAX_EXPENSES);
@@ -227,7 +227,7 @@ export default function GroupDetailScreen() {
           const marks = [
             m.isProvisional ? 'sin cuenta' : null,
             m.claimedOn ? `se sumó ${formatShortDate(m.claimedOn)}` : null,
-            m.leftOn ? 'se fue' : null,
+            m.left ? 'se fue' : null,
           ].filter(Boolean);
           const color = m.balance.minor > 0 ? colors.success : m.balance.minor < 0 ? colors.error : colors.textMuted;
           return (
@@ -238,7 +238,7 @@ export default function GroupDetailScreen() {
               style={[
                 styles.row,
                 i < data.members.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.line },
-                m.leftOn && styles.left,
+                m.left && styles.left,
               ]}
             >
               <View style={[styles.initial, { backgroundColor: m.isMe ? colors.primary : colors.primarySoft }]}>

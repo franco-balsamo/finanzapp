@@ -78,8 +78,10 @@ export interface GroupMemberView {
   isProvisional: boolean;
   /** Día en que reclamó su lugar: "· se sumó 2/10". */
   claimedOn: ISODate | null;
-  /** Día en que se fue del grupo. */
+  /** Día en que se fue del grupo (null en la web de invitados, que no lo recibe). */
   leftOn: ISODate | null;
+  /** Se fue del grupo. */
+  left: boolean;
   /** Como se muestra (cero debajo del umbral). */
   balance: Money;
   /** Al día (02 §7): puede abandonar el grupo. */
@@ -174,6 +176,7 @@ export function groupDetail(groups: readonly DbWalletGroup[], groupId: string): 
       isProvisional: m.user_id === null,
       claimedOn: dayOf(m.claimed_at),
       leftOn: dayOf(m.left_at),
+      left: m.left_at !== null,
       balance: displayBalance(balance),
       settled: isSettled(balance),
       participated: participated.has(m.id),
@@ -259,4 +262,53 @@ export function recentGroups(groups: readonly DbWalletGroup[], limit = 3): DbWal
     .sort((a, b) => (a.at === b.at ? a.i - b.i : a.at < b.at ? 1 : -1))
     .slice(0, limit)
     .map((x) => x.g);
+}
+
+/** La respuesta de `get_guest_group` (web de invitados): sin `user_id`, sin alias y sin fechas de ingreso. */
+export interface GuestGroupJson {
+  name: string;
+  currency: Currency;
+  members: { id: string; display_name: string; has_account: boolean; active: boolean }[];
+  expenses: {
+    id: string;
+    date: ISODate;
+    description: string;
+    amount: string;
+    currency: Currency;
+    fx_rate: string | null;
+    payer_member_id: string;
+    split_mode: 'equal' | 'exact';
+    parts: { member_id: string; value: string }[];
+  }[];
+  /** Sin los anulados. */
+  payments: { id: string; date: ISODate; from_member_id: string; to_member_id: string; amount: string }[];
+}
+
+const GUEST_ID = 'guest';
+// La web no recibe cuándo se fue alguien: alcanza con marcarlo.
+const LEFT_PLACEHOLDER = '1970-01-01T00:00:00Z';
+
+/**
+ * El detalle de la web de invitados (W-1): los mismos saldos y "Cómo saldar" que la app, sin
+ * lugar propio (nadie es "Vos", tu saldo en cero y sin dueño).
+ */
+export function guestGroupDetail(json: GuestGroupJson): GroupDetail {
+  const g: DbWalletGroup = {
+    id: GUEST_ID,
+    name: json.name,
+    currency: json.currency,
+    owner_member_id: null,
+    my_member_id: '',
+    members: json.members.map((m) => ({
+      id: m.id,
+      display_name: m.display_name,
+      user_id: m.has_account ? 'cuenta' : null,
+      left_at: m.active ? null : LEFT_PLACEHOLDER,
+      claimed_at: null,
+    })),
+    expenses: json.expenses.map((e) => ({ ...e, category_id: null })),
+    payments: json.payments.map((p) => ({ ...p, deleted_at: null })),
+  };
+  const detail = groupDetail([g], GUEST_ID);
+  return { ...detail, members: detail.members.map((m) => ({ ...m, leftOn: null })) };
 }

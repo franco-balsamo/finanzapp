@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ars, usd } from '../cards/fixtures.ts';
 import { savedToastText } from '../entry/toast.ts';
-import { expenseShareFor, groupDetail, groupList, recentGroups } from './groups.ts';
+import { expenseShareFor, groupDetail, groupList, guestGroupDetail, recentGroups, type GuestGroupJson } from './groups.ts';
 import { money } from '../money.ts';
 import type { DbWalletGroup } from './wallet.ts';
 
@@ -211,5 +211,55 @@ describe('gasto de grupo en la hoja (G-5)', () => {
     const nuevo = cabana({ id: 'nuevo', expenses: [], payments: [payment('p', 'juan', 'vos', '10.00', { date: '2026-10-05' })] });
     const vacio = cabana({ id: 'vacio', expenses: [] });
     expect(recentGroups([vacio, viejo, cabana(), nuevo]).map((g) => g.id)).toEqual(['nuevo', 'cabana', 'viejo']);
+  });
+});
+
+describe('web de invitados (W-1)', () => {
+  // La respuesta de get_guest_group con el ejemplo de 02 §7.
+  const json: GuestGroupJson = {
+    name: 'Cabaña',
+    currency: 'ARS',
+    members: [
+      { id: 'vos', display_name: 'Fran', has_account: true, active: true },
+      { id: 'ana', display_name: 'Ana', has_account: true, active: true },
+      { id: 'juan', display_name: 'Juan', has_account: false, active: true },
+    ],
+    expenses: cabana().expenses.map(({ category_id: _, ...e }) => e),
+    payments: [],
+  };
+
+  it('los mismos saldos y transferencias que la app, sin lugar propio', () => {
+    const d = guestGroupDetail(json);
+    expect(d.members.map((m) => [m.name, m.balance, m.isMe, m.isProvisional])).toEqual([
+      ['Fran', ars(60_000), false, false],
+      ['Ana', ars(-10_000), false, false],
+      ['Juan', ars(-50_000), false, true],
+    ]);
+    expect(d.transfers.map((t) => [t.fromName, t.toName, t.amount, t.involvesMe])).toEqual([
+      ['Juan', 'Fran', ars(50_000), false],
+      ['Ana', 'Fran', ars(10_000), false],
+    ]);
+    expect(d).toMatchObject({ name: 'Cabaña', memberCount: 3, myBalance: ars(0), isOwner: false, ownerName: null, totalSpent: ars(120_000) });
+  });
+
+  it('igual que groupDetail para el mismo grupo', () => {
+    const app = groupDetail([cabana()], 'cabana');
+    expect(guestGroupDetail(json).transfers.map((t) => t.amount)).toEqual(app.transfers.map((t) => t.amount));
+  });
+
+  it('alguien que se fue y participó sale al final, marcado, sin fecha', () => {
+    const d = guestGroupDetail({
+      ...json,
+      members: [...json.members, { id: 'caro', display_name: 'Caro', has_account: true, active: false }],
+      payments: [{ id: 'p', date: '2026-10-03', from_member_id: 'caro', to_member_id: 'vos', amount: '100.00' }],
+    });
+    expect(d.members.at(-1)).toMatchObject({ name: 'Caro', left: true, leftOn: null });
+    expect(d.memberCount).toBe(3);
+  });
+
+  it('un grupo sin gastos', () => {
+    const d = guestGroupDetail({ ...json, expenses: [] });
+    expect(d.transfers).toEqual([]);
+    expect(d.members.every((m) => m.settled)).toBe(true);
   });
 });

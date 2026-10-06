@@ -62,7 +62,7 @@ export default function EditGroup() {
   useEffect(load, [load]);
 
   const me = data?.members.find((m) => m.isMe);
-  const active = data?.members.filter((m) => !m.leftOn) ?? [];
+  const active = data?.members.filter((m) => !m.left) ?? [];
 
   async function save() {
     if (!data || !me) return;
