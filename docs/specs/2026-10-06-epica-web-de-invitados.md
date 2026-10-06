@@ -184,6 +184,13 @@ create or replace function public.revoke_invite_token(gid uuid) returns void …
 - `55000 not a provisional place`: "Ese lugar ya lo tomó otra persona." y se recarga la lista;
 - `P0002 invalid invite`: el mensaje de link inválido.
 
+**Implementado el 7/10.**
+- `components/ClaimPanel.tsx` y `claimPlace` en `apps/mobile/src/lib/guest.ts`. El login usa los mismos `signInWithOtp`, `verifyOtp` y `authErrorMessage` que la app, con "Reenviar el código" a los 30 segundos.
+- El lugar que se reclama va en la URL (`/g/<token>?claim=<id>`): al iniciar sesión, `RootNavigator` se vuelve a montar mientras trae los ajustes y el estado se perdería.
+- Con sesión, el panel confirma con qué mail se toma el lugar y ofrece "Usar otro mail" (cierra la sesión de la web).
+- Si el lugar ya lo tomó otra persona, la lista se vuelve a traer.
+- Sin ver en pantalla: el recorrido completo (mail real, código, reclamo e instalar) se prueba con la web publicada.
+
 **Criterios de aceptación de W-5:**
 1. Un mail nuevo, desde la web, recibe el código, reclama a Juan y queda como integrante: en la app de Vos, Juan aparece "· se sumó 7/10" y deja de decir "sin cuenta".
 2. Los gastos que pagó Juan entran a las finanzas del nuevo usuario como "Sin medio de pago" (`origin = claim`), con su parte en `my_share`.

@@ -21,7 +21,8 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - **Pendientes de la épica:** "¿Ya lo pagaste?" no se combina con un gasto de grupo (G-5); el bloqueo de D5 en la hoja es más estricto que en la base; nada se vio en pantalla.
 - **Épica de la web de invitados** (`docs/specs/2026-10-06-epica-web-de-invitados.md`, decisiones en `docs/decisiones/2026-10-06-spec-web-de-invitados.md`): spec aprobada el 6/10. W-1 hecha (migración `20261007120000_invite_token` aplicada en `mangos` y `guestGroupDetail` en core).
 - W-3 hecha: web de invitados de solo lectura en `/g/[token]`, con las secciones compartidas con el detalle (`components/GroupSections.tsx`).
-- **Siguiente paso: W-2** (publicar en Vercel: crear el proyecto lo confirma Fran antes) o **W-5** ("Soy Juan" en la web, que se puede probar en local). Sigue pendiente probar las tres épicas en el teléfono contra `mangos` (abajo). Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
+- W-5 hecha: "Soy Juan" en la web, con el login por código y `claim_member`.
+- **Siguiente paso: W-6** (deshacer un reclamo en la app), **W-4** (compartir, regenerar y revocar) o **W-2** (publicar en Vercel: crear el proyecto lo confirma Fran antes). W-4 arma los links con la URL de W-2. Sigue pendiente probar las tres épicas en el teléfono contra `mangos` (abajo). Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
   - Antes de cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
 - **Pendiente de Fran:**
   - Cargar en el panel de `mangos` (Authentication → Email Templates) la plantilla `supabase/templates/codigo.html` en "Magic Link" y en "Confirm signup", con el asunto "Tu código para entrar a Mangos". Sin esto, en `mangos` llega un link y no un código.
