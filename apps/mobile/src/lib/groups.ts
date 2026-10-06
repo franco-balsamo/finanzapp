@@ -116,3 +116,16 @@ export function leaveGroup(groupId: string): Promise<GroupActionError | null> {
 export function deleteGroup(groupId: string): Promise<GroupActionError | null> {
   return rpcAction('delete_group', { gid: groupId });
 }
+
+export type UndoClaimError = 'too_old' | 'not_allowed' | 'failed';
+
+/**
+ * Deshacer un reclamo (`undo_claim`, 02 §7): el lugar vuelve a ser provisorio con el mismo nombre,
+ * los gastos y saldos del grupo no cambian y se borran los "Sin medio de pago" de esa cuenta.
+ */
+export async function undoClaim(memberId: string): Promise<UndoClaimError | null> {
+  const { error } = await supabase.rpc('undo_claim', { member_id: memberId });
+  if (!error) return null;
+  if (/older than 7 days/.test(error.message)) return 'too_old';
+  return error.code === '42501' || error.code === '55000' ? 'not_allowed' : 'failed';
+}

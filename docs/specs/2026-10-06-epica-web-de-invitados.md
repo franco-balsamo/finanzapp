@@ -205,6 +205,10 @@ create or replace function public.revoke_invite_token(gid uuid) returns void …
 - `undo_claim(member_id)`. Si lo hizo la propia persona, vuelve a la lista de Grupos (ya no es integrante). Toast: "Deshiciste el reclamo de Juan".
 - Errores: `55000 older than 7 days`: "Pasaron más de 7 días: ya no se puede deshacer."
 
+**Implementado el 7/10.**
+- La regla va en core: `canUndoClaim(detail, member, today)` y `UNDO_CLAIM_DAYS` en `packages/core/src/wallet/groups.ts`. Se cuenta por fecha en hora de Argentina; la base controla la hora exacta y, si pasó, la hoja muestra "Pasaron más de 7 días…".
+- `undoClaim` en `apps/mobile/src/lib/groups.ts`. La confirmación va debajo de la lista de integrantes, con un texto distinto si el reclamo es el tuyo ("…dejás de ver el grupo").
+
 **Criterios de aceptación de W-6:**
 1. El dueño deshace el reclamo de Juan: Juan vuelve a "· sin cuenta", los saldos no cambian y los "Sin medio de pago" de la cuenta de Juan se borran.
 2. Un integrante que no es el dueño ni Juan no ve "Deshacer".

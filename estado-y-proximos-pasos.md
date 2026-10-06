@@ -22,13 +22,14 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - **Épica de la web de invitados** (`docs/specs/2026-10-06-epica-web-de-invitados.md`, decisiones en `docs/decisiones/2026-10-06-spec-web-de-invitados.md`): spec aprobada el 6/10. W-1 hecha (migración `20261007120000_invite_token` aplicada en `mangos` y `guestGroupDetail` en core).
 - W-3 hecha: web de invitados de solo lectura en `/g/[token]`, con las secciones compartidas con el detalle (`components/GroupSections.tsx`).
 - W-5 hecha: "Soy Juan" en la web, con el login por código y `claim_member`.
-- **Siguiente paso: W-6** (deshacer un reclamo en la app), **W-4** (compartir, regenerar y revocar) o **W-2** (publicar en Vercel: crear el proyecto lo confirma Fran antes). W-4 arma los links con la URL de W-2. Sigue pendiente probar las tres épicas en el teléfono contra `mangos` (abajo). Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
+- W-6 hecha: "Deshacer" un reclamo en el detalle de grupo.
+- **Siguiente paso: W-2** (publicar en Vercel: crear el proyecto lo confirma Fran antes) y **W-4** (compartir, regenerar y revocar, que arma los links con la URL de W-2). Son las dos últimas hijas. Sigue pendiente probar las tres épicas en el teléfono contra `mangos` (abajo). Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
   - Antes de cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
 - **Pendiente de Fran:**
   - Cargar en el panel de `mangos` (Authentication → Email Templates) la plantilla `supabase/templates/codigo.html` en "Magic Link" y en "Confirm signup", con el asunto "Tu código para entrar a Mangos". Sin esto, en `mangos` llega un link y no un código.
   - Probar las dos épicas en el teléfono contra `mangos`: apuntar `apps/mobile/.env` a `mangos`, correr `npx expo start` y abrir con Expo Go. Lo más importante es la carga en menos de 10 segundos.
 - **Sin verificar en pantalla:** nada se vio todavía en el navegador ni en el teléfono, porque la extensión de Chrome no estaba conectada. Cada parte se probó contra la base local con scripts de supabase-js y un usuario real, usando las mismas consultas que la app.
-- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 444 tests pgTAP y 317 de Vitest, el typecheck y el export web.
+- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 444 tests pgTAP y 320 de Vitest, el typecheck y el export web.
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.
   2. Consultas de la app en `apps/mobile/src/lib/`.

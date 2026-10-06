@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ars, usd } from '../cards/fixtures.ts';
 import { savedToastText } from '../entry/toast.ts';
-import { expenseShareFor, groupDetail, groupList, guestGroupDetail, recentGroups, type GuestGroupJson } from './groups.ts';
+import { canUndoClaim, expenseShareFor, groupDetail, groupList, guestGroupDetail, recentGroups, type GuestGroupJson } from './groups.ts';
 import { money } from '../money.ts';
 import type { DbWalletGroup } from './wallet.ts';
 
@@ -261,5 +261,29 @@ describe('web de invitados (W-1)', () => {
     const d = guestGroupDetail({ ...json, expenses: [] });
     expect(d.transfers).toEqual([]);
     expect(d.members.every((m) => m.settled)).toBe(true);
+  });
+});
+
+describe('deshacer un reclamo (W-6, 02 §7)', () => {
+  // Ana reclamó el 2/10 (cabana()).
+  const ana = (d = groupDetail([cabana()], 'cabana')) => d.members.find((m) => m.name === 'Ana')!;
+
+  it('el dueño puede, dentro de los 7 días', () => {
+    const d = groupDetail([cabana()], 'cabana');
+    expect(canUndoClaim(d, ana(d), '2026-10-06')).toBe(true);
+    expect(canUndoClaim(d, ana(d), '2026-10-09')).toBe(true);
+    expect(canUndoClaim(d, ana(d), '2026-10-10')).toBe(false);
+  });
+
+  it('la propia persona puede; otro integrante que no es el dueño, no', () => {
+    const asAna = groupDetail([cabana({ my_member_id: 'ana' })], 'cabana');
+    expect(canUndoClaim(asAna, asAna.members.find((m) => m.isMe)!, '2026-10-06')).toBe(true);
+    const asJuan = groupDetail([cabana({ my_member_id: 'juan' })], 'cabana');
+    expect(canUndoClaim(asJuan, ana(asJuan), '2026-10-06')).toBe(false);
+  });
+
+  it('sin reclamo (provisorio o con cuenta desde el principio) no hay nada que deshacer', () => {
+    const d = groupDetail([cabana()], 'cabana');
+    expect(d.members.filter((m) => canUndoClaim(d, m, '2026-10-06')).map((m) => m.name)).toEqual(['Ana']);
   });
 });

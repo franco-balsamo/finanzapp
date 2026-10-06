@@ -2,7 +2,7 @@
 // Los saldos salen de groupBalances y simplifyDebts (02 §7); acá solo se arman las vistas.
 
 import type { ByCurrency } from '../cards/types.ts';
-import type { ISODate } from '../dates.ts';
+import { daysBetween, type ISODate } from '../dates.ts';
 import { displayBalance, groupBalances, isSettled } from '../groups/balances.ts';
 import { shares } from '../groups/shares.ts';
 import { simplifyDebts } from '../groups/simplify.ts';
@@ -311,4 +311,17 @@ export function guestGroupDetail(json: GuestGroupJson): GroupDetail {
   };
   const detail = groupDetail([g], GUEST_ID);
   return { ...detail, members: detail.members.map((m) => ({ ...m, leftOn: null })) };
+}
+
+/** Días que tiene el dueño o quien reclamó para deshacer un reclamo (02 §7, R3-8). */
+export const UNDO_CLAIM_DAYS = 7;
+
+/**
+ * "Deshacer" en la fila de un integrante reclamado (W-6): el dueño o la propia persona, dentro de
+ * los 7 días. Se cuenta por fecha en hora de Argentina; la base controla la hora exacta.
+ */
+export function canUndoClaim(detail: Pick<GroupDetail, 'isOwner'>, member: GroupMemberView, today: ISODate): boolean {
+  if (!member.claimedOn || member.left || member.isProvisional) return false;
+  if (!detail.isOwner && !member.isMe) return false;
+  return daysBetween(member.claimedOn, today) <= UNDO_CLAIM_DAYS;
 }

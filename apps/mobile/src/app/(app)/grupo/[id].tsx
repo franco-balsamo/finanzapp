@@ -1,4 +1,4 @@
-import { formatMoney, moneyInWords, type GroupDetail } from '@mangos/core';
+import { canUndoClaim, formatMoney, moneyInWords, todayInArgentina, type GroupDetail } from '@mangos/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -7,7 +7,7 @@ import { absMoney as abs, ExpenseList, MemberList, memberName as nameOf, Payment
 import { Screen } from '../../../components/Screen';
 import { useToast } from '../../../components/Toast';
 import { onWalletChanged, walletChanged } from '../../../lib/events';
-import { loadGroupDetail, voidGroupPayment } from '../../../lib/groups';
+import { loadGroupDetail, undoClaim, voidGroupPayment } from '../../../lib/groups';
 import { useSession } from '../../../lib/session';
 import { radius, type } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
@@ -23,6 +23,9 @@ export default function GroupDetailScreen() {
   const [failed, setFailed] = useState(false);
   const [confirmVoid, setConfirmVoid] = useState<string | null>(null);
   const [voiding, setVoiding] = useState(false);
+  // Deshacer un reclamo (W-6): el integrante que se está por desvincular.
+  const [confirmUndo, setConfirmUndo] = useState<{ id: string; name: string; isMe: boolean } | null>(null);
+  const [undoError, setUndoError] = useState<string | null>(null);
   const toast = useToast();
 
   async function voidPayment(paymentId: string) {
@@ -32,6 +35,32 @@ export default function GroupDetailScreen() {
     setConfirmVoid(null);
     walletChanged();
     toast(ok ? 'Pago anulado · si estaba mal, registralo de nuevo' : 'No se pudo anular el pago. Probá de nuevo.');
+  }
+
+  async function undo(target: { id: string; name: string; isMe: boolean }) {
+    setVoiding(true);
+    setUndoError(null);
+    const failure = await undoClaim(target.id);
+    setVoiding(false);
+    if (failure) {
+      setUndoError(
+        failure === 'too_old'
+          ? 'Pasaron más de 7 días: ya no se puede deshacer.'
+          : failure === 'not_allowed'
+            ? 'Solo el dueño o quien reclamó pueden deshacerlo.'
+            : 'No pudimos deshacer el reclamo. Probá de nuevo.',
+      );
+      return;
+    }
+    setConfirmUndo(null);
+    walletChanged();
+    if (target.isMe) {
+      // Ya no sos integrante: el detalle no se puede ver más.
+      router.dismissAll();
+      toast('Te desvinculaste del grupo');
+      return;
+    }
+    toast(`Deshiciste el reclamo de ${target.name}`);
   }
 
   const load = useCallback(() => {
@@ -178,7 +207,39 @@ export default function GroupDetailScreen() {
         }
       />
 
-      <MemberList data={data} />
+      {/* Integrantes, con "Deshacer" en los reclamos de 7 días o menos (W-6). */}
+      <MemberList
+        data={data}
+        rowAction={(m) =>
+          canUndoClaim(data, m, todayInArgentina()) && confirmUndo?.id !== m.id ? (
+            <Button
+              title="Deshacer"
+              variant="ghost"
+              onPress={() => {
+                setUndoError(null);
+                setConfirmUndo({ id: m.id, name: m.name, isMe: m.isMe });
+              }}
+              accessibilityLabel={`Deshacer el reclamo de ${m.isMe ? 'tu lugar' : m.name}`}
+            />
+          ) : null
+        }
+        below={
+          confirmUndo ? (
+            <View style={[styles.confirm, { borderColor: colors.line }]} accessibilityLiveRegion="polite">
+              <Text style={[type.body, { color: colors.text }]}>
+                {confirmUndo.isMe
+                  ? 'Tu lugar vuelve a ser un integrante sin cuenta y dejás de ver el grupo. Los gastos y saldos del grupo no cambian. Los gastos que te entraron al reclamar se borran de tus finanzas.'
+                  : `${confirmUndo.name} vuelve a ser un integrante sin cuenta. Los gastos y saldos del grupo no cambian. Los gastos que le entraron al reclamar se borran de sus finanzas.`}
+              </Text>
+              {undoError ? <Text style={[type.caption, { color: colors.error }]}>{undoError}</Text> : null}
+              <View style={styles.confirmButtons}>
+                <Button title="Cancelar" onPress={() => setConfirmUndo(null)} disabled={voiding} />
+                <Button title="Deshacer" variant="primary" onPress={() => undo(confirmUndo)} loading={voiding} />
+              </View>
+            </View>
+          ) : null
+        }
+      />
 
       {/* Gastos: tocar uno lo edita (G-5). */}
       <ExpenseList
