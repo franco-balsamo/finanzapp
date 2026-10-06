@@ -139,6 +139,14 @@ create or replace function public.revoke_invite_token(gid uuid) returns void …
 
 **Diseño:** los tokens de `DESIGN.md` en la web, con ancho máximo de 560 y margen de 16.
 
+**Implementado el 7/10.**
+- Las secciones del detalle (Cómo saldar, Integrantes, Gastos y Pagos) pasaron a `apps/mobile/src/components/GroupSections.tsx`, con las acciones como parámetros opcionales. Las usan el detalle de la app y la web, así se ven igual.
+- `loadGuestGroup` en `apps/mobile/src/lib/guest.ts`: `get_guest_group` con la clave anónima; null es link inválido, error es "No pudimos traer el grupo.".
+- En la web, los gastos no muestran "tu parte" (el invitado no tiene lugar propio).
+- El export genera `g/[token].html`, que W-2 sirve para cualquier `/g/:token`.
+- "Soy Juan" llega con W-5.
+- Sin ver en pantalla (la extensión de Chrome no conecta): el diseño se revisa en el teléfono cuando esté publicada.
+
 **Criterios de aceptación de W-3:**
 1. Con el ejemplo de 02 §7, la web muestra los mismos saldos y transferencias que el detalle en la app.
 2. El HTML y la respuesta de la red de la página no contienen `payment_alias`, mails ni `user_id` (verificado con la respuesta de `get_guest_group`).
