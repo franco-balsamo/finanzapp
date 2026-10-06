@@ -219,6 +219,11 @@ export function cardDetail(input: WalletInput, cardId: string, movementsMeta: Re
   - vuelve a la Billetera con el toast "Tarjeta archivada" y "Deshacer".
 - **Archivadas** (al final de la pestaña Tarjetas, D4): `CardRow` con opacidad 0.5, la pastilla "Se borra en N días" y "Recuperar" (`archived_at = null`).
 
+**Implementado el 6/10.**
+- La fecha corregida se lee con `parseDateNear` de core: `dd/mm` toma el año más cercano a la fecha estimada, porque un cierre puede ser futuro.
+- La confirmación de archivar va en la misma pantalla, no en un diálogo del sistema.
+- Al recuperar una tarjeta archivada, no vuelve a ser favorita.
+
 **Criterios de aceptación de D-4:**
 1. Corregir el cierre de octubre al 27/10 pasa un gasto del 25/10 de noviembre a octubre en el detalle y en "Te vienen". Una corrección al 10/11 se rechaza con el mensaje de "10 días".
 2. Marcar la Master como favorita deja una sola ★ y la Master pasa primera en la Billetera y en las fichas de la hoja.

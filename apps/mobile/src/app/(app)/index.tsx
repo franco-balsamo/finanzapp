@@ -1,4 +1,4 @@
-import { formatMoney, moneyInWords } from '@mangos/core';
+import { daysBetween, formatMoney, moneyInWords, todayInArgentina } from '@mangos/core';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -6,9 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AccountRow } from '../../components/AccountRow';
 import { Button } from '../../components/Button';
 import { CardRow } from '../../components/CardRow';
+import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { Tabs } from '../../components/Tabs';
-import { onWalletChanged } from '../../lib/events';
+import { useToast } from '../../components/Toast';
+import { unarchiveCard } from '../../lib/cardActions';
+import { onWalletChanged, walletChanged } from '../../lib/events';
 import { useSession } from '../../lib/session';
 import { loadWallet, type WalletData } from '../../lib/wallet';
 import { layout, radius, shadow, type } from '../../theme/tokens';
@@ -35,6 +38,7 @@ export default function Wallet() {
   const { name: theme, colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { session, settings, signOut } = useSession();
+  const toast = useToast();
   const [tab, setTab] = useState<Tab>('cards');
   const [data, setData] = useState<WalletData | null>(null);
   const [failed, setFailed] = useState(false);
@@ -50,6 +54,16 @@ export default function Wallet() {
   useFocusEffect(load);
   // El "Deshacer" del toast pasa con la Billetera a la vista: no hay cambio de foco.
   useEffect(() => onWalletChanged(load), [load]);
+
+  async function recover(cardId: string, name: string) {
+    try {
+      await unarchiveCard(cardId);
+      toast(`${name} volvió a la Billetera`);
+    } catch {
+      toast('No se pudo recuperar la tarjeta. Probá de nuevo.');
+    }
+    walletChanged();
+  }
 
   const nw = data?.netWorth;
   const staleRate =
@@ -146,6 +160,29 @@ export default function Wallet() {
             <Button title="Sumar cuenta" variant="primary" onPress={() => router.push('/cuenta-nueva')} />
           </View>
         )}
+
+        {/* Archivadas: se recuperan durante los 7 días antes de la purga (02 §3, D4). */}
+        {tab === 'cards' && data?.archivedCards.length ? (
+          <View style={styles.archived}>
+            <Text style={[type.label, { color: colors.textMuted }]}>Archivadas</Text>
+            {data.archivedCards.map((c) => {
+              const days = Math.max(0, daysBetween(todayInArgentina(), c.deletesOn));
+              const when = days === 0 ? 'Se borra hoy' : days === 1 ? 'Se borra mañana' : `Se borra en ${days} días`;
+              return (
+                <View key={c.id} style={styles.archivedRow}>
+                  <View style={[styles.archivedText, { opacity: 0.5 }]} accessible accessibilityLabel={`${c.name}, archivada. ${when}.`}>
+                    <Text style={[type.bodyStrong, { color: colors.text }]} numberOfLines={1}>
+                      {c.name}
+                    </Text>
+                    <Text style={[type.moneySm, { color: colors.textMuted }]}>·· {c.last4}</Text>
+                  </View>
+                  <Pill label={when} variant="neutral" />
+                  <Button title="Recuperar" variant="ghost" onPress={() => recover(c.id, c.name)} />
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
         {/* Lugar para que el FAB no tape la última fila. */}
         <View style={styles.fabSpace} />
       </Screen>
@@ -178,5 +215,8 @@ const styles = StyleSheet.create({
   state: { gap: 12, paddingVertical: 16, paddingHorizontal: 4 },
   add: { alignSelf: 'flex-start', marginTop: 4 },
   fabSpace: { height: 64 },
+  archived: { gap: 6, marginTop: 8 },
+  archivedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  archivedText: { flex: 1, minWidth: 0 },
   fab: { position: 'absolute', right: layout.gutter, paddingVertical: 12, paddingHorizontal: 18, borderRadius: radius.full, minHeight: 48, justifyContent: 'center' },
 });

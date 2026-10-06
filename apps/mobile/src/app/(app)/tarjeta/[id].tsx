@@ -1,6 +1,7 @@
 import {
   formatMoney,
   formatShortDate,
+  addDays,
   formatTotal,
   moneyInWords,
   todayInArgentina,
@@ -19,6 +20,7 @@ import { useToast } from '../../../components/Toast';
 import { categoryLabel } from '../../../lib/categories';
 import { onWalletChanged, walletChanged } from '../../../lib/events';
 import { revertPayments } from '../../../lib/payments';
+import { archiveCard, setFavoriteCard, unarchiveCard } from '../../../lib/cardActions';
 import { useSession } from '../../../lib/session';
 import { loadCardDetail, type CardDetailData } from '../../../lib/wallet';
 import { layout, radius, type } from '../../../theme/tokens';
@@ -58,6 +60,8 @@ export default function CardDetailScreen() {
   const [failed, setFailed] = useState(false);
   const [period, setPeriod] = useState<Period | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
     if (!session || !settings || !id) return;
@@ -105,6 +109,48 @@ export default function CardDetailScreen() {
     }
     walletChanged();
   }
+
+  async function makeFavorite() {
+    if (!detail) return;
+    setBusy(true);
+    try {
+      await setFavoriteCard(detail.card.id);
+      toast(`${detail.card.name} es tu favorita`);
+    } catch {
+      toast('No se pudo marcar como favorita. Probá de nuevo.');
+    }
+    setBusy(false);
+    walletChanged();
+  }
+
+  async function archive() {
+    if (!detail) return;
+    const cardId = detail.card.id;
+    setBusy(true);
+    try {
+      await archiveCard(cardId);
+      walletChanged();
+      router.back();
+      toast('Tarjeta archivada', {
+        label: 'Deshacer',
+        onPress: async () => {
+          try {
+            await unarchiveCard(cardId);
+            toast('Tarjeta recuperada');
+          } catch {
+            toast('No se pudo recuperar. Probá desde "Archivadas" en la Billetera.');
+          }
+          walletChanged();
+        },
+      });
+    } catch {
+      setBusy(false);
+      toast('No se pudo archivar la tarjeta. Probá de nuevo.');
+    }
+  }
+
+  // Consumos distintos de la tarjeta (una compra en cuotas cuenta una vez), para el aviso al archivar.
+  const expenseCount = new Set(statements.flatMap((s) => s.items.map((i) => i.expenseId))).size;
 
   const items = statement?.items ?? [];
   const visibleItems = showAll ? items : items.slice(0, MAX_ITEMS);
@@ -294,6 +340,44 @@ export default function CardDetailScreen() {
           )}
         </View>
       ) : null}
+
+      {/* Configuración (D-4). */}
+      {detail ? (
+        <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <Text style={[type.subtitle, { color: colors.text }]}>Configuración</Text>
+          {statement ? (
+            <Button
+              title={`Corregir cierre de ${periodName(statement.period)}`}
+              variant="link"
+              onPress={() => router.push({ pathname: '/cierre/[cardId]/[period]', params: { cardId: detail.card.id, period: statement.period } })}
+              style={styles.start}
+            />
+          ) : null}
+          <Button
+            title="Editar tarjeta"
+            variant="link"
+            onPress={() => router.push({ pathname: '/tarjeta-editar/[id]', params: { id: detail.card.id } })}
+            style={styles.start}
+          />
+          {!detail.card.isFavorite ? (
+            <Button title="Marcar como favorita" variant="link" onPress={makeFavorite} disabled={busy} style={styles.start} />
+          ) : null}
+          {confirmArchive ? (
+            <View style={[styles.confirm, { borderColor: colors.line }]} accessibilityLiveRegion="polite">
+              <Text style={[type.body, { color: colors.text }]}>
+                {expenseCount === 1 ? 'Tiene 1 consumo.' : `Tiene ${expenseCount} consumos.`} Deja de verse y se borra el{' '}
+                {formatShortDate(addDays(todayInArgentina(), 7))}, salvo que la recuperes antes. Su deuda sigue contando.
+              </Text>
+              <View style={styles.confirmButtons}>
+                <Button title="Cancelar" onPress={() => setConfirmArchive(false)} disabled={busy} />
+                <Button title="Archivar" variant="primary" onPress={archive} loading={busy} />
+              </View>
+            </View>
+          ) : (
+            <Button title="Archivar tarjeta" variant="link" onPress={() => setConfirmArchive(true)} style={styles.start} />
+          )}
+        </View>
+      ) : null}
     </Screen>
   );
 }
@@ -311,6 +395,8 @@ const styles = StyleSheet.create({
   rowMiddle: { flex: 1, minWidth: 0 },
   rowRight: { alignItems: 'flex-end' },
   start: { alignSelf: 'flex-start' },
+  confirm: { borderWidth: 1, borderRadius: radius.md, padding: 12, gap: 10 },
+  confirmButtons: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
   limitHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   track: { height: 8, borderRadius: radius.xs, overflow: 'hidden' },
   fill: { height: 8, borderRadius: radius.xs },

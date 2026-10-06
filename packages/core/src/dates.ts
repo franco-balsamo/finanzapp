@@ -71,3 +71,23 @@ export function addDays(date: ISODate, days: number): ISODate {
   const d = new Date(Date.UTC(year, month - 1, day + days));
   return makeDate(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
 }
+
+/**
+ * `dd/mm` con el año que deja la fecha más cerca de `near`, o `dd/mm/aa` tal cual. null si no es una
+ * fecha válida. Lo usa la corrección del cierre real, que puede ser una fecha futura.
+ */
+export function parseDateNear(text: string, near: ISODate): ISODate | null {
+  const match = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2}|\d{4}))?$/.exec(text.trim());
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const valid = (year: number): ISODate | null => {
+    if (month < 1 || month > 12 || day < 1 || day > lastDayOfMonth(year, month)) return null;
+    return makeDate(year, month, day);
+  };
+  if (match[3]) return valid(match[3].length === 2 ? 2000 + Number(match[3]) : Number(match[3]));
+  const { year } = parseDate(near);
+  const candidates = [year - 1, year, year + 1].map(valid).filter((d): d is ISODate => d !== null);
+  if (!candidates.length) return null;
+  return candidates.reduce((best, d) => (Math.abs(daysBetween(near, d)) < Math.abs(daysBetween(near, best)) ? d : best));
+}
