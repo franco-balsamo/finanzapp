@@ -137,6 +137,12 @@ grant execute on function public.register_group_payment(uuid, uuid, uuid, uuid, 
 - D7: Juan → Vos $50.000 a tu Caja → `income` de $50.000; anularlo borra el movimiento; con una cuenta en otra moneda o ajena falla; si no sos `from` ni `to`, con cuenta falla;
 - ya no se puede `update deleted_at` ni `insert` en `group_payments` directo.
 
+**Implementado el 6/10.**
+- D5 y D6 viven en triggers de `group_expenses` (`group_expenses_guard_money` y `group_expenses_unlink_deleted`) en vez de revocar permisos: así valen también para `save_group_expense` y para el `update` directo de `deleted_at`, y no hubo que tocar los tests anteriores. Por lo mismo, `insert` en `group_payments` sigue permitido (un pago directo no mueve ninguna cuenta).
+- `movement` acepta `{"remove": true}` para "No sumarlo a mis finanzas" al editar.
+- Los integrantes que entran en un mismo `insert` empatan en `joined_at`; la app los ordena por `(joined_at, id)`, igual que `private.member_shares`, para que el resto de una división vaya al mismo integrante en core y en la base. En G-3, los provisorios se insertan de a uno para respetar el orden en que se escribieron.
+- 24 tests pgTAP en `supabase/tests/15_group_app.test.sql`.
+
 **Criterios de aceptación de G-1:**
 1. Pasan `npx supabase test db` y `db lint`, y la migración queda en `mangos` con la versión del archivo.
 2. Los tests de arriba pasan, y los 412 tests anteriores siguen en verde.
@@ -166,6 +172,8 @@ export function groupDetail(input: WalletInput, groupId: string): GroupDetail;
 `DbWalletGroup` suma `name`, `owner_member_id`, los integrantes con `user_id`, `left_at` y `claimed_at`, los gastos con `date`, `description` y `category_id`, y los pagos con `date` y `deleted_at` (`loadGroups` deja de filtrar los anulados y core los ignora en el saldo).
 
 **Texto del toast** en `packages/core/src/entry/toast.ts`: `savedToastText({ kind: 'group', myShare, owedToMe })` → "Guardado · tu parte $30.000; te deben $60.000". Si no pagaste vos: "Guardado · tu parte $30.000".
+
+**Implementado el 6/10.** `groupList` y `groupDetail` viven en `packages/core/src/wallet/groups.ts` (con `coreGroupFromDb`, que también usa la Billetera). `owed` y `owe` son `ByCurrency`. Los integrantes traen `claimedOn` y `leftOn` como fecha en hora de Argentina; la pantalla muestra "Vos" con `isMe`. 12 tests en `groups.test.ts`.
 
 **Criterios de aceptación de G-2:**
 1. Con el ejemplo de 02 §7, `groupDetail` da tu saldo +$60.000, total gastado $120.000 y 2 transferencias: Juan → Vos $50.000 y Ana → Vos $10.000.

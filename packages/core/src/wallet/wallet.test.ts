@@ -80,10 +80,16 @@ describe('Billetera', () => {
 
   it('tu saldo en los grupos', () => {
     const group: DbWalletGroup = {
-      id: 'g', currency: 'ARS', my_member_id: 'yo',
-      members: [{ id: 'yo', display_name: 'Vos' }, { id: 'juan', display_name: 'Juan' }],
-      expenses: [{ id: 'e', amount: '120000.00', currency: 'ARS', fx_rate: null, payer_member_id: 'yo', split_mode: 'equal', parts: [{ member_id: 'yo', value: '1.00' }, { member_id: 'juan', value: '1.00' }] }],
-      payments: [{ id: 'gp', from_member_id: 'juan', to_member_id: 'yo', amount: '10000.00' }],
+      id: 'g', name: 'Cabaña', currency: 'ARS', owner_member_id: 'yo', my_member_id: 'yo',
+      members: [
+        { id: 'yo', display_name: 'Vos', user_id: 'u1', left_at: null, claimed_at: null },
+        { id: 'juan', display_name: 'Juan', user_id: null, left_at: null, claimed_at: null },
+      ],
+      expenses: [{ id: 'e', date: '2026-10-01', description: 'Súper', amount: '120000.00', currency: 'ARS', fx_rate: null, payer_member_id: 'yo', split_mode: 'equal', category_id: null, parts: [{ member_id: 'yo', value: '1.00' }, { member_id: 'juan', value: '1.00' }] }],
+      payments: [
+        { id: 'gp', from_member_id: 'juan', to_member_id: 'yo', amount: '10000.00', date: '2026-10-02', deleted_at: null },
+        { id: 'anulado', from_member_id: 'juan', to_member_id: 'yo', amount: '5000.00', date: '2026-10-02', deleted_at: '2026-10-03T12:00:00Z' },
+      ],
     };
     expect(wallet(input({ movements: [], groups: [group] })).netWorth?.groups).toEqual(ars(50_000));
   });

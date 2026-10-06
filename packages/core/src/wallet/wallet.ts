@@ -8,7 +8,7 @@ import { lateExpenseImpact, type LateExpenseImpact } from '../cards/late.ts';
 import type { ByCurrency, CardExpense, CreditCard, StatementOverride, StatementPayment, StatementStatus } from '../cards/types.ts';
 import { addDays, type ISODate, type Period } from '../dates.ts';
 import { groupBalances } from '../groups/balances.ts';
-import type { Group, GroupExpense, GroupPayment } from '../groups/types.ts';
+import { coreGroupFromDb } from './groups.ts';
 import { fromDbNumeric, money, rate, zero, type Currency, type Money, type Rate } from '../money.ts';
 import { accountBalance } from '../personal/accountBalance.ts';
 import { netWorth, type NetWorth } from '../personal/netWorth.ts';
@@ -86,23 +86,35 @@ export interface DbWalletOverride {
 
 export interface DbWalletGroup {
   id: string;
+  name: string;
   currency: Currency;
+  owner_member_id: string | null;
   /** Tu lugar en el grupo. */
   my_member_id: string;
   /** Todos los integrantes, también los que se fueron, en orden de ingreso. */
-  members: { id: string; display_name: string }[];
+  members: {
+    id: string;
+    display_name: string;
+    /** null: integrante provisorio (sin cuenta). */
+    user_id: string | null;
+    left_at: string | null;
+    claimed_at: string | null;
+  }[];
   /** Sin los borrados. En partes iguales, `value` es 1. */
   expenses: {
     id: string;
+    date: ISODate;
+    description: string;
     amount: string;
     currency: Currency;
     fx_rate: string | null;
     payer_member_id: string;
     split_mode: 'equal' | 'exact';
+    category_id: string | null;
     parts: { member_id: string; value: string }[];
   }[];
-  /** Sin los anulados. */
-  payments: { id: string; from_member_id: string; to_member_id: string; amount: string }[];
+  /** También los anulados (`deleted_at`): no cuentan en el saldo, pero el detalle los muestra. */
+  payments: { id: string; from_member_id: string; to_member_id: string; amount: string; date: ISODate; deleted_at: string | null }[];
 }
 
 export interface WalletInput {
@@ -181,24 +193,7 @@ function movementFromDb(m: DbWalletMovement): Movement {
 }
 
 function myGroupBalance(g: DbWalletGroup): Money {
-  const group: Group = { id: g.id, currency: g.currency, members: g.members.map((m) => ({ id: m.id, name: m.display_name })) };
-  const expenses: GroupExpense[] = g.expenses.map((e) => ({
-    id: e.id,
-    amount: fromDbNumeric(e.amount, e.currency),
-    fxRate: optionalRate(e.fx_rate),
-    payerMemberId: e.payer_member_id,
-    splitMode: e.split_mode,
-    parts: e.parts.map((p) => ({
-      memberId: p.member_id,
-      value: e.split_mode === 'equal' ? null : fromDbNumeric(p.value, e.currency),
-    })),
-  }));
-  const payments: GroupPayment[] = g.payments.map((p) => ({
-    id: p.id,
-    fromMemberId: p.from_member_id,
-    toMemberId: p.to_member_id,
-    amount: fromDbNumeric(p.amount, g.currency),
-  }));
+  const { group, expenses, payments } = coreGroupFromDb(g);
   return groupBalances(group, expenses, payments)[g.my_member_id] ?? zero(g.currency);
 }
 

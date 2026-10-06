@@ -31,7 +31,7 @@ function rows<T>(result: { data: unknown; error: unknown }): T[] {
   return (result.data ?? []) as T[];
 }
 
-/** Los grupos donde sos integrante activo, con lo necesario para calcular tu saldo. */
+/** Los grupos donde sos integrante activo, con lo necesario para el saldo, la lista y el detalle. */
 async function loadGroups(userId: string): Promise<DbWalletGroup[]> {
   const mine = rows<{ id: string; group_id: string }>(
     await supabase.from('group_members').select('id, group_id').eq('user_id', userId).is('left_at', null),
@@ -39,21 +39,40 @@ async function loadGroups(userId: string): Promise<DbWalletGroup[]> {
   if (!mine.length) return [];
   const ids = mine.map((m) => m.group_id);
   const [groups, members, expenses, payments] = await Promise.all([
-    supabase.from('groups').select('id, currency').in('id', ids).is('deleted_at', null),
-    supabase.from('group_members').select('id, group_id, display_name').in('group_id', ids).order('joined_at'),
+    supabase.from('groups').select('id, name, currency, owner_member_id, created_at').in('id', ids).is('deleted_at', null).order('created_at'),
+    supabase
+      .from('group_members')
+      .select('id, group_id, display_name, user_id, left_at, claimed_at')
+      .in('group_id', ids)
+      // Mismo orden que private.member_shares: el resto de una división va igual en core y en la base.
+      .order('joined_at')
+      .order('id'),
     supabase
       .from('group_expenses')
-      .select('id, group_id, amount::text, currency, fx_rate::text, payer_member_id, split_mode, parts:group_expense_parts(member_id, value::text)')
+      .select(
+        'id, group_id, date, description, amount::text, currency, fx_rate::text, payer_member_id, split_mode, category_id, ' +
+          'parts:group_expense_parts(member_id, value::text)',
+      )
       .in('group_id', ids)
-      .is('deleted_at', null),
-    supabase.from('group_payments').select('id, group_id, from_member_id, to_member_id, amount::text').in('group_id', ids).is('deleted_at', null),
+      .is('deleted_at', null)
+      .order('date')
+      .order('created_at'),
+    // También los anulados: el detalle los muestra tachados y core no los cuenta.
+    supabase
+      .from('group_payments')
+      .select('id, group_id, from_member_id, to_member_id, amount::text, date, deleted_at')
+      .in('group_id', ids)
+      .order('date')
+      .order('created_at'),
   ]);
-  const memberRows = rows<{ id: string; group_id: string; display_name: string }>(members);
+  const memberRows = rows<DbWalletGroup['members'][number] & { group_id: string }>(members);
   const expenseRows = rows<DbWalletGroup['expenses'][number] & { group_id: string }>(expenses);
   const paymentRows = rows<DbWalletGroup['payments'][number] & { group_id: string }>(payments);
-  return rows<{ id: string; currency: DbWalletGroup['currency'] }>(groups).map((g) => ({
+  return rows<{ id: string; name: string; currency: DbWalletGroup['currency']; owner_member_id: string | null }>(groups).map((g) => ({
     id: g.id,
+    name: g.name,
     currency: g.currency,
+    owner_member_id: g.owner_member_id,
     my_member_id: mine.find((m) => m.group_id === g.id)!.id,
     members: memberRows.filter((m) => m.group_id === g.id),
     expenses: expenseRows.filter((e) => e.group_id === g.id),

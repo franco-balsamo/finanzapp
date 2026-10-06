@@ -23,4 +23,5 @@ export * from './entry/quickBatch.ts';
 export * from './entry/quickEntry.ts';
 export * from './entry/toast.ts';
 export * from './a11y/words.ts';
+export * from './wallet/groups.ts';
 export * from './wallet/wallet.ts';

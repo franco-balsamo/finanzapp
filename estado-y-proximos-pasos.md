@@ -12,14 +12,14 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
     - D-4: corregir cierre, editar, favorita, archivar y "Archivadas".
     - D-5: carga por texto de varias líneas en el detalle (`QuickEntry`, lógica en `packages/core/src/entry/quickBatch.ts`).
     - D-6: "¿Ya lo pagaste?" en la hoja y en la tanda (`lateImpacts` en core). Migración `20261006120000_expense_payment_ids` aplicada en `mangos`.
-- **Épica de grupos en la app** (`docs/specs/2026-10-06-epica-grupos-en-la-app.md`, decisiones en `docs/decisiones/2026-10-06-spec-grupos-en-la-app.md`): spec aprobada el 6/10, sin empezar.
-- **Siguiente paso: G-1** (base: `save_group_expense_with_movement`, `delete_group_expense`, `register_group_payment`) y **G-2** (core: `groupDetail`, `groupList`), que pueden ir en paralelo. Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
+- **Épica de grupos en la app** (`docs/specs/2026-10-06-epica-grupos-en-la-app.md`, decisiones en `docs/decisiones/2026-10-06-spec-grupos-en-la-app.md`): spec aprobada el 6/10. G-1 (base, migración `20261006130000_group_app` aplicada en `mangos`) y G-2 (core: `groupDetail` y `groupList` en `packages/core/src/wallet/groups.ts`) hechas.
+- **Siguiente paso: G-3**, pestañas, lista de grupos y "Nuevo grupo" (los provisorios se insertan de a uno, ver la spec). Después G-4 (detalle). Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
   - Antes de cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
 - **Pendiente de Fran:**
   - Cargar en el panel de `mangos` (Authentication → Email Templates) la plantilla `supabase/templates/codigo.html` en "Magic Link" y en "Confirm signup", con el asunto "Tu código para entrar a Mangos". Sin esto, en `mangos` llega un link y no un código.
   - Probar las dos épicas en el teléfono contra `mangos`: apuntar `apps/mobile/.env` a `mangos`, correr `npx expo start` y abrir con Expo Go. Lo más importante es la carga en menos de 10 segundos.
 - **Sin verificar en pantalla:** nada se vio todavía en el navegador ni en el teléfono, porque la extensión de Chrome no estaba conectada. Cada parte se probó contra la base local con scripts de supabase-js y un usuario real, usando las mismas consultas que la app.
-- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 412 tests pgTAP y 290 de Vitest, el typecheck y el export web.
+- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 436 tests pgTAP y 302 de Vitest, el typecheck y el export web.
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.
   2. Consultas de la app en `apps/mobile/src/lib/`.
@@ -33,7 +33,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - la app: `apps/mobile/.env` (copiar de `.env.example`) y `npx expo start --web` en `apps/mobile`. El código del login llega a Mailpit (http://127.0.0.1:54324). El teléfono no ve la base local (colima publica solo en 127.0.0.1);
   - **rutas tipadas:** al sumar una ruta, `tsc` falla hasta que Expo regenera `.expo/types/router.d.ts`. Para eso hay que levantar `npx expo start` unos segundos (con `CI=1` no lo regenera). No usar `pkill -f "expo start…"`, porque mata a la propia shell: usar `timeout`;
   - el sistema anda justo de memoria: el servidor de Expo en segundo plano lo cortó Claude Code una vez.
-- **Migraciones en `mangos`:** se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. La última es `20261006120000_expense_payment_ids`.
+- **Migraciones en `mangos`:** se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. La última es `20261006130000_group_app`.
 
 ## Dónde está cada cosa
 - **Repo de Fran (fuente de verdad):** `CLAUDE.md`, `DESIGN.md`, `docs/01-alcance-v1.md`, `docs/02-reglas-de-negocio.md`, `docs/03-modelo-de-datos.md`, `docs/04-guia-gstack.md`, `docs/05-plan-tecnico.md`, `docs/producto-y-lanzamiento.md`, `docs/diseno-pantallas-v1.md`, `docs/decisiones/` y `prototipo/mangos.html`. Para revisar algo, Fran pasa los archivos como adjuntos.
