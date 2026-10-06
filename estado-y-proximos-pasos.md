@@ -25,11 +25,11 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - W-6 hecha: "Deshacer" un reclamo en el detalle de grupo.
 - W-2 hecha: la web está publicada en **https://mangos-kohl.vercel.app** (proyecto `mangos` en Vercel, deploy en cada push a `main`). La conexión de Vercel de Claude solo lee: crear proyectos o variables lo hace Fran desde el panel.
 - W-4 hecha: "Compartir link" en el detalle y crear, regenerar o revocar en "Editar grupo". **La épica de la web de invitados está completa** (W-1 a W-6).
-- **Siguiente paso:** probar las cuatro épicas en el teléfono contra `mangos`, con `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app` en `apps/mobile/.env`. El recorrido clave: crear un grupo, compartir el link, abrirlo en otro teléfono, reclamar con un mail nuevo y entrar a la app con ese mail. Prerrequisito: la plantilla del mail con el código en `mangos`. Sigue pendiente probar las tres épicas en el teléfono contra `mangos` (abajo). Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
+- **Siguiente paso:** probar las cuatro épicas en el teléfono contra `mangos`, con `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app` en `apps/mobile/.env`. El recorrido clave: crear un grupo, compartir el link, abrirlo en otro teléfono, reclamar con un mail nuevo y entrar a la app con ese mail.
   - Antes de cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
 - **Pendiente de Fran:**
-  - Cargar en el panel de `mangos` (Authentication → Email Templates) la plantilla `supabase/templates/codigo.html` en "Magic Link" y en "Confirm signup", con el asunto "Tu código para entrar a Mangos". Sin esto, en `mangos` llega un link y no un código.
-  - Probar las dos épicas en el teléfono contra `mangos`: apuntar `apps/mobile/.env` a `mangos`, correr `npx expo start` y abrir con Expo Go. Lo más importante es la carga en menos de 10 segundos.
+  - Probar las cuatro épicas en el teléfono contra `mangos`: apuntar `apps/mobile/.env` a `mangos` (con `EXPO_PUBLIC_WEB_URL`), correr `npx expo start` y abrir con Expo Go. Lo más importante: la carga en menos de 10 segundos y el recorrido del invitado.
+- **Mail con el código en `mangos` (hecho el 7/10):** Supabase hosteado solo deja editar las plantillas con un SMTP propio, y la de fábrica manda un link. Se configuró SMTP de Gmail (`smtp.gmail.com:587`, remitente "Mangos", el Gmail de Fran con una contraseña de aplicación) y la plantilla `supabase/templates/codigo.html` en "Magic Link" y "Confirm signup", con el asunto "Tu código para entrar a Mangos". Probado desde https://mangos-kohl.vercel.app: llega el código de 6 números. Límite de Gmail: unos 500 mails por día; rate limit de Supabase en 30 por hora.
 - **Sin verificar en pantalla:** nada se vio todavía en el navegador ni en el teléfono, porque la extensión de Chrome no estaba conectada. Cada parte se probó contra la base local con scripts de supabase-js y un usuario real, usando las mismas consultas que la app.
 - **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 444 tests pgTAP y 321 de Vitest, el typecheck y el export web.
 - **Cómo se trabajó cada parte:**
@@ -123,7 +123,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - los índices de las claves foráneas que marcó el advisor (están en `docs/decisiones/2026-10-04-primer-deploy.md`);
    - el envío del push de los avisos, cuando la app registre tokens;
    - Maestro (T11);
-   - la Auth de producción: URL, plantilla del mail con el código y SMTP.
+   - la Auth de producción: pasar el SMTP de Gmail a un remitente con dominio propio (Resend o Brevo) cuando esté el dominio, y la URL del sitio.
 4. **Herramientas:** instalar `codex` (revisión externa en `/spec` y `/review`) y `gh` (subir los specs como issues).
 
 ## Commits
