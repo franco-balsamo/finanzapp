@@ -1,18 +1,36 @@
-# Mangos: estado y próximos pasos (5 de octubre de 2026)
+# Mangos: estado y próximos pasos (6 de octubre de 2026)
 
 Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales de Fran para Argentina; el nombre es provisorio.
 
 ## Para retomar
-- **Dónde quedó (5/10):** de la épica de las primeras pantallas (`docs/specs/2026-10-05-epica-primeras-pantallas.md`, decisiones en `docs/decisiones/2026-10-05-spec-primeras-pantallas.md`) están hechas E1 (login con código, sesión, tema, fuentes y `onboarded_at`), E2 (lógica de la hoja en core) E3 (bienvenida en 3 pasos y alta de tarjeta y de cuenta) E4 (Billetera con patrimonio, tarjetas y cuentas; el cálculo está en core, `wallet`) y E5 (hoja de carga con una línea de texto, fichas, cuotas, categoría que aprende, lo descontado, toast con Deshacer y el FAB). La épica está completa en código.
-- **Siguiente paso:** probar la épica en el teléfono contra `mangos` (criterios de E1 a E5, sobre todo el de los 10 segundos) e implementar la épica del detalle de tarjeta (`docs/specs/2026-10-05-epica-detalle-de-tarjeta.md`, decisiones en `docs/decisiones/2026-10-05-spec-detalle-de-tarjeta.md`) en orden: D-1 (hecha y aplicada en `mangos`) D-2 (pantalla del detalle), D-3 (pagar y deshacer pagos) y D-4 (corregir cierre, editar, favorita, archivar y "Archivadas") hechas; siguen D-5 y D-6. Antes de tomar cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
-- **Pendiente de Fran:** cargar en el panel de `mangos` (Authentication → Email Templates) la plantilla `supabase/templates/codigo.html` en "Magic Link" y en "Confirm signup", con el asunto "Tu código para entrar a Mangos". `onboarded_at` ya está aplicada en `mangos`.
-- **Sin verificar:** el recorrido en el navegador o el teléfono (la extensión de Chrome no estaba conectada). Las consultas de E1 a E5 se probaron contra la base local con un usuario real (E4 da el ejemplo de 02 §8: $1.711.600; E5: id repetido, toast, dólar tarjeta, palabra aprendida y Deshacer).
-- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 410 tests pgTAP y 270 de Vitest.
+- **Dónde quedó (6/10):**
+  - **Épica de las primeras pantallas** (`docs/specs/2026-10-05-epica-primeras-pantallas.md`): E1 a E5 completas en código. Están el login con código, la bienvenida, las altas, la Billetera y la hoja de carga.
+  - **Épica del detalle de tarjeta** (`docs/specs/2026-10-05-epica-detalle-de-tarjeta.md`, decisiones en `docs/decisiones/2026-10-05-spec-detalle-de-tarjeta.md`): están hechas D-1 a D-4.
+    - D-1: funciones de la base, aplicadas en `mangos`.
+    - D-2: pantalla del detalle.
+    - D-3: pagar y deshacer pagos.
+    - D-4: corregir cierre, editar, favorita, archivar y "Archivadas".
+- **Siguiente paso: D-5**, la carga por texto de varias líneas en el detalle (componente `QuickEntry`, ver la spec). **Después, D-6**: "¿Ya lo pagaste?" con `save_expense_with_payments`.
+  - Antes de cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
+- **Pendiente de Fran:**
+  - Cargar en el panel de `mangos` (Authentication → Email Templates) la plantilla `supabase/templates/codigo.html` en "Magic Link" y en "Confirm signup", con el asunto "Tu código para entrar a Mangos". Sin esto, en `mangos` llega un link y no un código.
+  - Probar las dos épicas en el teléfono contra `mangos`: apuntar `apps/mobile/.env` a `mangos`, correr `npx expo start` y abrir con Expo Go. Lo más importante es la carga en menos de 10 segundos.
+- **Sin verificar en pantalla:** nada se vio todavía en el navegador ni en el teléfono, porque la extensión de Chrome no estaba conectada. Cada parte se probó contra la base local con scripts de supabase-js y un usuario real, usando las mismas consultas que la app.
+- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 410 tests pgTAP y 270 de Vitest, y el typecheck.
+- **Cómo se trabajó cada parte:**
+  1. Lógica pura en `packages/core` con tests Vitest.
+  2. Consultas de la app en `apps/mobile/src/lib/`.
+  3. Pantallas en `apps/mobile/src/app/`.
+  4. Prueba contra la base local con un script `.mts` temporal: `node --experimental-strip-types` en `apps/mobile`, usuario creado con `admin.auth.admin.generateLink` y la `SERVICE_ROLE_KEY` de `npx supabase status -o json`.
+  5. Commit, push y actualizar esta sección.
 - **Entorno local:**
-  - colima con 6 GiB de memoria (con 2 GiB se colgó; el 5/10 se cayó una vez igual, hay contenedores de otros proyectos);
+  - colima con 6 GiB de memoria (con 2 GiB se colgó; el 5/10 se cayó una vez igual: en colima hay contenedores de otros proyectos);
   - para que Docker apunte a colima: `export DOCKER_HOST=unix://$HOME/.config/colima/default/docker.sock`;
   - Supabase local: `npx supabase start -x vector,logflare,studio,imgproxy,realtime,storage-api,postgres-meta,supavisor` (el contenedor `vector` no levanta), `npx supabase db reset` y `npx supabase test db`. Si cambia `config.toml`, hace falta `stop` y `start`;
-  - la app: `apps/mobile/.env` (copiar de `.env.example`) y `npx expo start --web` en `apps/mobile`. El código del login llega a Mailpit (http://127.0.0.1:54324). El teléfono no ve la base local (colima publica solo en 127.0.0.1): para el teléfono, apuntar `.env` a `mangos`.
+  - la app: `apps/mobile/.env` (copiar de `.env.example`) y `npx expo start --web` en `apps/mobile`. El código del login llega a Mailpit (http://127.0.0.1:54324). El teléfono no ve la base local (colima publica solo en 127.0.0.1);
+  - **rutas tipadas:** al sumar una ruta, `tsc` falla hasta que Expo regenera `.expo/types/router.d.ts`. Para eso hay que levantar `npx expo start` unos segundos (con `CI=1` no lo regenera). No usar `pkill -f "expo start…"`, porque mata a la propia shell: usar `timeout`;
+  - el sistema anda justo de memoria: el servidor de Expo en segundo plano lo cortó Claude Code una vez.
+- **Migraciones en `mangos`:** se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. La última es `20261005130000_card_detail`.
 
 ## Dónde está cada cosa
 - **Repo de Fran (fuente de verdad):** `CLAUDE.md`, `DESIGN.md`, `docs/01-alcance-v1.md`, `docs/02-reglas-de-negocio.md`, `docs/03-modelo-de-datos.md`, `docs/04-guia-gstack.md`, `docs/05-plan-tecnico.md`, `docs/producto-y-lanzamiento.md`, `docs/diseno-pantallas-v1.md`, `docs/decisiones/` y `prototipo/mangos.html`. Para revisar algo, Fran pasa los archivos como adjuntos.
