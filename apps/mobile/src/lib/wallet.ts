@@ -39,7 +39,7 @@ export async function loadGroups(userId: string): Promise<DbWalletGroup[]> {
   if (!mine.length) return [];
   const ids = mine.map((m) => m.group_id);
   const [groups, members, expenses, payments] = await Promise.all([
-    supabase.from('groups').select('id, name, currency, owner_member_id, created_at').in('id', ids).is('deleted_at', null).order('created_at'),
+    supabase.from('groups').select('id, name, currency, owner_member_id, invite_token, created_at').in('id', ids).is('deleted_at', null).order('created_at'),
     supabase
       .from('group_members')
       .select('id, group_id, display_name, user_id, left_at, claimed_at')
@@ -68,11 +68,14 @@ export async function loadGroups(userId: string): Promise<DbWalletGroup[]> {
   const memberRows = rows<DbWalletGroup['members'][number] & { group_id: string }>(members);
   const expenseRows = rows<DbWalletGroup['expenses'][number] & { group_id: string }>(expenses);
   const paymentRows = rows<DbWalletGroup['payments'][number] & { group_id: string }>(payments);
-  return rows<{ id: string; name: string; currency: DbWalletGroup['currency']; owner_member_id: string | null }>(groups).map((g) => ({
+  return rows<{ id: string; name: string; currency: DbWalletGroup['currency']; owner_member_id: string | null; invite_token: string | null }>(
+    groups,
+  ).map((g) => ({
     id: g.id,
     name: g.name,
     currency: g.currency,
     owner_member_id: g.owner_member_id,
+    invite_token: g.invite_token,
     my_member_id: mine.find((m) => m.group_id === g.id)!.id,
     members: memberRows.filter((m) => m.group_id === g.id),
     expenses: expenseRows.filter((e) => e.group_id === g.id),

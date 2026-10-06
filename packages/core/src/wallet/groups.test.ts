@@ -158,6 +158,11 @@ describe('detalle de grupo (1A, 02 §7)', () => {
     expect(d.expenses[0]!.myShare).toEqual(ars(90_000));
   });
 
+  it('el token del link, si hay', () => {
+    expect(groupDetail(input([cabana()]), 'cabana').inviteToken).toBeNull();
+    expect(groupDetail(input([cabana({ invite_token: 'abc' })]), 'cabana').inviteToken).toBe('abc');
+  });
+
   it('sin dueño', () => {
     expect(groupDetail(input([cabana({ owner_member_id: null })]), 'cabana')).toMatchObject({ isOwner: false, ownerName: null });
   });

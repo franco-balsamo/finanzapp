@@ -89,6 +89,8 @@ export interface DbWalletGroup {
   name: string;
   currency: Currency;
   owner_member_id: string | null;
+  /** El link para invitar (D2 de la web de invitados). null si no hay o se revocó. */
+  invite_token?: string | null;
   /** Tu lugar en el grupo. */
   my_member_id: string;
   /** Todos los integrantes, también los que se fueron, en orden de ingreso. */

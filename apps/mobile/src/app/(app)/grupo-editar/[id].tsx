@@ -17,6 +17,7 @@ import {
   removeMember,
   renameGroup,
 } from '../../../lib/groups';
+import { inviteUrl, revokeInvite, rotateInvite } from '../../../lib/invite';
 import { useSession } from '../../../lib/session';
 import { radius, type } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
@@ -26,7 +27,12 @@ interface PersonField {
   name: string;
 }
 
-type Confirm = { kind: 'leave' } | { kind: 'delete' } | { kind: 'remove'; memberId: string; name: string };
+type Confirm =
+  | { kind: 'leave' }
+  | { kind: 'delete' }
+  | { kind: 'remove'; memberId: string; name: string }
+  | { kind: 'rotate' }
+  | { kind: 'revoke' };
 
 const abs = (m: Money): Money => ({ minor: Math.abs(m.minor), currency: m.currency });
 
@@ -93,6 +99,21 @@ export default function EditGroup() {
     if (!data) return;
     setBusy(true);
     setMessage(null);
+    // Link para invitar (W-4): crear, regenerar o revocar.
+    if (action.kind === 'rotate' || action.kind === 'revoke') {
+      try {
+        if (action.kind === 'rotate') await rotateInvite(data.id);
+        else await revokeInvite(data.id);
+        toast(action.kind === 'rotate' ? (data.inviteToken ? 'Link nuevo listo' : 'Link creado') : 'Revocaste el link');
+        walletChanged();
+        load();
+      } catch {
+        setMessage('No pudimos cambiar el link. Probá de nuevo.');
+      }
+      setBusy(false);
+      setConfirm(null);
+      return;
+    }
     if (action.kind === 'remove') {
       const failure = await removeMember(action.memberId);
       setBusy(false);
@@ -236,6 +257,35 @@ export default function EditGroup() {
         </Text>
       ) : null}
 
+      {/* Link para invitar (W-4): lo ve cualquiera que lo tenga, sin instalar nada. */}
+      <View style={[styles.section, { borderTopColor: colors.line }]}>
+        <Text style={[type.caption, { color: colors.textMuted }]}>Link para invitar</Text>
+        {data.inviteToken ? (
+          <>
+            <Text style={[type.small, { color: colors.text }]} selectable numberOfLines={2}>
+              {inviteUrl(data.inviteToken) ?? 'Falta configurar la dirección de la web (EXPO_PUBLIC_WEB_URL).'}
+            </Text>
+            {confirm?.kind === 'rotate' ? (
+              confirmBox('El link anterior deja de andar. Vas a tener que compartir el nuevo.', confirm, 'Regenerar')
+            ) : confirm?.kind === 'revoke' ? (
+              confirmBox('El link anterior deja de andar y nadie más puede ver el grupo desde la web.', confirm, 'Revocar')
+            ) : (
+              <View style={styles.links}>
+                <Button title="Regenerar link" variant="link" onPress={() => setConfirm({ kind: 'rotate' })} />
+                <Button title="Revocar link" variant="link" onPress={() => setConfirm({ kind: 'revoke' })} />
+              </View>
+            )}
+          </>
+        ) : (
+          <>
+            <Text style={[type.caption, { color: colors.textMuted }]}>
+              El grupo no tiene link. Con uno, cualquiera puede ver los gastos y saldos sin instalar nada.
+            </Text>
+            <Button title="Crear link" variant="link" onPress={() => run({ kind: 'rotate' })} disabled={busy} style={styles.start} />
+          </>
+        )}
+      </View>
+
       {/* Abandonar: solo al día (02 §7). */}
       <View style={[styles.section, { borderTopColor: colors.line }]}>
         {me.settled ? (
@@ -283,6 +333,7 @@ const styles = StyleSheet.create({
   remove: { marginBottom: 2 },
   start: { alignSelf: 'flex-start' },
   section: { borderTopWidth: 1, paddingTop: 14, gap: 10 },
+  links: { flexDirection: 'row', gap: 16, flexWrap: 'wrap' },
   confirm: { borderWidth: 1, borderRadius: radius.md, padding: 12, gap: 10 },
   buttons: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
   skeleton: { height: 120, borderRadius: radius.sm },

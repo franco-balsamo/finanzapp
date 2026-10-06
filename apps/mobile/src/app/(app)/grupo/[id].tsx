@@ -8,6 +8,7 @@ import { Screen } from '../../../components/Screen';
 import { useToast } from '../../../components/Toast';
 import { onWalletChanged, walletChanged } from '../../../lib/events';
 import { loadGroupDetail, undoClaim, voidGroupPayment } from '../../../lib/groups';
+import { inviteUrl, rotateInvite, shareInvite } from '../../../lib/invite';
 import { useSession } from '../../../lib/session';
 import { radius, type } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
@@ -35,6 +36,29 @@ export default function GroupDetailScreen() {
     setConfirmVoid(null);
     walletChanged();
     toast(ok ? 'Pago anulado · si estaba mal, registralo de nuevo' : 'No se pudo anular el pago. Probá de nuevo.');
+  }
+
+  const [sharing, setSharing] = useState(false);
+
+  /** "Compartir link" (W-4): el link guardado, o uno nuevo si el grupo todavía no tiene. */
+  async function share() {
+    if (!data) return;
+    setSharing(true);
+    try {
+      const token = data.inviteToken ?? (await rotateInvite(data.id));
+      if (!data.inviteToken) walletChanged();
+      const url = inviteUrl(token);
+      if (!url) {
+        toast('Falta configurar la dirección de la web (EXPO_PUBLIC_WEB_URL).');
+        return;
+      }
+      const result = await shareInvite(data.name, url);
+      if (result === 'copied') toast('Copiaste el link');
+    } catch {
+      toast('No pudimos armar el link. Probá de nuevo.');
+    } finally {
+      setSharing(false);
+    }
   }
 
   async function undo(target: { id: string; name: string; isMe: boolean }) {
@@ -173,12 +197,15 @@ export default function GroupDetailScreen() {
             {data.ownerName ? `Dueño: ${data.ownerName}` : 'El grupo no tiene dueño.'}
           </Text>
         ) : null}
-        <Button
-          title="+ Gasto"
-          variant="primary"
-          onPress={() => router.push({ pathname: '/cargar', params: { groupId: data.id } })}
-          style={styles.start}
-        />
+        <View style={styles.actions}>
+          <Button title="+ Gasto" variant="primary" onPress={() => router.push({ pathname: '/cargar', params: { groupId: data.id } })} />
+          <Button
+            title="Compartir link"
+            onPress={share}
+            loading={sharing}
+            accessibilityLabel="Compartir el link para que vean el grupo sin instalar nada"
+          />
+        </View>
       </View>
 
       {/* Cómo saldar, con "Registrar" (G-6). */}
@@ -282,6 +309,7 @@ const styles = StyleSheet.create({
   faces: { flexDirection: 'row' },
   face: { width: 28, height: 28, borderRadius: radius.full, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   faceOverlap: { marginLeft: -8 },
+  actions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   balance: { flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
   confirm: { borderWidth: 1, borderRadius: radius.md, padding: 12, gap: 10 },
   confirmButtons: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },

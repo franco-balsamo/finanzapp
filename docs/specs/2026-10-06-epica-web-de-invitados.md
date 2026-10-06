@@ -1,6 +1,6 @@
 ---
 spec_kind: epic
-status: approved
+status: done
 date: 2026-10-06
 ---
 
@@ -171,6 +171,12 @@ create or replace function public.revoke_invite_token(gid uuid) returns void …
   - con link: el link en `caption`, "Regenerar link" y "Revocar link", los dos con la confirmación "El link anterior deja de andar.";
   - sin link: "Crear link".
 - Toast: "Link nuevo listo" o "Revocaste el link".
+
+**Implementado el 7/10.**
+- `apps/mobile/src/lib/invite.ts`: `inviteUrl`, `rotateInvite`, `revokeInvite` y `shareInvite`. En la web, si el navegador no tiene `navigator.share`, copia el link ("Copiaste el link").
+- El token llega por `loadGroups` (`invite_token` en el select de `groups`) y `groupDetail` lo expone como `inviteToken`.
+- Sin `EXPO_PUBLIC_WEB_URL`, "Compartir link" avisa "Falta configurar la dirección de la web" en vez de armar un link roto.
+- En "Editar grupo", el link se muestra seleccionable para copiarlo a mano.
 
 **Criterios de aceptación de W-4:**
 1. Vos creás el link desde tu teléfono; Ana, desde el suyo, toca "Compartir link" y comparte el mismo link sin regenerarlo.

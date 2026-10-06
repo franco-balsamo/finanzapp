@@ -135,6 +135,8 @@ export interface GroupDetail {
   ownerName: string | null;
   /** Integrantes activos: "4 personas". */
   memberCount: number;
+  /** El token del link para invitar; null si el grupo todavía no tiene link (W-4). */
+  inviteToken: string | null;
   myBalance: Money;
   /** Suma de los gastos en la moneda del grupo. */
   totalSpent: Money;
@@ -210,6 +212,7 @@ export function groupDetail(groups: readonly DbWalletGroup[], groupId: string): 
     isOwner: g.owner_member_id === g.my_member_id,
     ownerName: g.owner_member_id === null ? null : nameOf(g.owner_member_id),
     memberCount: activeMembers(g).length,
+    inviteToken: g.invite_token ?? null,
     myBalance: displayBalance(balances[g.my_member_id] ?? zero(g.currency)),
     totalSpent,
     transfers: simplifyDebts(group, balances).map((t) => ({
