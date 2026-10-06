@@ -112,6 +112,14 @@ create or replace function public.revoke_invite_token(gid uuid) returns void …
 - `apps/mobile/.env.example` suma `EXPO_PUBLIC_WEB_URL`.
 - **Crear el proyecto en Vercel y conectarlo al repo lo confirma Fran antes** (es un servicio nuevo, aunque sea gratis).
 
+**Implementado el 7/10.**
+- Proyecto `mangos` en Vercel (equipo `franco-balsamos-projects`), conectado a `franco-balsamo/finanzapp`. Producción: **https://mangos-kohl.vercel.app**. Lo creó Fran desde el panel: la conexión de Vercel de Claude solo puede leer (403 al crear proyectos y variables).
+- `vercel.json` en la raíz: `pnpm install --frozen-lockfile`, `cd apps/mobile && npx expo export --platform web`, salida `apps/mobile/dist`, `cleanUrls` y la reescritura de `/g/:token` a `/g/[token]`.
+- Variables en Production y Preview: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (la publicable `sb_publishable_…` de `mangos`) y `EXPO_PUBLIC_WEB_URL` = la URL de producción. Preview usa la misma base: lo que se pruebe ahí queda en los datos reales.
+- El export no pre-renderiza contenido (el layout espera las fuentes y la sesión): todas las páginas son el mismo esqueleto y el router elige la pantalla en el navegador. La reescritura hace que `/g/<cualquier cosa>` responda 200 en vez de 404.
+- Verificado el 7/10: la producción abre sin login de Vercel (la protección es `all_except_custom_domains` y el dominio de producción queda público); el bundle tiene la URL y la clave de `mangos`; `get_guest_group` con un token inventado contra `mangos` y la clave publicable devuelve `null`.
+- Falta del criterio 1: abrir un link válido desde un teléfono, cuando W-4 permita crear el link desde la app.
+
 **Criterios de aceptación de W-2:**
 1. Un push a `main` publica la web, y `<URL>/g/<token válido>` abre la página del grupo desde un teléfono con datos móviles.
 2. `<URL>/g/cualquiercosa` muestra "Este link ya no funciona…", no un 404 de Vercel.

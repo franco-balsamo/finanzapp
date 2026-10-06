@@ -23,7 +23,8 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - W-3 hecha: web de invitados de solo lectura en `/g/[token]`, con las secciones compartidas con el detalle (`components/GroupSections.tsx`).
 - W-5 hecha: "Soy Juan" en la web, con el login por código y `claim_member`.
 - W-6 hecha: "Deshacer" un reclamo en el detalle de grupo.
-- **Siguiente paso: W-2** (publicar en Vercel: crear el proyecto lo confirma Fran antes) y **W-4** (compartir, regenerar y revocar, que arma los links con la URL de W-2). Son las dos últimas hijas. Sigue pendiente probar las tres épicas en el teléfono contra `mangos` (abajo). Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
+- W-2 hecha: la web está publicada en **https://mangos-kohl.vercel.app** (proyecto `mangos` en Vercel, deploy en cada push a `main`). La conexión de Vercel de Claude solo lee: crear proyectos o variables lo hace Fran desde el panel.
+- **Siguiente paso: W-4** (compartir, regenerar y revocar el link), la última hija. Necesita `EXPO_PUBLIC_WEB_URL` en Vercel y en `apps/mobile/.env`. Sigue pendiente probar las tres épicas en el teléfono contra `mangos` (abajo). Sigue pendiente probar las dos épicas anteriores en el teléfono (abajo).
   - Antes de cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
 - **Pendiente de Fran:**
   - Cargar en el panel de `mangos` (Authentication → Email Templates) la plantilla `supabase/templates/codigo.html` en "Magic Link" y en "Confirm signup", con el asunto "Tu código para entrar a Mangos". Sin esto, en `mangos` llega un link y no un código.
@@ -48,6 +49,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 ## Dónde está cada cosa
 - **Repo de Fran (fuente de verdad):** `CLAUDE.md`, `DESIGN.md`, `docs/01-alcance-v1.md`, `docs/02-reglas-de-negocio.md`, `docs/03-modelo-de-datos.md`, `docs/04-guia-gstack.md`, `docs/05-plan-tecnico.md`, `docs/producto-y-lanzamiento.md`, `docs/diseno-pantallas-v1.md`, `docs/decisiones/` y `prototipo/mangos.html`. Para revisar algo, Fran pasa los archivos como adjuntos.
+- **Web publicada (invitados):** https://mangos-kohl.vercel.app (Vercel, proyecto `mangos`, equipo `franco-balsamos-projects`).
 - **Prototipo publicado:** https://claude.ai/artifact/VcdZaUcopPPczEKi8vjSh4. Se lee con Artifact (action read) y conserva la capacidad `sample`.
 - **Documento de producto (Claude Docs):** https://claude.ai/code/artifact/bdee199b-bc4c-4257-a296-be764d705be4. Está desactualizado; la copia del repo es la que vale.
 - **En este proyecto:** `mangos/01-alcance-v1.md`, que es la versión del 1/10, anterior a las revisiones de gstack.
