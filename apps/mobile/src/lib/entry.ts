@@ -1,6 +1,7 @@
 import {
   addDays,
   cardStatementFor,
+  convert,
   learnableWord,
   money,
   paymentMethodWords,
@@ -11,10 +12,12 @@ import {
   type CardNetwork,
   type Currency,
   type ISODate,
+  type LineWarning,
   type Money,
   type PaymentMethod,
   type PaymentUse,
   type Rate,
+  type ResolvedLine,
   type StatementOverride,
 } from '@mangos/core';
 import type { UserSettings } from './session';
@@ -153,9 +156,74 @@ export async function saveExpense(draft: ExpenseDraft): Promise<SaveError | null
   }
 }
 
+/** Por qué una línea de la carga por texto (o la hoja) pide revisión. */
+export const WARNING_TEXT: Record<LineWarning, string> = {
+  future_date: 'La fecha es futura.',
+  invalid_date: 'La fecha no existe.',
+  ambiguous_amount: 'Revisá el monto.',
+  several_amounts: 'Hay más de un número: revisá el monto.',
+  installments_out_of_range: 'Las cuotas van de 1 a 24.',
+  installments_need_credit: 'Las cuotas son solo para tarjetas de crédito.',
+};
+
+export interface BatchResult {
+  /** Los ids que quedaron guardados, en orden. */
+  saved: string[];
+  /** Sin dólar tarjeta de la fecha para descontar de una cuenta en otra moneda: quedan en el campo. */
+  noRate: string[];
+  /** Si se cortó a mitad de la tanda: las que siguen quedan en el campo. */
+  failure: SaveError | null;
+}
+
+/**
+ * Guarda las líneas listas de a una, cada una con su id (D-5). Si se corta la señal, para ahí: al
+ * reintentar, las que ya habían llegado cuentan como guardadas y no se duplican.
+ */
+export async function saveBatch(lines: readonly ResolvedLine[], ctx: EntryContext): Promise<BatchResult> {
+  const result: BatchResult = { saved: [], noRate: [], failure: null };
+  const rates = new Map<ISODate, Rate | null>();
+  for (const line of lines) {
+    const method = ctx.methods.find((m) => m.id === line.methodId);
+    if (!method || !line.amount) continue;
+    const account = method.kind === 'account' ? ctx.accounts.get(method.id) : undefined;
+    let debited: Money | null = null;
+    if (account && account.currency !== line.amount.currency) {
+      if (!rates.has(line.date)) rates.set(line.date, await cardRateOn(line.date));
+      const r = rates.get(line.date);
+      if (!r) {
+        result.noRate.push(line.id);
+        continue;
+      }
+      debited = convert(line.amount, r, account.currency);
+    }
+    const failure = await saveExpense({
+      id: line.id,
+      origin: 'text',
+      date: line.date,
+      description: line.description.slice(0, 60),
+      amount: line.amount,
+      method,
+      installments: line.installments,
+      categoryId: line.categoryId,
+      debited,
+    });
+    if (failure) {
+      result.failure = failure;
+      break;
+    }
+    result.saved.push(line.id);
+  }
+  return result;
+}
+
 /** "Deshacer" del toast: borra el gasto. */
 export async function deleteExpense(id: string): Promise<boolean> {
-  const { error } = await supabase.from('movements').delete().eq('id', id);
+  return deleteExpenses([id]);
+}
+
+/** "Deshacer" de la tanda: borra todos los gastos que se guardaron juntos. */
+export async function deleteExpenses(ids: readonly string[]): Promise<boolean> {
+  const { error } = await supabase.from('movements').delete().in('id', ids);
   return !error;
 }
 

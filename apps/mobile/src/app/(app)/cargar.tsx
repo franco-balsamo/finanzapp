@@ -15,7 +15,6 @@ import {
   convert,
   type Currency,
   type ISODate,
-  type LineWarning,
   type PaymentMethod,
   type Rate,
 } from '@mangos/core';
@@ -40,6 +39,7 @@ import {
   toastFor,
   type EntryContext,
   type ExpenseDraft,
+  WARNING_TEXT,
 } from '../../lib/entry';
 import { CATEGORIES } from '../../lib/categories';
 import { walletChanged } from '../../lib/events';
@@ -55,14 +55,6 @@ const CURRENCY_OPTIONS = [
 
 const QUICK_INSTALLMENTS = [1, 3, 6, 12];
 
-const WARNING_TEXT: Record<LineWarning, string> = {
-  future_date: 'La fecha es futura.',
-  invalid_date: 'La fecha no existe.',
-  ambiguous_amount: 'Revisá el monto.',
-  several_amounts: 'Hay más de un número: revisá el monto.',
-  installments_out_of_range: 'Las cuotas van de 1 a 24.',
-  installments_need_credit: 'Las cuotas son solo para tarjetas de crédito.',
-};
 
 
 interface Errors {

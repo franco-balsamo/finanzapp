@@ -5,18 +5,19 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 ## Para retomar
 - **Dónde quedó (6/10):**
   - **Épica de las primeras pantallas** (`docs/specs/2026-10-05-epica-primeras-pantallas.md`): E1 a E5 completas en código. Están el login con código, la bienvenida, las altas, la Billetera y la hoja de carga.
-  - **Épica del detalle de tarjeta** (`docs/specs/2026-10-05-epica-detalle-de-tarjeta.md`, decisiones en `docs/decisiones/2026-10-05-spec-detalle-de-tarjeta.md`): están hechas D-1 a D-4.
+  - **Épica del detalle de tarjeta** (`docs/specs/2026-10-05-epica-detalle-de-tarjeta.md`, decisiones en `docs/decisiones/2026-10-05-spec-detalle-de-tarjeta.md`): están hechas D-1 a D-5.
     - D-1: funciones de la base, aplicadas en `mangos`.
     - D-2: pantalla del detalle.
     - D-3: pagar y deshacer pagos.
     - D-4: corregir cierre, editar, favorita, archivar y "Archivadas".
-- **Siguiente paso: D-5**, la carga por texto de varias líneas en el detalle (componente `QuickEntry`, ver la spec). **Después, D-6**: "¿Ya lo pagaste?" con `save_expense_with_payments`.
+    - D-5: carga por texto de varias líneas en el detalle (`QuickEntry`, lógica en `packages/core/src/entry/quickBatch.ts`).
+- **Siguiente paso: D-6**, "¿Ya lo pagaste?" con `save_expense_with_payments`, en la hoja de carga y en la tanda de `QuickEntry` (ver la spec).
   - Antes de cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
 - **Pendiente de Fran:**
   - Cargar en el panel de `mangos` (Authentication → Email Templates) la plantilla `supabase/templates/codigo.html` en "Magic Link" y en "Confirm signup", con el asunto "Tu código para entrar a Mangos". Sin esto, en `mangos` llega un link y no un código.
   - Probar las dos épicas en el teléfono contra `mangos`: apuntar `apps/mobile/.env` a `mangos`, correr `npx expo start` y abrir con Expo Go. Lo más importante es la carga en menos de 10 segundos.
 - **Sin verificar en pantalla:** nada se vio todavía en el navegador ni en el teléfono, porque la extensión de Chrome no estaba conectada. Cada parte se probó contra la base local con scripts de supabase-js y un usuario real, usando las mismas consultas que la app.
-- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 410 tests pgTAP y 270 de Vitest, y el typecheck.
+- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 410 tests pgTAP y 282 de Vitest, el typecheck y el export web.
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.
   2. Consultas de la app en `apps/mobile/src/lib/`.

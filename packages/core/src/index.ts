@@ -18,6 +18,7 @@ export * from './notices/fromDb.ts';
 export * from './entry/amount.ts';
 export * from './entry/categories.ts';
 export * from './entry/paymentMethods.ts';
+export * from './entry/quickBatch.ts';
 export * from './entry/quickEntry.ts';
 export * from './entry/toast.ts';
 export * from './a11y/words.ts';

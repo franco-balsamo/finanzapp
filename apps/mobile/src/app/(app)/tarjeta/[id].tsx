@@ -11,10 +11,11 @@ import {
 } from '@mangos/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
 import { CreditCard } from '../../../components/CreditCard';
 import { Pill, type PillVariant } from '../../../components/Pill';
+import { QuickEntry } from '../../../components/QuickEntry';
 import { Screen } from '../../../components/Screen';
 import { useToast } from '../../../components/Toast';
 import { categoryLabel } from '../../../lib/categories';
@@ -207,16 +208,8 @@ export default function CardDetailScreen() {
         </View>
       ) : null}
 
-      {/* Carga por texto: en D-2 abre la hoja con esta tarjeta; D-5 la cambia por la de varias líneas. */}
-      {detail ? (
-        <Pressable
-          onPress={() => router.push({ pathname: '/cargar', params: { cardId: detail.card.id } })}
-          accessibilityRole="button"
-          style={[styles.quick, { backgroundColor: colors.surface, borderColor: colors.line }]}
-        >
-          <Text style={[type.body, { color: colors.textMuted }]}>¿Te falta cargar algo?</Text>
-        </Pressable>
-      ) : null}
+      {/* Carga por texto de varias líneas, con esta tarjeta si la línea no nombra otro medio (D-5). */}
+      {detail ? <QuickEntry defaultCardId={detail.card.id} /> : null}
 
       {canPay && detail && statement ? (
         <Button
@@ -389,7 +382,6 @@ const styles = StyleSheet.create({
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   navTitle: { alignItems: 'center', gap: 4, flex: 1 },
   center: { textAlign: 'center' },
-  quick: { borderWidth: 1, borderRadius: radius.sm, paddingVertical: 9, paddingHorizontal: 10, minHeight: 44, justifyContent: 'center' },
   panel: { borderWidth: 1, borderRadius: radius.lg, padding: layout.panelPadding, gap: 10 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 },
   rowMiddle: { flex: 1, minWidth: 0 },

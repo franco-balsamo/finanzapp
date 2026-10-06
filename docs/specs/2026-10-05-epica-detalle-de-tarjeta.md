@@ -245,6 +245,13 @@ export function cardDetail(input: WalletInput, cardId: string, movementsMeta: Re
 - **Botón:** "Guardar 6 gastos", o "Guardar 6 · faltan 2" si quedan líneas sin completar. Guarda las listas y las confirmadas, de a una, con un id por línea, generado al aparecer la línea y estable mientras la línea no cambie.
 - **Después:** las guardadas salen del campo y las demás quedan. Toast "Guardaste 6 gastos" con "Deshacer", que borra los 6.
 
+**Implementado el 6/10.**
+- La lógica de la tanda está en core (`packages/core/src/entry/quickBatch.ts`): `assignLineIds` reusa el id de una línea con el mismo texto, y `resolveLine` aplica la ficha, la descripción o la confirmación y recalcula el estado.
+- Una línea con el monto ambiguo ("12.5") no se confirma con "Revisar": hay que corregir el texto.
+- Si una línea se paga con una cuenta en otra moneda, lo descontado se calcula con el dólar tarjeta de la fecha. Si falta esa cotización, la línea queda en el campo con un aviso.
+- Las fichas de una línea incompleta son las candidatas o las de `paymentChips`, sin "Otro…".
+- Si se corta la señal, la tanda para ahí: las guardadas salen del campo y las demás quedan con "Sin conexión: las que quedan no se guardaron. Probá de nuevo.".
+
 **Criterios de aceptación de D-5:**
 1. Pegar 8 líneas (6 completas, 1 sin medio y 1 sin monto) muestra "Guardar 6 · faltan 2". Guardar deja en el campo solo las 2 que faltan.
 2. En el detalle de la Master, "12000 súper" se carga con la Master, y "12000 súper visa" con la Visa (R3-6).
