@@ -273,6 +273,13 @@ Usa `lateExpenseImpact` con los gastos y pagos de la tarjeta (de `loadWalletInpu
 - **En la tanda de varias líneas:** una sola pregunta para todas las líneas tarde, con la lista de los resúmenes afectados. Cada línea se evalúa contra los gastos de las líneas anteriores de la misma tanda.
 - **El toast** suma "· pago de $12.000 registrado" cuando se contestó "Sí".
 
+**Implementado el 6/10.**
+- Core: `lateImpacts(input, drafts)` en `wallet.ts` evalúa uno o varios gastos con las filas de la Billetera; en una tanda, cada línea cuenta los gastos y los pagos propuestos de las anteriores. Los textos están en `entry/alreadyPaid.ts`.
+- Solo se traen los pagos si el resumen del gasto ya cerró (`mayBeLate`): la carga común no espera nada más.
+- Los pagos llevan el id que genera el teléfono (migración `20261006120000_expense_payment_ids.sql`). "Deshacer" revierte esos pagos y después borra el gasto.
+- En la hoja, con un solo pago se edita lo que salió de la cuenta (no más que lo propuesto); con varios, se muestran sin editar. En la tanda, los pagos no se editan.
+- "Volver" cierra la pregunta y deja seguir editando. Sin dólar tarjeta de hoy, no se propone un pago que lo necesite.
+
 **Criterios de aceptación de D-6** (los ejemplos de 02 §3, verificados en la base):
 1. Visa con cierre 30 y septiembre pagado completo ($100.000). Cargar "28/09 12000 farmacia visa":
    - con "Sí", el resumen queda en $112.000 "Pagado";

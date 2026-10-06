@@ -5,7 +5,6 @@ import {
   formatMoney,
   formatTotal,
   money,
-  rate as toRate,
   todayInArgentina,
   type ISODate,
   type Rate,
@@ -21,7 +20,7 @@ import { TextField } from '../../../../components/TextField';
 import { useToast } from '../../../../components/Toast';
 import { cardRateOn } from '../../../../lib/entry';
 import { walletChanged } from '../../../../lib/events';
-import { registerPayments, revertPayments, type PaymentDraft } from '../../../../lib/payments';
+import { impliedRate, registerPayments, revertPayments, type PaymentDraft } from '../../../../lib/payments';
 import { useSession } from '../../../../lib/session';
 import { loadCardDetail, type CardDetailData } from '../../../../lib/wallet';
 import { type } from '../../../../theme/tokens';
@@ -35,12 +34,6 @@ interface Errors {
   usdAccount?: string;
   debited?: string;
   date?: string;
-}
-
-/** Pesos por dólar con 4 decimales, a partir de lo descontado y lo pagado (en centavos). */
-function impliedRate(arsMinor: number, usdMinor: number): Rate {
-  const scaled = Math.round((arsMinor * 10_000) / usdMinor);
-  return toRate(`${Math.floor(scaled / 10_000)}.${String(scaled % 10_000).padStart(4, '0')}`);
 }
 
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];

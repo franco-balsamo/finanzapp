@@ -4,7 +4,8 @@
 import { todayInArgentina } from '../notices/fromDb.ts';
 import { cardState } from '../cards/state.ts';
 import { closeDate, statementFor } from '../cards/schedule.ts';
-import type { ByCurrency, CreditCard, StatementOverride, StatementPayment, StatementStatus } from '../cards/types.ts';
+import { lateExpenseImpact, type LateExpenseImpact } from '../cards/late.ts';
+import type { ByCurrency, CardExpense, CreditCard, StatementOverride, StatementPayment, StatementStatus } from '../cards/types.ts';
 import { addDays, type ISODate, type Period } from '../dates.ts';
 import { groupBalances } from '../groups/balances.ts';
 import type { Group, GroupExpense, GroupPayment } from '../groups/types.ts';
@@ -491,4 +492,54 @@ export function cardDetail(input: WalletInput, cardId: string): CardDetail {
     available: limitKnown ? state.available : null,
     overrides,
   };
+}
+
+/** Un gasto con tarjeta de crédito que se está por guardar, para "¿Ya lo pagaste?" (D-6). */
+export interface LateDraft {
+  id: string;
+  cardId: string;
+  date: ISODate;
+  amount: Money;
+  installments: number;
+}
+
+/**
+ * "¿Ya lo pagaste?" para uno o varios gastos que se guardan juntos (02 §3, D-6). Cada gasto se evalúa
+ * contra los guardados y contra los anteriores de la tanda, con sus pagos propuestos como si se
+ * contestara "Sí": la pregunta es una sola para toda la tanda. Sin dólar tarjeta de hoy, no se
+ * propone un pago que lo necesite.
+ */
+export function lateImpacts(input: WalletInput, drafts: readonly LateDraft[]): LateExpenseImpact[] {
+  const prepared = prepare(input);
+  const extraExpenses: (CardExpense & { cardId: string })[] = [];
+  const extraPayments: CardPayment[] = [];
+  const fxCard = input.fxCard ?? UNUSED_RATE;
+
+  return drafts.map((draft) => {
+    const row = input.cards.find((c) => c.id === draft.cardId);
+    if (!row) return { isLate: false, askAlreadyPaid: false, proposedPayments: [] };
+    const { card, overrides } = cardFromDb(row, input);
+    const expense: CardExpense = { id: draft.id, date: draft.date, amount: draft.amount, installments: draft.installments };
+    const impact = lateExpenseImpact({
+      card,
+      expense,
+      expenses: [
+        ...prepared.movements
+          .filter((m) => m.cardId === row.id && m.type === 'expense')
+          .map((m) => ({ id: m.id, date: m.date, amount: m.amount, installments: m.installments })),
+        ...extraExpenses.filter((e) => e.cardId === row.id),
+      ],
+      payments: [...prepared.payments, ...extraPayments].filter((p) => p.cardId === row.id),
+      overrides,
+      today: input.today,
+      fxCard,
+    });
+    const proposedPayments = impact.proposedPayments.filter((p) => input.fxCard || p.fxCardRate !== UNUSED_RATE);
+
+    extraExpenses.push({ ...expense, cardId: row.id });
+    proposedPayments.forEach((p, i) =>
+      extraPayments.push({ ...p, id: `${draft.id}-${i}`, cardId: row.id, revertedAt: null }),
+    );
+    return { ...impact, askAlreadyPaid: proposedPayments.length > 0, proposedPayments };
+  });
 }

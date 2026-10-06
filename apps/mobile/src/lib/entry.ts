@@ -1,6 +1,9 @@
 import {
   addDays,
   cardStatementFor,
+  closeDate,
+  lateImpacts,
+  statementFor,
   convert,
   learnableWord,
   money,
@@ -12,15 +15,19 @@ import {
   type CardNetwork,
   type Currency,
   type ISODate,
+  type LateDraft,
+  type LateExpenseImpact,
   type LineWarning,
   type Money,
   type PaymentMethod,
   type PaymentUse,
+  type ProposedPayment,
   type Rate,
   type ResolvedLine,
   type StatementOverride,
 } from '@mangos/core';
 import type { UserSettings } from './session';
+import { impliedRate } from './payments';
 import { supabase } from './supabase';
 import { loadWalletInput } from './wallet';
 
@@ -129,26 +136,83 @@ function isNetworkError(error: unknown): boolean {
   return /network request failed|failed to fetch|fetch failed|load failed|networkerror/i.test(message);
 }
 
+/** Un pago propuesto por "¿Ya lo pagaste?", con el id que generó el teléfono para poder deshacerlo. */
+export interface LatePayment extends ProposedPayment {
+  id: string;
+}
+
+export function withIds(payments: readonly ProposedPayment[], newId: () => string): LatePayment[] {
+  return payments.map((p) => ({ ...p, id: newId() }));
+}
+
+/**
+ * La persona corrigió lo que salió de la cuenta. En la misma moneda cambia también lo que cubre; en
+ * otra, cambia la cotización (como al pagar un resumen, D-3).
+ */
+export function editLatePayment(payment: LatePayment, debitedMinor: number): LatePayment {
+  const debited = money(debitedMinor, payment.debitedAmount.currency);
+  if (payment.appliesTo === debited.currency) return { ...payment, amount: money(debitedMinor, payment.appliesTo), debitedAmount: debited };
+  return { ...payment, debitedAmount: debited, fxCardRate: impliedRate(debitedMinor, payment.amount.minor) };
+}
+
+/**
+ * ¿Algún resumen donde entra este gasto ya cerró? Solo entonces vale la pena traer los pagos para
+ * preguntar "¿Ya lo pagaste?": la carga común (fecha de hoy) no espera nada más.
+ */
+export function mayBeLate(ctx: EntryContext, cardId: string, date: ISODate): boolean {
+  const card = ctx.cards.get(cardId);
+  if (!card) return false;
+  const core = { id: card.id, closeDay: card.closeDay, dueDay: card.dueDay, creditLimit: money(0, 'ARS') };
+  return closeDate(core, statementFor(core, date, card.overrides), card.overrides) < ctx.today;
+}
+
+/** `lateImpacts` con los datos de la Billetera. null si no se pudieron traer: se guarda sin preguntar. */
+export async function loadLateImpacts(userId: string, settings: UserSettings, drafts: readonly LateDraft[]): Promise<LateExpenseImpact[] | null> {
+  try {
+    const { input } = await loadWalletInput(userId, settings);
+    return lateImpacts(input, drafts);
+  } catch {
+    return null;
+  }
+}
+
+function paymentJson(p: LatePayment) {
+  return {
+    id: p.id,
+    period: `${p.period}-01`,
+    applies_to: p.appliesTo,
+    amount: toDbNumeric(p.amount),
+    from_account_id: p.fromAccountId,
+    debited_amount: toDbNumeric(p.debitedAmount),
+    fx_card_rate: p.fxCardRate,
+    paid_on: p.paidAt,
+  };
+}
+
 /**
  * Guarda el gasto con el id que generó el teléfono al abrir la hoja. Si ese id ya existe (un reintento
- * que sí había llegado), cuenta como guardado: nunca se duplica (02 §5).
+ * que sí había llegado), cuenta como guardado: nunca se duplica (02 §5). Con pagos ("¿Ya lo pagaste?"
+ * → Sí), gasto y pagos van juntos en `save_expense_with_payments`.
  */
-export async function saveExpense(draft: ExpenseDraft): Promise<SaveError | null> {
+export async function saveExpense(draft: ExpenseDraft, payments: readonly LatePayment[] = []): Promise<SaveError | null> {
+  const row = {
+    id: draft.id,
+    type: 'expense',
+    origin: draft.origin,
+    date: draft.date,
+    description: draft.description.trim(),
+    amount: toDbNumeric(draft.amount),
+    currency: draft.amount.currency,
+    card_id: draft.method.kind === 'card' ? draft.method.id : null,
+    account_id: draft.method.kind === 'account' ? draft.method.id : null,
+    installments: draft.method.kind === 'card' ? draft.installments : 1,
+    category_id: draft.categoryId,
+    debited_amount: draft.debited ? toDbNumeric(draft.debited) : null,
+  };
   try {
-    const { error } = await supabase.from('movements').insert({
-      id: draft.id,
-      type: 'expense',
-      origin: draft.origin,
-      date: draft.date,
-      description: draft.description.trim(),
-      amount: toDbNumeric(draft.amount),
-      currency: draft.amount.currency,
-      card_id: draft.method.kind === 'card' ? draft.method.id : null,
-      account_id: draft.method.kind === 'account' ? draft.method.id : null,
-      installments: draft.method.kind === 'card' ? draft.installments : 1,
-      category_id: draft.categoryId,
-      debited_amount: draft.debited ? toDbNumeric(draft.debited) : null,
-    });
+    const { error } = payments.length
+      ? await supabase.rpc('save_expense_with_payments', { expense: row, payments: payments.map(paymentJson) })
+      : await supabase.from('movements').insert(row);
     if (!error || error.code === '23505') return null;
     return isNetworkError(error) ? 'offline' : 'failed';
   } catch (error) {
@@ -169,6 +233,8 @@ export const WARNING_TEXT: Record<LineWarning, string> = {
 export interface BatchResult {
   /** Los ids que quedaron guardados, en orden. */
   saved: string[];
+  /** Los pagos de "¿Ya lo pagaste?" que se registraron con esos gastos. */
+  payments: LatePayment[];
   /** Sin dólar tarjeta de la fecha para descontar de una cuenta en otra moneda: quedan en el campo. */
   noRate: string[];
   /** Si se cortó a mitad de la tanda: las que siguen quedan en el campo. */
@@ -179,8 +245,12 @@ export interface BatchResult {
  * Guarda las líneas listas de a una, cada una con su id (D-5). Si se corta la señal, para ahí: al
  * reintentar, las que ya habían llegado cuentan como guardadas y no se duplican.
  */
-export async function saveBatch(lines: readonly ResolvedLine[], ctx: EntryContext): Promise<BatchResult> {
-  const result: BatchResult = { saved: [], noRate: [], failure: null };
+export async function saveBatch(
+  lines: readonly ResolvedLine[],
+  ctx: EntryContext,
+  payments: ReadonlyMap<string, readonly LatePayment[]> = new Map(),
+): Promise<BatchResult> {
+  const result: BatchResult = { saved: [], payments: [], noRate: [], failure: null };
   const rates = new Map<ISODate, Rate | null>();
   for (const line of lines) {
     const method = ctx.methods.find((m) => m.id === line.methodId);
@@ -196,6 +266,7 @@ export async function saveBatch(lines: readonly ResolvedLine[], ctx: EntryContex
       }
       debited = convert(line.amount, r, account.currency);
     }
+    const linePayments = payments.get(line.id) ?? [];
     const failure = await saveExpense({
       id: line.id,
       origin: 'text',
@@ -206,12 +277,13 @@ export async function saveBatch(lines: readonly ResolvedLine[], ctx: EntryContex
       installments: line.installments,
       categoryId: line.categoryId,
       debited,
-    });
+    }, linePayments);
     if (failure) {
       result.failure = failure;
       break;
     }
     result.saved.push(line.id);
+    result.payments.push(...linePayments);
   }
   return result;
 }
@@ -235,6 +307,16 @@ export async function learnCategory(description: string, categoryId: string, met
   const word = learnableWord(description, paymentMethodWords(methods));
   if (!word) return;
   await supabase.from('category_keywords').upsert({ word, category_id: categoryId }, { onConflict: 'user_id,word' });
+}
+
+/** Pasa las líneas de tarjeta de una tanda a `LateDraft`, para `loadLateImpacts`. */
+export function lateDrafts(lines: readonly ResolvedLine[], ctx: EntryContext): LateDraft[] {
+  return lines.flatMap((l) => {
+    const method = ctx.methods.find((m) => m.id === l.methodId);
+    return method?.kind === 'card' && l.amount
+      ? [{ id: l.id, cardId: method.id, date: l.date, amount: l.amount, installments: l.installments }]
+      : [];
+  });
 }
 
 /** Texto del toast, con lo que viene en el resumen ya contando el gasto nuevo. */

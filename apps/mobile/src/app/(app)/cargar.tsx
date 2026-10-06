@@ -1,8 +1,10 @@
 import {
+  alreadyPaidQuestion,
   amountInputText,
   closeDate,
   deduceCategory,
   formatAmountInput,
+  formatMoney,
   formatShortDate,
   money,
   orderedMethods,
@@ -10,6 +12,8 @@ import {
   parseQuickEntryLine,
   paymentChips,
   paymentMethodLabel,
+  paymentsToastSuffix,
+  proposedPaymentText,
   statementFor,
   SYSTEM_CATEGORY_IDS,
   convert,
@@ -33,16 +37,22 @@ import { useToast } from '../../components/Toast';
 import {
   cardRateOn,
   deleteExpense,
+  editLatePayment,
   learnCategory,
   loadEntryContext,
+  loadLateImpacts,
+  mayBeLate,
   saveExpense,
   toastFor,
+  withIds,
   type EntryContext,
   type ExpenseDraft,
+  type LatePayment,
   WARNING_TEXT,
 } from '../../lib/entry';
 import { CATEGORIES } from '../../lib/categories';
 import { walletChanged } from '../../lib/events';
+import { revertPayments } from '../../lib/payments';
 import { useSession } from '../../lib/session';
 import { radius, type } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
@@ -104,6 +114,10 @@ export default function AddExpense() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [otherOpen, setOtherOpen] = useState(false);
+  // "¿Ya lo pagaste?" (D-6): reemplaza al pie. Los pagos llevan su id desde que aparece la pregunta.
+  const [question, setQuestion] = useState<{ draft: ExpenseDraft; payments: LatePayment[] } | null>(null);
+  const [paidAmount, setPaidAmount] = useState('');
+  const [paidError, setPaidError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoadFailed(false);
@@ -253,9 +267,45 @@ export default function AddExpense() {
       debited: needsDebited && account && debitedMinor ? money(debitedMinor, account.currency) : null,
     };
 
+    // Un gasto en un resumen que ya cerró: si ese resumen estaba pagado, se pregunta antes de guardar.
+    if (method.kind === 'card' && mayBeLate(ctx, method.id, expenseDate)) {
+      setSaving(true);
+      const impacts = await loadLateImpacts(session.user.id, settings, [
+        { id, cardId: method.id, date: expenseDate, amount: draft.amount, installments: draft.installments },
+      ]);
+      setSaving(false);
+      const impact = impacts?.[0];
+      if (impact?.askAlreadyPaid) {
+        const payments = withIds(impact.proposedPayments, randomUUID);
+        setQuestion({ draft, payments });
+        setPaidAmount(amountInputText(payments[0]!.debitedAmount.minor));
+        setPaidError(null);
+        return;
+      }
+    }
+    await commit(draft, []);
+  }
+
+  /** "Sí": con el monto corregido si hay un solo pago. */
+  async function answerYes() {
+    if (!question) return;
+    let payments = question.payments;
+    if (payments.length === 1) {
+      const proposed = payments[0]!;
+      const minor = formatAmountInput(paidAmount).minor;
+      if (!minor) return setPaidError('Poné cuánto pagaste.');
+      if (minor > proposed.debitedAmount.minor) return setPaidError(`No puede ser más que el gasto (${formatMoney(proposed.debitedAmount)}).`);
+      payments = [editLatePayment(proposed, minor)];
+    }
+    setPaidError(null);
+    await commit(question.draft, payments);
+  }
+
+  async function commit(draft: ExpenseDraft, payments: LatePayment[]) {
+    if (!ctx || !session || !settings) return;
     setSaving(true);
     setSaveError(null);
-    const failure = await saveExpense(draft);
+    const failure = await saveExpense(draft, payments);
     if (failure) {
       setSaving(false);
       setSaveError(failure === 'offline' ? 'Sin conexión. Probá de nuevo.' : 'No pudimos guardar el gasto. Probá de nuevo.');
@@ -269,10 +319,12 @@ export default function AddExpense() {
     router.back();
 
     const text = await toastFor(draft, session.user.id, settings);
-    toast(text, {
+    toast(text + paymentsToastSuffix(payments), {
       label: 'Deshacer',
       onPress: async () => {
-        const ok = await deleteExpense(draft.id);
+        let ok = true;
+        if (payments.length) ok = await revertPayments(payments.map((p) => p.id)).then(() => true, () => false);
+        if (ok) ok = await deleteExpense(draft.id);
         walletChanged();
         toast(ok ? 'Gasto borrado' : 'No se pudo borrar el gasto. Probá de nuevo.');
       },
@@ -280,6 +332,7 @@ export default function AddExpense() {
   }
 
   const cardSelected = method?.kind === 'card';
+  const accountName = (p: LatePayment) => ctx?.accounts.get(p.fromAccountId)?.name ?? 'una cuenta';
 
   return (
     <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
@@ -290,7 +343,12 @@ export default function AddExpense() {
         <Button title="✕" variant="ghost" onPress={() => router.back()} accessibilityLabel="Cerrar" />
       </View>
 
-      <KeyboardAwareScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bottomOffset={90}>
+      <KeyboardAwareScrollView
+        contentContainerStyle={[styles.content, question && styles.frozen]}
+        pointerEvents={question ? 'none' : 'auto'}
+        keyboardShouldPersistTaps="handled"
+        bottomOffset={90}
+      >
         {/* 1. Carga por texto, plegada: no se lleva el foco. */}
         {quickOpen ? (
           <View style={styles.block}>
@@ -459,10 +517,48 @@ export default function AddExpense() {
 
       {/* 10. Guardar, siempre arriba del teclado. */}
       <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
-        <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.line, paddingBottom: 12 + insets.bottom }]}>
-          <Button title="Cancelar" onPress={() => router.back()} disabled={saving} />
-          <Button title="Guardar gasto" variant="primary" onPress={save} loading={saving} disabled={!ctx} />
-        </View>
+        {question ? (
+          <View
+            style={[styles.question, { backgroundColor: colors.surface, borderTopColor: colors.line, paddingBottom: 12 + insets.bottom }]}
+            accessibilityLiveRegion="polite"
+          >
+            <Text style={[type.subtitle, { color: colors.text }]}>{alreadyPaidQuestion(question.payments, ctx!.today)}</Text>
+            {question.payments.length === 1 ? (
+              <TextField
+                label={`Pago desde ${accountName(question.payments[0]!)}, ${formatShortDate(question.payments[0]!.paidAt)} (${question.payments[0]!.debitedAmount.currency === 'ARS' ? '$' : 'US$'})`}
+                value={paidAmount}
+                onChangeText={(t) => {
+                  setPaidAmount(formatAmountInput(t).text);
+                  setPaidError(null);
+                }}
+                error={paidError ?? undefined}
+                mono
+                keyboardType="decimal-pad"
+              />
+            ) : (
+              question.payments.map((p) => (
+                <Text key={p.id} style={[type.small, { color: colors.text }]}>
+                  {proposedPaymentText(p, accountName(p))}
+                </Text>
+              ))
+            )}
+            {saveError ? (
+              <Text style={[type.caption, { color: colors.error }]} accessibilityLiveRegion="polite">
+                {saveError}
+              </Text>
+            ) : null}
+            <View style={styles.questionButtons}>
+              <Button title="Volver" variant="ghost" onPress={() => setQuestion(null)} disabled={saving} />
+              <Button title="No" onPress={() => commit(question.draft, [])} disabled={saving} />
+              <Button title="Sí" variant="primary" onPress={answerYes} loading={saving} />
+            </View>
+          </View>
+        ) : (
+          <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.line, paddingBottom: 12 + insets.bottom }]}>
+            <Button title="Cancelar" onPress={() => router.back()} disabled={saving} />
+            <Button title="Guardar gasto" variant="primary" onPress={save} loading={saving} disabled={!ctx} />
+          </View>
+        )}
       </KeyboardStickyView>
 
       {/* "Otro…": todos los medios, agrupados en Tarjetas y Cuentas. */}
@@ -520,6 +616,9 @@ const styles = StyleSheet.create({
   skeleton: { height: 30, width: 240, borderRadius: radius.full },
   otherInstallments: { minWidth: 56, minHeight: 32, borderWidth: 1, borderRadius: radius.full, paddingHorizontal: 11, textAlign: 'center' },
   details: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
+  frozen: { opacity: 0.45 },
+  question: { gap: 10, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
+  questionButtons: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
   footer: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
   scrim: { flex: 1, justifyContent: 'flex-end' },
   picker: { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: 20, gap: 14, maxHeight: '80%' },

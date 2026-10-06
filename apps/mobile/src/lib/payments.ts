@@ -1,5 +1,11 @@
-import { toDbNumeric, type Currency, type ISODate, type Money, type Period, type Rate } from '@mangos/core';
+import { rate as toRate, toDbNumeric, type Currency, type ISODate, type Money, type Period, type Rate } from '@mangos/core';
 import { supabase } from './supabase';
+
+/** Pesos por dólar con 4 decimales, a partir de lo descontado y lo pagado (en centavos). */
+export function impliedRate(arsMinor: number, usdMinor: number): Rate {
+  const scaled = Math.round((arsMinor * 10_000) / usdMinor);
+  return toRate(`${Math.floor(scaled / 10_000)}.${String(scaled % 10_000).padStart(4, '0')}`);
+}
 
 export interface PaymentDraft {
   appliesTo: Currency;

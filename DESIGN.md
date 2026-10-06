@@ -476,10 +476,11 @@ Se definió en `/plan-design-review` (1/10). La ubicación y el comportamiento e
 | Estado de cada línea | Cómo se ve |
 |---|---|
 | Lista | Fila normal |
-| Para revisar | `Pill` `warning` "Revisar" a la derecha; tocarla abre ese gasto para confirmarlo |
+| Para revisar | `Pill` `warning` "Revisar" a la derecha, con el motivo en `caption`; tocarla confirma la línea, que pasa a "Lista". Un monto ambiguo no se confirma: se corrige en el texto |
+| Incompleta | Fichas de medio de pago (las candidatas o las de `PaymentMethodChips`, sin "Otro…") o el campo de descripción, y "Descartar" |
 | Sin monto | `Pill` `error` "Falta el monto"; la línea queda en el campo después de guardar |
 
-- El botón `primary` dice "Guardar 8 gastos". Si quedan líneas sin guardar, suma "· quedan 2 sin guardar" en `caption`.
+- El botón `primary` dice "Guardar 8 gastos" ("Guardar 1 gasto" si es uno). Si quedan líneas sin completar, dice "Guardar 6 · faltan 2".
 - Si no hay ninguna línea lista, el botón queda deshabilitado (opacidad 0.45).
 
 ### Fichas de medio de pago (`PaymentMethodChips`)

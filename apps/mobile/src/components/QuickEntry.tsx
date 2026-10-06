@@ -1,4 +1,5 @@
 import {
+  alreadyPaidQuestion,
   assignLineIds,
   batchSavedText,
   batchSaveLabel,
@@ -9,6 +10,8 @@ import {
   parseQuickEntryLine,
   paymentChips,
   paymentMethodLabel,
+  paymentsToastSuffix,
+  proposedPaymentText,
   resolveLine,
   type BatchLine,
   type LineOverride,
@@ -18,8 +21,21 @@ import {
 import { randomUUID } from 'expo-crypto';
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { deleteExpenses, loadEntryContext, saveBatch, WARNING_TEXT, type EntryContext } from '../lib/entry';
+import {
+  deleteExpenses,
+  lateDrafts,
+  loadEntryContext,
+  loadLateImpacts,
+  mayBeLate,
+  saveBatch,
+  WARNING_TEXT,
+  withIds,
+  type EntryContext,
+  type LatePayment,
+} from '../lib/entry';
 import { walletChanged } from '../lib/events';
+import { revertPayments } from '../lib/payments';
+import { useSession } from '../lib/session';
 import { radius, type } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { Button } from './Button';
@@ -38,6 +54,7 @@ interface Props {
 export function QuickEntry({ defaultCardId }: Props) {
   const { colors } = useTheme();
   const toast = useToast();
+  const { session, settings } = useSession();
   const [open, setOpen] = useState(false);
   const [ctx, setCtx] = useState<EntryContext | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -47,6 +64,10 @@ export function QuickEntry({ defaultCardId }: Props) {
   const [note, setNote] = useState<string | null>(null);
   // Los ids viven mientras la línea no cambie: reintentar después de un corte no duplica.
   const linesRef = useRef<BatchLine[]>([]);
+  // "¿Ya lo pagaste?" (D-6): una sola pregunta para toda la tanda. Cada línea conserva los ids de sus
+  // pagos, así un reintento no deja pagos sin poder deshacer.
+  const [question, setQuestion] = useState<{ lines: ResolvedLine[]; payments: Map<string, LatePayment[]> } | null>(null);
+  const paymentIdsRef = useRef(new Map<string, LatePayment[]>());
 
   const lines = useMemo(() => {
     const next = assignLineIds(linesRef.current, batchTexts(text), randomUUID);
@@ -74,6 +95,7 @@ export function QuickEntry({ defaultCardId }: Props) {
   }
 
   function override(id: string, fields: LineOverride) {
+    setQuestion(null);
     setOverrides((o) => ({ ...o, [id]: { ...o[id], ...fields } }));
   }
 
@@ -85,10 +107,39 @@ export function QuickEntry({ defaultCardId }: Props) {
   }
 
   async function save() {
-    if (!ctx || !ready.length) return;
+    if (!ctx || !session || !settings || !ready.length) return;
+    const late = lateDrafts(ready, ctx).filter((d) => mayBeLate(ctx, d.cardId, d.date));
+    if (late.length) {
+      setSaving(true);
+      const impacts = await loadLateImpacts(session.user.id, settings, late);
+      setSaving(false);
+      const payments = new Map<string, LatePayment[]>();
+      impacts?.forEach((impact, i) => {
+        if (!impact.askAlreadyPaid) return;
+        const id = late[i]!.id;
+        const cached = paymentIdsRef.current.get(id);
+        // Reusa los ids si la propuesta no cambió (un reintento después de un corte).
+        const same =
+          cached?.length === impact.proposedPayments.length &&
+          cached.every((c, j) => c.period === impact.proposedPayments[j]!.period && c.amount.minor === impact.proposedPayments[j]!.amount.minor);
+        const withId = same ? cached! : withIds(impact.proposedPayments, randomUUID);
+        paymentIdsRef.current.set(id, withId);
+        payments.set(id, withId);
+      });
+      if (payments.size) {
+        setQuestion({ lines: ready, payments });
+        return;
+      }
+    }
+    await commit(ready, new Map());
+  }
+
+  async function commit(lines: ResolvedLine[], payments: ReadonlyMap<string, LatePayment[]>) {
+    if (!ctx) return;
+    setQuestion(null);
     setSaving(true);
     setNote(null);
-    const result = await saveBatch(ready, ctx);
+    const result = await saveBatch(lines, ctx, payments);
     setSaving(false);
     keepOnly(new Set(result.saved));
 
@@ -102,10 +153,13 @@ export function QuickEntry({ defaultCardId }: Props) {
     if (!result.saved.length) return;
     walletChanged();
     const saved = result.saved;
-    toast(batchSavedText(saved.length), {
+    const paymentIds = result.payments.map((p) => p.id);
+    toast(batchSavedText(saved.length) + paymentsToastSuffix(result.payments), {
       label: 'Deshacer',
       onPress: async () => {
-        const ok = await deleteExpenses(saved);
+        let ok = true;
+        if (paymentIds.length) ok = await revertPayments(paymentIds).then(() => true, () => false);
+        if (ok) ok = await deleteExpenses(saved);
         walletChanged();
         toast(ok ? (saved.length === 1 ? 'Gasto borrado' : 'Gastos borrados') : 'No se pudieron borrar. Probá de nuevo.');
       },
@@ -129,7 +183,10 @@ export function QuickEntry({ defaultCardId }: Props) {
     <View style={styles.block}>
       <TextInput
         value={text}
-        onChangeText={setText}
+        onChangeText={(t) => {
+          setText(t);
+          setQuestion(null);
+        }}
         multiline
         autoFocus
         autoCapitalize="none"
@@ -165,12 +222,30 @@ export function QuickEntry({ defaultCardId }: Props) {
         </Text>
       ) : null}
 
-      <View style={styles.actions}>
-        <Button title="Cerrar" variant="ghost" onPress={() => setOpen(false)} disabled={saving} />
-        {resolved.length ? (
-          <Button title={batchSaveLabel(resolved)} variant="primary" onPress={save} loading={saving} disabled={!ready.length} />
-        ) : null}
-      </View>
+      {question && ctx ? (
+        <View style={[styles.question, { borderColor: colors.line }]} accessibilityLiveRegion="polite">
+          <Text style={[type.subtitle, { color: colors.text }]}>
+            {alreadyPaidQuestion([...question.payments.values()].flat(), ctx.today)}
+          </Text>
+          {[...question.payments.values()].flat().map((p) => (
+            <Text key={p.id} style={[type.small, { color: colors.text }]}>
+              {proposedPaymentText(p, ctx.accounts.get(p.fromAccountId)?.name ?? 'una cuenta')}
+            </Text>
+          ))}
+          <View style={styles.actions}>
+            <Button title="Volver" variant="ghost" onPress={() => setQuestion(null)} />
+            <Button title="No" onPress={() => commit(question.lines, new Map())} />
+            <Button title="Sí" variant="primary" onPress={() => commit(question.lines, question.payments)} />
+          </View>
+        </View>
+      ) : (
+        <View style={styles.actions}>
+          <Button title="Cerrar" variant="ghost" onPress={() => setOpen(false)} disabled={saving} />
+          {resolved.length ? (
+            <Button title={batchSaveLabel(resolved)} variant="primary" onPress={save} loading={saving} disabled={!ready.length} />
+          ) : null}
+        </View>
+      )}
     </View>
   );
 }
@@ -283,6 +358,7 @@ const styles = StyleSheet.create({
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rowMiddle: { flex: 1, minWidth: 0 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  question: { borderWidth: 1, borderRadius: radius.md, padding: 12, gap: 8 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
   start: { alignSelf: 'flex-start' },
 });

@@ -2,7 +2,7 @@
 -- save_expense_with_payments con el ejemplo de R3-3 (02 §3).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(16);
 
 -- Ana (a…01) y Beto (b…02).
 insert into auth.users (id, email) values
@@ -115,6 +115,23 @@ select is(
   (select count(*)::int from public.movements where id = 'a3000000-0000-4000-8000-000000000003'),
   0,
   'Y el gasto tampoco queda guardado'
+);
+
+-- El pago lleva el id del teléfono (D-6), para que "Deshacer" lo revierta.
+select is(
+  public.save_expense_with_payments(
+    '{"id": "a3000000-0000-4000-8000-000000000004", "date": "2026-09-29", "description": "kiosco", "amount": "1000.00",
+      "currency": "ARS", "card_id": "a2000000-0000-4000-8000-000000000001"}',
+    '[{"id": "a4000000-0000-4000-8000-000000000001", "period": "2026-09-01", "applies_to": "ARS", "amount": "1000.00",
+       "from_account_id": "a1000000-0000-4000-8000-000000000002", "debited_amount": "1000.00", "paid_on": "2026-10-06"}]'
+  ),
+  true,
+  'Guarda un gasto con un pago que trae su id'
+);
+select is(
+  (select amount from public.statement_payments where id = 'a4000000-0000-4000-8000-000000000001'),
+  1000.00,
+  'El pago quedó con ese id'
 );
 
 select * from finish();
