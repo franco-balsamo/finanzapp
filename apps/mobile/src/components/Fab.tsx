@@ -21,7 +21,7 @@ export function Fab() {
         pressed && { opacity: 0.9 },
       ]}
     >
-      <Text style={[type.button, { color: colors.onPrimary, fontSize: 15 }]}>+ Gasto</Text>
+      <Text style={[type.button, { color: colors.onPrimary }]}>+ Gasto</Text>
     </Pressable>
   );
 }

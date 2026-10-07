@@ -26,6 +26,7 @@
 | [2026-10-07-cotizacion-del-dia.md](2026-10-07-cotizacion-del-dia.md) | ArgentinaDatos solo guarda días terminados y corrige los que ya tenía: antes, la fila de hoy traía el cierre de ayer y le ganaba todo el día a DolarApi |
 | [2026-10-07-ultimo-resumen-cerrado.md](2026-10-07-ultimo-resumen-cerrado.md) | El detalle de tarjeta muestra siempre el último resumen cerrado, aunque esté vacío ("Sin consumos"), para poder corregir su cierre |
 | [2026-10-07-web-completa.md](2026-10-07-web-completa.md) | Mangos web y móvil: la app completa en la web va después de la beta, con diseño de escritorio como el del prototipo |
+| [2026-10-07-revision-de-diseno.md](2026-10-07-revision-de-diseno.md) | Revisión de diseño a 320 y 390 con datos reales: fila de tarjeta, cómo saldar, cuotas, montos en Plex Mono, avatares con colores de categoría y otros arreglos |
 
 La fuente de verdad es `02-reglas-de-negocio.md` junto con `03-modelo-de-datos.md`.
 

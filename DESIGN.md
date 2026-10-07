@@ -512,6 +512,9 @@ Se definió en `/plan-design-review` (1/10). La ubicación y el comportamiento e
 - **Toast:** fondo `text`, texto `bg`, 14, padding 10 × 16, radio `md`, sombra `float`. Va 84 sobre el borde inferior para no tapar la barra de pestañas.
 - **Barra de pestañas:** `surface` con borde superior `line`. Cada ítem tiene ícono y texto de 11, en `textMuted`; el activo va en `primary`. El aviso es un `error` de 18 de alto con texto blanco 11 / 500.
 - **Medidor:** pista de 8 en `surface2`, radio `xs`, relleno `primary`.
+- **Avatar de integrante** (decisión de Fran, 7/10): la inicial en `text` sobre el color de categoría del integrante al 16% (`tint16`). El color sale de su lugar en el grupo (`cat[i % 6]`), también para "Vos". Nada de blanco sobre los colores de categoría (I-6) ni de `primary` como decoración.
+- **Cómo saldar:** fila compacta (padding 10). "Juan → Vos" usa todo el ancho, en hasta dos líneas, con el monto en `money` debajo y "Registrar" a la derecha. En una sola línea, a 320 se perdía a quién hay que pagarle.
+- **Monto dentro de un texto corrido** ("Quedan $X · Pago mínimo aprox. $Y", "Usado $X · Disponible $Y"): el monto va en Plex Mono con el tamaño del texto (`Mono`).
 
 ## Do's and Don'ts
 
@@ -576,3 +579,4 @@ Pasan: `textMuted` sobre `bg` (5.81), blanco sobre `primary` (7.81), `onPrimary`
 | 2026-10-01 | Se creó el sistema extrayendo los valores de `prototipo/mangos.html` | Fran pidió no cambiar la dirección visual y marcar solo las inconsistencias |
 | 2026-10-01 | El carrusel se documenta, pero no entra en la v1 | Recorte C4 (`docs/decisiones/2026-10-01-ceo-review.md`). La tarjeta se usa en la lista y en el detalle |
 | 2026-10-01 | Se agregan QuickEntry, PaymentMethodChips, CardRow y Toast con acción | `/plan-design-review`, decisión 10A. Salen de las decisiones 2A, 3A, 5A y 9A (`docs/diseno-pantallas-v1.md`) |
+| 2026-10-07 | Avatares de integrantes con los colores de categoría; "Cómo saldar" en dos líneas; `CardRow` con pesos y dólares en dos líneas | Revisión de diseño a 320 y 390 con datos reales (`docs/decisiones/2026-10-07-revision-de-diseno.md`) |

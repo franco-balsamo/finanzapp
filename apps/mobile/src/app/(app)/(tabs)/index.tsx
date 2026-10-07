@@ -1,7 +1,7 @@
 import { daysBetween, formatMoney, moneyInWords, todayInArgentina, wallet, type WalletInput } from '@mangos/core';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { AccountRow } from '../../../components/AccountRow';
 import { Button } from '../../../components/Button';
 import { CardRow } from '../../../components/CardRow';
@@ -25,6 +25,8 @@ const TABS = [
 ] as const;
 
 const HOUR_MS = 60 * 60 * 1000;
+// DESIGN.md: el patrimonio va en 38, y en 30 en pantallas angostas.
+const NARROW_WIDTH = 360;
 
 type Currency = UserSettings['display_currency'];
 const CURRENCY_CHIP: Record<Currency, { label: string; name: string; other: string }> = {
@@ -36,6 +38,7 @@ function rateTime(fetchedAt: string): string {
   return new Intl.DateTimeFormat('es-AR', {
     hour: '2-digit',
     minute: '2-digit',
+    hourCycle: 'h23',
     timeZone: 'America/Argentina/Buenos_Aires',
   }).format(new Date(fetchedAt));
 }
@@ -45,6 +48,7 @@ export default function Wallet() {
   const { colors } = useTheme();
   const { session, settings, signOut, updateSettings } = useSession();
   const toast = useToast();
+  const { width } = useWindowDimensions();
   const [tab, setTab] = useState<Tab>('cards');
   const [loaded, setLoaded] = useState<Awaited<ReturnType<typeof loadWalletInput>> | null>(null);
   const [failed, setFailed] = useState(false);
@@ -128,7 +132,7 @@ export default function Wallet() {
             <View style={[styles.skeletonHero, { backgroundColor: colors.surface2 }]} />
           ) : nw ? (
             <Text
-              style={[type.moneyHero, { color: nw.total.minor < 0 ? colors.error : colors.text }]}
+              style={[width < NARROW_WIDTH ? type.moneyHeroCompact : type.moneyHero, { color: nw.total.minor < 0 ? colors.error : colors.text }]}
               maxFontSizeMultiplier={1.3}
               adjustsFontSizeToFit
               numberOfLines={1}

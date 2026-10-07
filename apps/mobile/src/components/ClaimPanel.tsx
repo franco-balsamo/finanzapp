@@ -161,7 +161,7 @@ export function ClaimPanel({ token, memberId, memberName, groupName, onClose, on
             autoComplete="one-time-code"
             maxLength={6}
             placeholder="123456"
-            style={{ fontSize: 24, letterSpacing: 6 }}
+            style={[type.moneyCard, { letterSpacing: 6 }]}
           />
           <View style={styles.buttons}>
             <Button title="Cambiar el mail" variant="ghost" onPress={() => setStep('email')} disabled={busy} />

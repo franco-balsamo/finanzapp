@@ -1,4 +1,4 @@
-import { formatShortDate, formatTotal, moneyInWords, paymentMethodLabel, type WalletCard } from '@mangos/core';
+import { formatMoney, formatShortDate, moneyInWords, paymentMethodLabel, type WalletCard } from '@mangos/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { cardColors, radius, type } from '../theme/tokens';
@@ -20,6 +20,10 @@ export function CardRow({ card, last, onPress }: { card: WalletCard; last: boole
   const { colors } = useTheme();
   const label = paymentMethodLabel({ kind: 'card', id: card.id, bank: '', network: card.network, last4: card.last4, isFavorite: card.isFavorite });
   const closes = formatShortDate(card.closeDate);
+  // Pesos y dólares en dos líneas: en una sola, a 320 de ancho, el monto se come el nombre.
+  const { ARS, USD } = card.currentTotal;
+  const amounts = [ARS, USD].filter((m) => m.minor !== 0);
+  if (!amounts.length) amounts.push(ARS);
 
   return (
     <Pressable
@@ -40,12 +44,16 @@ export function CardRow({ card, last, onPress }: { card: WalletCard; last: boole
           {card.name}
           {card.isFavorite ? <Text style={{ color: cardColors.favoriteStar }}> ★</Text> : null}
         </Text>
-        <Text style={[type.moneySm, { color: colors.textMuted }]}>·· {card.last4}</Text>
+        <Text style={[type.moneySm, { color: colors.textMuted }]} numberOfLines={1}>
+          ·· {card.last4}
+        </Text>
       </View>
       <View style={styles.right}>
-        <Text style={[type.money, { color: colors.text }]} maxFontSizeMultiplier={1.3}>
-          {formatTotal(card.currentTotal)}
-        </Text>
+        {amounts.map((m) => (
+          <Text key={m.currency} style={[type.money, { color: colors.text }]} maxFontSizeMultiplier={1.3} numberOfLines={1}>
+            {formatMoney(m)}
+          </Text>
+        ))}
         <Text style={[type.caption, { color: colors.textMuted }]}>cierra {closes}</Text>
       </View>
     </Pressable>
@@ -56,5 +64,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 4 },
   thumb: { width: 56, height: 36, borderRadius: radius.xs },
   middle: { flex: 1, minWidth: 0 },
-  right: { alignItems: 'flex-end' },
+  right: { alignItems: 'flex-end', flexShrink: 0 },
 });

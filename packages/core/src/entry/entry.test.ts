@@ -79,7 +79,7 @@ describe('campo Monto mientras se escribe (11A)', () => {
     for (const minor of [0, 5, 50, 1_200_000, 1_200_050, 1_200_005, 8_650_000]) {
       expect(formatAmountInput(amountInputText(minor)).minor).toBe(minor === 0 ? 0 : minor);
     }
-    expect(amountInputText(1_200_050)).toBe('12.000,5');
+    expect(amountInputText(1_200_050)).toBe('12.000,50');
     expect(amountInputText(1_200_000)).toBe('12.000');
   });
 

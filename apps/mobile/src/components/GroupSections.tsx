@@ -11,9 +11,10 @@ import {
 } from '@mangos/core';
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { layout, radius, type } from '../theme/tokens';
+import { layout, radius, tint16, type, type Palette } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { Button } from './Button';
+import { Mono } from './Mono';
 
 // Las secciones del detalle de grupo (1A). Las usan la app (G-4, con acciones) y la web de
 // invitados (W-3, de solo lectura): mismos datos de core, mismo dibujo.
@@ -40,6 +41,15 @@ export const memberName = (m: Pick<GroupMemberView, 'isMe' | 'name'>) => (m.isMe
 /** El nombre a mostrar de un integrante por id ("Vos" si es tu lugar). */
 export function nameIn(data: GroupDetail, memberId: string, fallback: string): string {
   return data.members.find((m) => m.id === memberId)?.isMe ? 'Vos' : fallback;
+}
+
+/**
+ * El avatar de un integrante (decisión del 7/10): el color de categoría según su lugar en el grupo,
+ * al 16% de fondo con la inicial en `text`. Blanco sobre esos colores no llega al contraste (I-6).
+ */
+export function memberAvatar(colors: Palette, data: GroupDetail, memberId: string): { backgroundColor: string } {
+  const found = data.members.findIndex((m) => m.id === memberId);
+  return { backgroundColor: tint16(colors.cat[Math.max(found, 0) % colors.cat.length]!) };
 }
 
 function Panel({ children }: { children: ReactNode }) {
@@ -75,14 +85,17 @@ export function TransferList({
               key={`${t.fromId}-${t.toId}`}
               accessible={!rowAction}
               accessibilityLabel={`${from} le paga a ${to} ${moneyInWords(t.amount)}`}
-              style={[styles.row, i < n - 1 && { borderBottomWidth: 1, borderBottomColor: colors.line }]}
+              style={[styles.row, styles.transfer, i < n - 1 && { borderBottomWidth: 1, borderBottomColor: colors.line }]}
             >
-              <Text style={[type.body, styles.flex, { color: colors.text }, t.involvesMe && type.bodyStrong]} numberOfLines={1}>
-                {from} → {to}
-              </Text>
-              <Text style={[type.money, { color: colors.text }]} maxFontSizeMultiplier={1.3}>
-                {formatMoney(t.amount)}
-              </Text>
+              {/* Los nombres usan todo el ancho y el monto va abajo: en una línea, se perdía a quién hay que pagarle. */}
+              <View style={styles.flex}>
+                <Text style={[type.body, { color: colors.text }, t.involvesMe && type.bodyStrong]} numberOfLines={2}>
+                  {from} → {to}
+                </Text>
+                <Text style={[type.money, { color: colors.text }]} maxFontSizeMultiplier={1.3}>
+                  {formatMoney(t.amount)}
+                </Text>
+              </View>
               {rowAction?.(t, from, to)}
             </View>
           );
@@ -127,15 +140,19 @@ export function MemberList({
               m.left && styles.faded,
             ]}
           >
-            <View style={[styles.initial, { backgroundColor: m.isMe ? colors.primary : colors.primarySoft }]}>
-              <Text style={[type.bodyStrong, { color: m.isMe ? colors.onPrimary : colors.primary }]}>
-                {memberName(m).trim().charAt(0).toUpperCase()}
-              </Text>
+            <View style={[styles.initial, memberAvatar(colors, data, m.id)]}>
+              <Text style={[type.bodyStrong, { color: colors.text }]}>{memberName(m).trim().charAt(0).toUpperCase()}</Text>
             </View>
-            <Text style={[type.body, styles.flex, { color: colors.text }]} numberOfLines={1}>
-              <Text style={type.bodyStrong}>{memberName(m)}</Text>
-              {marks.length ? <Text style={{ color: colors.textMuted }}> · {marks.join(' · ')}</Text> : null}
-            </Text>
+            <View style={styles.flex}>
+              <Text style={[type.bodyStrong, { color: colors.text }]} numberOfLines={1}>
+                {memberName(m)}
+              </Text>
+              {marks.length ? (
+                <Text style={[type.caption, { color: colors.textMuted }]} numberOfLines={1}>
+                  {marks.join(' · ')}
+                </Text>
+              ) : null}
+            </View>
             <Text style={[type.money, { color }]} maxFontSizeMultiplier={1.3}>
               {signed(m.balance)}
             </Text>
@@ -192,7 +209,13 @@ export function ExpenseList({
                 </Text>
                 {showMyShare ? (
                   <Text style={[type.caption, { color: colors.textMuted }]}>
-                    {e.myShare.minor ? `tu parte ${formatMoney(e.myShare)}` : 'no participás'}
+                    {e.myShare.minor ? (
+                      <>
+                        tu parte <Mono>{formatMoney(e.myShare)}</Mono>
+                      </>
+                    ) : (
+                      'no participás'
+                    )}
                   </Text>
                 ) : null}
               </View>
@@ -297,6 +320,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: layout.rowPaddingV, minHeight: layout.minTouch },
   initial: { width: layout.rowIcon, height: layout.rowIcon, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   right: { alignItems: 'flex-end' },
+  // "Cómo saldar" es una fila compacta, sin ícono (DESIGN.md, I-4).
+  transfer: { paddingVertical: 10 },
   faded: { opacity: 0.5 },
   voided: { textDecorationLine: 'line-through' },
   toggle: { minHeight: layout.minTouch, justifyContent: 'center' },

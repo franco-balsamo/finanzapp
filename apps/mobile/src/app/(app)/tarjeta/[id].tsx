@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
 import { CreditCard } from '../../../components/CreditCard';
+import { Mono } from '../../../components/Mono';
 import { Pill, type PillVariant } from '../../../components/Pill';
 import { QuickEntry } from '../../../components/QuickEntry';
 import { Screen } from '../../../components/Screen';
@@ -187,7 +188,7 @@ export default function CardDetailScreen() {
             <Button title="‹" variant="ghost" onPress={() => goTo(index - 1)} disabled={index <= 0} accessibilityLabel="Resumen anterior" />
             <View style={styles.navTitle} accessible accessibilityLabel={`Resumen de ${periodName(statement.period)}, ${status.label}`}>
               <Text style={[type.title, { color: colors.text }]}>Resumen de {periodName(statement.period)}</Text>
-              <Pill label={status.label} variant={status.variant} />
+              <Pill label={status.label} variant={status.variant} style={styles.centerSelf} />
             </View>
             <Button
               title="›"
@@ -202,8 +203,13 @@ export default function CardDetailScreen() {
           </Text>
           {hasPending(statement) && statement.status !== 'current' && statement.status !== 'future' ? (
             <Text style={[type.small, styles.center, { color: colors.text }]}>
-              Quedan {formatTotal(statement.pending)}
-              {statement.minimumPayment.minor > 0 ? ` · Pago mínimo aprox. ${formatMoney(statement.minimumPayment)}` : ''}
+              Quedan <Mono>{formatTotal(statement.pending)}</Mono>
+              {statement.minimumPayment.minor > 0 ? (
+                <>
+                  {' · Pago mínimo aprox. '}
+                  <Mono>{formatMoney(statement.minimumPayment)}</Mono>
+                </>
+              ) : null}
             </Text>
           ) : null}
         </View>
@@ -256,13 +262,20 @@ export default function CardDetailScreen() {
       {detail && detail.futureInstallments.length ? (
         <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <Text style={[type.subtitle, { color: colors.text }]}>Cuotas que siguen</Text>
-          <Text style={[type.money, { color: colors.text }]}>
-            {detail.futureInstallments
-              .slice(0, MAX_FUTURE)
-              .map((f) => `${periodName(f.period, true)} ${formatTotal(f.total)}`)
-              .join(' · ')}
-            {detail.futureInstallments.length > MAX_FUTURE ? ` · +${detail.futureInstallments.length - MAX_FUTURE}` : ''}
-          </Text>
+          {/* Un mes por fila: en texto corrido, a 320 el mes y su monto quedaban en líneas distintas. */}
+          {detail.futureInstallments.slice(0, MAX_FUTURE).map((f) => (
+            <View key={f.period} style={styles.futureRow} accessible accessibilityLabel={`${periodName(f.period)}: ${formatTotal(f.total)}`}>
+              <Text style={[type.body, { color: colors.textMuted }]}>{periodName(f.period, true)}</Text>
+              <Text style={[type.money, { color: colors.text }]} maxFontSizeMultiplier={1.3}>
+                {formatTotal(f.total)}
+              </Text>
+            </View>
+          ))}
+          {detail.futureInstallments.length > MAX_FUTURE ? (
+            <Text style={[type.caption, { color: colors.textMuted }]}>
+              Y {detail.futureInstallments.length - MAX_FUTURE} meses más
+            </Text>
+          ) : null}
         </View>
       ) : null}
 
@@ -322,7 +335,8 @@ export default function CardDetailScreen() {
                 <View style={[styles.fill, { width: `${limitPercent}%`, backgroundColor: colors.primary }]} />
               </View>
               <Text style={[type.caption, { color: colors.textMuted }]}>
-                Usado {formatMoney(detail.limitUsed)} · Disponible {formatMoney(detail.available)} de {formatMoney(detail.card.creditLimit)}
+                Usado <Mono>{formatMoney(detail.limitUsed)}</Mono> · Disponible <Mono>{formatMoney(detail.available)}</Mono> de{' '}
+                <Mono>{formatMoney(detail.card.creditLimit)}</Mono>
               </Text>
             </>
           ) : (
@@ -383,6 +397,8 @@ const styles = StyleSheet.create({
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   navTitle: { alignItems: 'center', gap: 4, flex: 1 },
   center: { textAlign: 'center' },
+  centerSelf: { alignSelf: 'center' },
+  futureRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 },
   panel: { borderWidth: 1, borderRadius: radius.lg, padding: layout.panelPadding, gap: 10 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 },
   rowMiddle: { flex: 1, minWidth: 0 },

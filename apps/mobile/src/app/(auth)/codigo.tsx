@@ -65,7 +65,7 @@ export default function Code() {
         autoComplete="one-time-code"
         maxLength={6}
         placeholder="123456"
-        style={{ fontSize: 24, letterSpacing: 6 }}
+        style={[type.moneyCard, { letterSpacing: 6 }]}
       />
       <Button
         title="Entrar"

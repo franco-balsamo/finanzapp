@@ -1,22 +1,25 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { radius, type } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
+import { Mono } from './Mono';
 
 interface Props {
   label: string;
+  /** Un número que va después del texto, en Plex Mono ("·· 2337"). */
+  mono?: string;
   selected?: boolean;
   onPress: () => void;
   accessibilityLabel?: string;
 }
 
 /** `Chip` de DESIGN.md. Mide menos de 44 de alto: lleva `hitSlop` vertical de 8. */
-export function Chip({ label, selected = false, onPress, accessibilityLabel }: Props) {
+export function Chip({ label, mono, selected = false, onPress, accessibilityLabel }: Props) {
   const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityLabel={accessibilityLabel ?? (mono ? `${label} ${mono}` : label)}
       accessibilityState={{ selected }}
       hitSlop={{ top: 8, bottom: 8 }}
       style={[
@@ -26,7 +29,15 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel }: P
           : { backgroundColor: colors.surface, borderColor: colors.line },
       ]}
     >
-      <Text style={[type.small, { color: selected ? colors.onPrimary : colors.textMuted }]}>{label}</Text>
+      <Text style={[type.small, { color: selected ? colors.onPrimary : colors.textMuted }]}>
+        {label}
+        {mono ? (
+          <>
+            {' '}
+            <Mono>{mono}</Mono>
+          </>
+        ) : null}
+      </Text>
     </Pressable>
   );
 }

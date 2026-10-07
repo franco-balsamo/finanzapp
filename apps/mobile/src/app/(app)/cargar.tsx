@@ -43,6 +43,7 @@ import { Button } from '../../components/Button';
 import { Chip } from '../../components/Chip';
 import { DateChooser, dateLabel } from '../../components/DateChooser';
 import { GroupSplit } from '../../components/GroupSplit';
+import { Mono } from '../../components/Mono';
 import { Segmented } from '../../components/Segmented';
 import { TextField } from '../../components/TextField';
 import { useToast } from '../../components/Toast';
@@ -94,6 +95,8 @@ function textToRate(text: string): Rate | null {
   return minor ? toRate(`${Math.floor(minor / 100)}.${String(minor % 100).padStart(2, '0')}`) : null;
 }
 const parseMinor = (text: string) => formatAmountInput(text).minor ?? 0;
+/** El nombre del medio sin los últimos 4, que van aparte en Plex Mono ("Visa" + "·· 2337"). */
+const methodName = (m: PaymentMethod) => paymentMethodLabel(m).replace(/ ·· \d{4}$/, '');
 
 /** Al editar un gasto de grupo: lo que no se puede cambiar y tu gasto personal vinculado. */
 interface EditState {
@@ -687,7 +690,8 @@ export default function AddExpense() {
               {(candidates.length ? ctx.methods.filter((m) => candidates.includes(m.id)) : chips).map((m) => (
                 <Chip
                   key={m.id}
-                  label={`${m.kind === 'card' && m.isFavorite ? '★ ' : ''}${paymentMethodLabel(m)}`}
+                  label={`${m.kind === 'card' && m.isFavorite ? '★ ' : ''}${methodName(m)}`}
+                  mono={m.kind === 'card' ? `·· ${m.last4}` : undefined}
                   selected={addToMine && m.id === methodId}
                   onPress={() => chooseMethod(m)}
                 />
@@ -963,7 +967,13 @@ export default function AddExpense() {
                       >
                         <Text style={[type.bodyStrong, { color: m.id === methodId ? colors.primary : colors.text }]}>
                           {m.kind === 'card' && m.isFavorite ? '★ ' : ''}
-                          {paymentMethodLabel(m)}
+                          {methodName(m)}
+                          {m.kind === 'card' ? (
+                            <>
+                              {' '}
+                              <Mono>·· {m.last4}</Mono>
+                            </>
+                          ) : null}
                         </Text>
                       </Pressable>
                     ))}

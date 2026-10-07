@@ -1,11 +1,11 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { radius, type } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
 export type PillVariant = 'success' | 'error' | 'warning' | 'neutral';
 
 /** `Pill` de DESIGN.md: estado sin interacción ("A pagar", "Vencido", "Pagado"). */
-export function Pill({ label, variant }: { label: string; variant: PillVariant }) {
+export function Pill({ label, variant, style }: { label: string; variant: PillVariant; style?: StyleProp<ViewStyle> }) {
   const { colors } = useTheme();
   const [bg, fg] = {
     success: [colors.successBg, colors.success],
@@ -14,7 +14,7 @@ export function Pill({ label, variant }: { label: string; variant: PillVariant }
     neutral: [colors.surface2, colors.textMuted],
   }[variant];
   return (
-    <View style={[styles.pill, { backgroundColor: bg }]}>
+    <View style={[styles.pill, { backgroundColor: bg }, style]}>
       <Text style={[type.pill, { color: fg }]}>{label}</Text>
     </View>
   );

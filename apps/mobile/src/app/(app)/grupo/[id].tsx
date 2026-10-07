@@ -3,7 +3,8 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
-import { absMoney as abs, ExpenseList, MemberList, memberName as nameOf, PaymentList, signed, TransferList } from '../../../components/GroupSections';
+import { absMoney as abs, ExpenseList, MemberList, memberAvatar, memberName as nameOf, PaymentList, signed, TransferList } from '../../../components/GroupSections';
+import { Mono } from '../../../components/Mono';
 import { Screen } from '../../../components/Screen';
 import { useToast } from '../../../components/Toast';
 import { onWalletChanged, walletChanged } from '../../../lib/events';
@@ -159,11 +160,12 @@ export default function GroupDetailScreen() {
                 key={m.id}
                 style={[
                   styles.face,
-                  { backgroundColor: m.isMe ? colors.primary : colors.primarySoft, borderColor: colors.bg },
+                  memberAvatar(colors, data, m.id),
+                  { borderColor: colors.bg },
                   i > 0 && styles.faceOverlap,
                 ]}
               >
-                <Text style={[type.caption, { color: m.isMe ? colors.onPrimary : colors.primary }]}>
+                <Text style={[type.caption, { color: colors.text }]}>
                   {nameOf(m).trim().charAt(0).toUpperCase()}
                 </Text>
               </View>
@@ -190,7 +192,7 @@ export default function GroupDetailScreen() {
           </View>
         )}
         <Text style={[type.small, { color: colors.textMuted }]} accessibilityLabel={`Total gastado: ${moneyInWords(data.totalSpent)}`}>
-          Total gastado: {formatMoney(data.totalSpent)}
+          Total gastado: <Mono>{formatMoney(data.totalSpent)}</Mono>
         </Text>
         {!data.isOwner ? (
           <Text style={[type.caption, { color: colors.textMuted }]}>

@@ -5,8 +5,14 @@ import { cardColors, fonts, radius, shadow, type } from '../theme/tokens';
 
 const NETWORK_LABELS: Record<CardNetwork, string> = { VISA: 'VISA', MC: 'mastercard', AMEX: 'AMEX', CABAL: 'CABAL' };
 
+// Sin "Banco" adelante ni conectores: "Banco de la Nación Argentina" → "NA", no "DL".
+const CONNECTORS = new Set(['de', 'del', 'la', 'las', 'el', 'los', 'y']);
+
 function initials(bank: string): string {
-  const words = bank.replace(/^banco\s+/i, '').split(/\s+/).filter(Boolean);
+  const words = bank
+    .replace(/^banco\s+/i, '')
+    .split(/\s+/)
+    .filter((w) => w && !CONNECTORS.has(w.toLowerCase()));
   return (words.length > 1 ? words[0]![0]! + words[1]![0]! : (words[0] ?? '?').slice(0, 2)).toUpperCase();
 }
 
