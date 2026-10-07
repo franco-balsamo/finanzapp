@@ -37,6 +37,7 @@ const STATUS: Record<StatementStatus, { label: string; variant: PillVariant }> =
   partial: { label: 'Pago parcial', variant: 'warning' },
   paid: { label: 'Pagado', variant: 'success' },
   overdue: { label: 'Vencido', variant: 'error' },
+  empty: { label: 'Sin consumos', variant: 'neutral' },
 };
 
 const MAX_ITEMS = 30;

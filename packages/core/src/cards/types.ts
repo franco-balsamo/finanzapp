@@ -41,7 +41,8 @@ export interface StatementPayment {
   revertedAt: ISODate | null;
 }
 
-export type StatementStatus = 'current' | 'future' | 'to_pay' | 'partial' | 'paid' | 'overdue';
+/** `empty`: el último resumen cerrado sin consumos ni pagos, que se muestra para poder corregir su cierre. */
+export type StatementStatus = 'current' | 'future' | 'to_pay' | 'partial' | 'paid' | 'overdue' | 'empty';
 
 export interface Installment {
   /** De 1 a `of`. */

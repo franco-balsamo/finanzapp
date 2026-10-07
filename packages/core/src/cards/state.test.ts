@@ -169,3 +169,43 @@ describe('casos que 02 no resolvía (decididos en el spec)', () => {
     expect(() => state([], [malo], '2026-10-04')).toThrow(RangeError);
   });
 });
+
+describe('el último resumen cerrado aparece aunque esté vacío (7/10)', () => {
+  // La prueba en el teléfono: todo cargado en octubre y septiembre sin nada.
+  const octubre = [expense('cafe', '2026-10-07', ars(3_500)), expense('nafta', '2026-09-28', ars(8_000))];
+
+  it('septiembre vacío aparece como Sin consumos; agosto no', () => {
+    const s = state(octubre, [], '2026-10-07');
+    expect(s.statements.map((x) => [x.period, x.status])).toEqual([
+      ['2026-09', 'empty'],
+      ['2026-10', 'current'],
+    ]);
+    expect(find(s, '2026-09').total).toEqual({ ARS: ars(0), USD: usd(0) });
+  });
+
+  it('no cambia lo que hay que pagar ni el límite', () => {
+    const s = state(octubre, [], '2026-10-07');
+    expect(s.toPay).toEqual([]);
+    expect(s.limitUsed).toEqual(ars(11_500));
+  });
+
+  it('corregir su cierre al 29/9 trae la nafta del 28/9 y queda Vencido', () => {
+    const s = cardState({
+      card: cardA,
+      expenses: octubre,
+      payments: [],
+      overrides: [{ period: '2026-09', closeDate: '2026-09-29', dueDate: '2026-10-06' }],
+      today: '2026-10-07',
+      fxCard,
+    });
+    const sep = find(s, '2026-09');
+    expect(sep.status).toBe('overdue');
+    expect(sep.total.ARS).toEqual(ars(8_000));
+    expect(find(s, '2026-10').total.ARS).toEqual(ars(3_500));
+  });
+
+  it('con un pago revertido sigue siendo Pagado, como antes', () => {
+    const revertido = payment('p', '2026-09', ars(1_000), 'caja', '2026-10-03', { revertedAt: '2026-10-03' });
+    expect(find(state([], [revertido], '2026-10-04'), '2026-09').status).toBe('paid');
+  });
+});

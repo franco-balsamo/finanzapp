@@ -121,6 +121,7 @@ La pregunta aparece solo para gastos con fecha anterior al último cierre, así 
 | Pago parcial | Ya cerró y los pagos registrados no cubren el total |
 | Pagado | Los pagos registrados cubren el total |
 | Vencido | Ya cerró, pasó la fecha de vencimiento y queda saldo pendiente (sin pagos o con pago parcial) |
+| Sin consumos | Es el último resumen cerrado y no tiene gastos ni pagos (7/10) |
 
 ### Lo que se muestra
 - **A pagar:** todos los resúmenes cerrados con **saldo pendiente** (total − pagos registrados), vencidos o no. El más próximo a vencer va primero; los vencidos se marcan en rojo.
@@ -146,7 +147,7 @@ La pregunta aparece solo para gastos con fecha anterior al último cierre, así 
 - Al archivar se avisa cuántos consumos tiene y cuándo se borra.
 
 > **✅ Decidido** (cambios respecto del prototipo):
-> - **Cierre real:** cada resumen permite corregir su fecha real de cierre y de vencimiento. El día fijo de la tarjeta se usa solo como estimación.
+> - **Cierre real:** cada resumen permite corregir su fecha real de cierre y de vencimiento. El día fijo de la tarjeta se usa solo como estimación. El detalle muestra siempre el **último resumen cerrado**, aunque esté vacío, para poder corregir su cierre (7/10). *Ejemplo: cierre el 24, compra el 28/9 y nada antes. Septiembre aparece "Sin consumos"; si el banco cerró el 29/9, se corrige ahí y la compra pasa a septiembre.* Los resúmenes vacíos anteriores no se muestran.
 > - **Días 29 a 31:** se permiten. En los meses más cortos se usa el último día del mes. *Ejemplo: cierre el 31 → en febrero cierra el 28 (o el 29 si es bisiesto); en abril, el 30.* Para saber en qué mes vence se comparan los días **configurados** (vencimiento contra cierre), y después cada fecha se ajusta al último día del mes si hace falta (eng review, 1/10). *Ejemplo: cierre 31 y vencimiento 30 → el resumen de febrero cierra el 28/2 (29 si es bisiesto) y vence el 30/3.*
 > - **Distancia entre cierre y vencimiento** (decisión del 2/10, después del /review):
 >   - El formulario de la tarjeta exige que el vencimiento quede **al menos 5 días después del cierre en todos los meses**, contando el cambio de mes y febrero. *Ejemplo: cierre 24 y vencimiento 6 → el caso más corto es febrero (24/2 → 6/3, 10 días): se acepta. Cierre 28 y vencimiento 2 → en febrero de 2027 queda 28/2 → 2/3, 2 días: se rechaza.*

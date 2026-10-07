@@ -146,7 +146,7 @@ export function cardDetail(input: WalletInput, cardId: string, movementsMeta: Re
 **Orden de 6A** (`docs/diseno-pantallas-v1.md:94-120`):
 1. `‹ Billetera`.
 2. **Plástico (`CreditCard` de DESIGN.md).** Lleva el degradado, el monograma del banco, el banco, la ★, el total del resumen elegido en `moneyCard` con la parte en dólares en `moneySm`, "Vence 6/11", "•••• 2337", la red y el vencimiento del plástico. Las capas de brillo y anillos quedan para cuando esté `react-native-svg`.
-3. **Navegación:** `‹ Resumen de octubre ›` con la pastilla de estado: "En curso" `neutral`, "Cuotas futuras" `neutral`, "A pagar" `warning`, "Pago parcial" `warning`, "Pagado" `success` y "Vencido" `error`. Abajo, "Cierra 24/10 · Vence 6/11" y "Pago mínimo aprox. $28.050", este último solo si hay pendiente en pesos.
+3. **Navegación:** `‹ Resumen de octubre ›` con la pastilla de estado: "En curso" `neutral`, "Cuotas futuras" `neutral`, "A pagar" `warning`, "Pago parcial" `warning`, "Pagado" `success`, "Vencido" `error` y "Sin consumos" `neutral` (el último cerrado vacío, 7/10). Abajo, "Cierra 24/10 · Vence 6/11" y "Pago mínimo aprox. $28.050", este último solo si hay pendiente en pesos.
 4. **Carga por texto** "¿Te falta cargar algo?": en D-2 lleva al FAB de la hoja con la tarjeta elegida; D-5 la reemplaza por la de varias líneas.
 5. **"Pagar resumen"** (`primary`): solo si el resumen elegido ya cerró y tiene pendiente (A pagar, Pago parcial o Vencido). Lo implementa D-3.
 6. **Cuotas que siguen:** "nov $120.000 · dic $95.000 · …", con hasta 6 meses y "+N".
@@ -162,7 +162,7 @@ export function cardDetail(input: WalletInput, cardId: string, movementsMeta: Re
 
 **Criterios de aceptación de D-2:**
 1. Tocar la Visa en la Billetera abre su detalle, y "‹ Billetera" vuelve.
-2. Con un resumen de septiembre "A pagar" y octubre en curso, el detalle abre en septiembre; con `›` pasa a octubre y a las cuotas futuras, y con `‹` vuelve hasta el primer resumen con consumos.
+2. Con un resumen de septiembre "A pagar" y octubre en curso, el detalle abre en septiembre; con `›` pasa a octubre y a las cuotas futuras, y con `‹` vuelve hasta el primer resumen con consumos, o hasta el último cerrado si es anterior y está vacío (7/10).
 3. Los totales, estados y cuotas de la pantalla coinciden con `cardDetail` para los ejemplos de 02 §3, verificados contra la base local.
 4. Cada monto tiene `accessibilityLabel` en palabras, y la pastilla de estado se lee junto al título del resumen.
 

@@ -1,6 +1,6 @@
 // Estado de una tarjeta de crédito: resúmenes, saldo pendiente y límite usado (02 §3).
 
-import type { ISODate, Period } from '../dates.ts';
+import { addMonths, type ISODate, type Period } from '../dates.ts';
 import { add, convert, subtract, zero, type Currency, type Money, type Rate } from '../money.ts';
 import { closeDate, dueDate, installmentSchedule, statementFor } from './schedule.ts';
 import type {
@@ -67,9 +67,11 @@ function statusOf(
   today: ISODate,
   pending: ByCurrency,
   hasActivePayments: boolean,
+  isEmpty: boolean,
 ): StatementStatus {
   if (period > currentPeriod) return 'future';
   if (period === currentPeriod) return 'current';
+  if (isEmpty) return 'empty';
   if (!hasAmount(pending)) return 'paid';
   if (today > due) return 'overdue';
   return hasActivePayments ? 'partial' : 'to_pay';
@@ -97,7 +99,9 @@ export function cardState(input: CardStateInput): CardState {
     }
   }
 
-  const periods = new Set<Period>([currentPeriod, ...items.keys(), ...payments.map((p) => p.period)]);
+  // El último cerrado va aunque esté vacío: si el banco cerró más tarde, ahí se corrige el cierre.
+  const lastClosed = addMonths(currentPeriod, -1);
+  const periods = new Set<Period>([lastClosed, currentPeriod, ...items.keys(), ...payments.map((p) => p.period)]);
   const statements = [...periods].sort().map((period): StatementView => {
     const periodItems = items.get(period) ?? [];
     const periodPayments = payments.filter((p) => p.period === period && isActivePayment(p));
@@ -121,7 +125,15 @@ export function cardState(input: CardStateInput): CardState {
       period,
       closeDate: closeDate(card, period, overrides),
       dueDate: due,
-      status: statusOf(period, currentPeriod, due, today, pending, periodPayments.length > 0),
+      status: statusOf(
+        period,
+        currentPeriod,
+        due,
+        today,
+        pending,
+        periodPayments.length > 0,
+        periodItems.length === 0 && !payments.some((p) => p.period === period),
+      ),
       total,
       paid,
       pending,
