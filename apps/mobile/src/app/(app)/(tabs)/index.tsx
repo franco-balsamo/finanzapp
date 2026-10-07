@@ -1,10 +1,11 @@
-import { daysBetween, formatMoney, moneyInWords, todayInArgentina } from '@mangos/core';
+import { daysBetween, formatMoney, moneyInWords, todayInArgentina, wallet, type WalletInput } from '@mangos/core';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { AccountRow } from '../../../components/AccountRow';
 import { Button } from '../../../components/Button';
 import { CardRow } from '../../../components/CardRow';
+import { Chip } from '../../../components/Chip';
 import { Fab, FAB_SPACE } from '../../../components/Fab';
 import { Pill } from '../../../components/Pill';
 import { Screen } from '../../../components/Screen';
@@ -12,8 +13,8 @@ import { Tabs } from '../../../components/Tabs';
 import { useToast } from '../../../components/Toast';
 import { unarchiveCard } from '../../../lib/cardActions';
 import { onWalletChanged, walletChanged } from '../../../lib/events';
-import { useSession } from '../../../lib/session';
-import { loadWallet, type WalletData } from '../../../lib/wallet';
+import { useSession, type UserSettings } from '../../../lib/session';
+import { loadWalletInput, type WalletData } from '../../../lib/wallet';
 import { layout, radius, type } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
 
@@ -24,6 +25,12 @@ const TABS = [
 ] as const;
 
 const HOUR_MS = 60 * 60 * 1000;
+
+type Currency = UserSettings['display_currency'];
+const CURRENCY_CHIP: Record<Currency, { label: string; name: string; other: string }> = {
+  ARS: { label: '🇦🇷 AR$', name: 'pesos', other: 'dólares' },
+  USD: { label: '🇺🇸 US$', name: 'dólares', other: 'pesos' },
+};
 
 function rateTime(fetchedAt: string): string {
   return new Intl.DateTimeFormat('es-AR', {
@@ -36,18 +43,40 @@ function rateTime(fetchedAt: string): string {
 /** Billetera (E4): patrimonio, tarjetas con lo que viene y cuentas con su saldo. */
 export default function Wallet() {
   const { colors } = useTheme();
-  const { session, settings, signOut } = useSession();
+  const { session, settings, signOut, updateSettings } = useSession();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>('cards');
-  const [data, setData] = useState<WalletData | null>(null);
+  const [loaded, setLoaded] = useState<Awaited<ReturnType<typeof loadWalletInput>> | null>(null);
   const [failed, setFailed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // La moneda cambia al toque: se recalcula con las filas que ya están, sin volver a pedirlas.
+  const [display, setDisplay] = useState<Currency>(settings?.display_currency ?? 'ARS');
 
+  const userId = session?.user.id;
+  const fxReference = settings?.fx_reference;
   const load = useCallback(() => {
-    if (!session || !settings) return;
+    if (!userId || !fxReference) return;
     setFailed(false);
-    loadWallet(session.user.id, settings).then(setData, () => setFailed(true));
-  }, [session, settings]);
+    loadWalletInput(userId, { fx_reference: fxReference, display_currency: 'ARS' }).then(setLoaded, () => setFailed(true));
+  }, [userId, fxReference]);
+
+  const data = useMemo<WalletData | null>(() => {
+    if (!loaded) return null;
+    const input: WalletInput = { ...loaded.input, display };
+    return { ...wallet(input), referenceRate: loaded.referenceRate };
+  }, [loaded, display]);
+
+  async function toggleCurrency() {
+    const previous = display;
+    const next: Currency = previous === 'ARS' ? 'USD' : 'ARS';
+    setDisplay(next);
+    try {
+      await updateSettings({ display_currency: next });
+    } catch {
+      setDisplay(previous);
+      toast('No se pudo cambiar la moneda. Probá de nuevo.');
+    }
+  }
 
   // Al volver de "Sumar tarjeta" o de cargar un gasto, se vuelve a calcular.
   useFocusEffect(load);
@@ -87,7 +116,14 @@ export default function Wallet() {
         ) : null}
 
         <View style={styles.hero}>
-          <Text style={[type.label, { color: colors.textMuted }]}>Patrimonio</Text>
+          <View style={styles.heroHead}>
+            <Text style={[type.label, { color: colors.textMuted }]}>Patrimonio</Text>
+            <Chip
+              label={CURRENCY_CHIP[display].label}
+              onPress={toggleCurrency}
+              accessibilityLabel={`Patrimonio en ${CURRENCY_CHIP[display].name}. Tocá para verlo en ${CURRENCY_CHIP[display].other}.`}
+            />
+          </View>
           {!data && !failed ? (
             <View style={[styles.skeletonHero, { backgroundColor: colors.surface2 }]} />
           ) : nw ? (
@@ -196,6 +232,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   menu: { borderWidth: 1, borderRadius: radius.lg, padding: layout.panelPadding, gap: 10 },
   hero: { gap: 4 },
+  heroHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   skeletonHero: { height: 42, width: 220, borderRadius: radius.sm },
   skeletonRow: { height: 46, borderRadius: radius.md, marginVertical: 6 },
   state: { gap: 12, paddingVertical: 16, paddingHorizontal: 4 },

@@ -17,7 +17,7 @@ Recortada el 1 de octubre para que la beta entre en 3 meses con una sola persona
 
 ### 1. Cuenta de usuario y bienvenida
 - Registro e inicio de sesión con mail y código.
-- Bienvenida corta: moneda principal y dólar de referencia. La primera tarjeta se suma después, desde la Billetera, que es lo primero que se ve al entrar (7/10).
+- Bienvenida corta: dólar de referencia. La moneda del patrimonio se cambia en la Billetera. La primera tarjeta se suma después, desde la Billetera, que es lo primero que se ve al entrar (7/10).
 - **Borrar mi cuenta** y **Exportar mis datos** en Ajustes (revisión técnica, 1/10; ver 02 §10).
 - El permiso de notificaciones se pide al cargar la primera tarjeta de crédito ("¿Te avisamos cuando cierre?"), no en la bienvenida.
 
@@ -119,7 +119,7 @@ El orden de lectura, los estados y los componentes nuevos de las pantallas princ
 | Web de invitados | Gastos y saldos del grupo, "soy Juan" y botón para instalar la app y reclamar el lugar. Solo lectura | Nueva (web, no app) |
 | Reclamar lugar | "¿Sos Juan?" al abrir el link con la app instalada | Nueva |
 | Ajustes | Perfil, dólar de referencia, tema, notificaciones (cierre y vencimiento por tarjeta), tarjetas archivadas para desarchivar, borrar mi cuenta y exportar mis datos | Sin edición de categorías ni creación de alertas |
-| Bienvenida | Moneda y dólar de referencia | De 4 pasos a 1 (sin objetivo ni tarjeta, 7/10); sin datos de ejemplo |
+| Bienvenida | Dólar de referencia | De 4 pasos a 1 (sin objetivo ni tarjeta, 7/10); sin datos de ejemplo |
 
 ## Decisiones abiertas para la revisión
 

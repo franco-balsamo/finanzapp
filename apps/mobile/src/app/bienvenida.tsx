@@ -4,7 +4,6 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { Option } from '../components/Option';
-import { Segmented } from '../components/Segmented';
 import { latestRates, type FxKind, type LatestRate } from '../lib/fx';
 import { useSession, type UserSettings } from '../lib/session';
 import { layout, type } from '../theme/tokens';
@@ -16,17 +15,11 @@ const FX_OPTIONS = [
   { value: 'blue', title: 'Dólar blue', subtitle: 'El del mercado informal.' },
 ] as const;
 
-const CURRENCY_OPTIONS = [
-  { value: 'ARS', label: 'Pesos' },
-  { value: 'USD', label: 'Dólares' },
-] as const;
-
-/** Bienvenida de un paso (01 §1): dólar de referencia y moneda. Las tarjetas se suman después, desde la Billetera. */
+/** Bienvenida de un paso (01 §1): el dólar de referencia. La moneda del patrimonio se cambia en la Billetera y las tarjetas se suman ahí. */
 export default function Welcome() {
   const { colors } = useTheme();
   const { updateSettings } = useSession();
   const [fx, setFx] = useState<UserSettings['fx_reference']>('mep');
-  const [currency, setCurrency] = useState<UserSettings['display_currency']>('ARS');
   const [rates, setRates] = useState<Partial<Record<FxKind, LatestRate>>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +33,7 @@ export default function Welcome() {
     setSaving(true);
     setError(null);
     try {
-      await updateSettings({ fx_reference: fx, display_currency: currency, onboarded_at: new Date().toISOString() });
+      await updateSettings({ fx_reference: fx, onboarded_at: new Date().toISOString() });
     } catch {
       setError('No pudimos guardar. Probá de nuevo.');
       setSaving(false);
@@ -76,8 +69,6 @@ export default function Welcome() {
             );
           })}
         </View>
-        <Text style={[type.label, { color: colors.textMuted }]}>Mostrar mi patrimonio en</Text>
-        <Segmented options={CURRENCY_OPTIONS} value={currency} onChange={setCurrency} accessibilityLabel="Moneda del patrimonio" />
         {error ? (
           <Text style={[type.caption, { color: colors.error }]} accessibilityLiveRegion="polite">
             {error}

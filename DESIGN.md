@@ -457,6 +457,7 @@ Una grilla de 3 columnas: ícono de categoría de 36, texto que se estira y un b
 | Componente | Reposo | Elegido | Uso |
 |---|---|---|---|
 | `Chip` | `surface`, borde `line`, texto `textMuted`, 13, padding 5 × 11, radio `full` | `primary` de fondo y de borde, texto `onPrimary` | Categoría en la hoja de carga, filtros |
+| Moneda del patrimonio | Un `Chip` en reposo con la bandera y la moneda actual: "🇦🇷 AR$" o "🇺🇸 US$". Tocarlo alterna. Las banderas son emoji: cada sistema las dibuja a su manera (aprobado por Fran, 7/10) | — | Al lado de "Patrimonio" en la Billetera |
 | `Segmented` | contenedor `surface2`, padding 3, radio `sm`; opción transparente con texto `textMuted` 13 y padding 5 × 10 | la opción pasa a `surface` con texto `text` y sombra `segmentSelected` | ARS / USD, modo de división |
 | `Tabs` (Billetera) | `surface2`, texto `textMuted` 14 / 600, mayúsculas, 0.04em, padding 10 × 20, radio `full` | fondo `text`, texto `bg` | Tarjetas / Cuentas |
 | `Option` (bienvenida) | `surface`, borde `line`, radio `md`, padding 14 | borde `primary` de 1 más un anillo de 1 | Opciones de la bienvenida |

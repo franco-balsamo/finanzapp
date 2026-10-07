@@ -91,7 +91,7 @@ export interface WalletData extends Wallet {
 /** Todas las filas que necesita la Billetera, ya en el formato de core. */
 export async function loadWalletInput(
   userId: string,
-  settings: UserSettings,
+  settings: Pick<UserSettings, 'fx_reference' | 'display_currency'>,
 ): Promise<{ input: WalletInput; referenceRate: LatestRate | null }> {
   const [cards, accounts, movements, payments, overrides, groups, rates] = await Promise.all([
     // También las archivadas: su deuda sigue contando hasta la purga (02 §3).
@@ -119,11 +119,6 @@ export async function loadWalletInput(
     },
     referenceRate: reference,
   };
-}
-
-export async function loadWallet(userId: string, settings: UserSettings): Promise<WalletData> {
-  const { input, referenceRate } = await loadWalletInput(userId, settings);
-  return { ...wallet(input), referenceRate };
 }
 
 export interface CardDetailData {
