@@ -1,36 +1,41 @@
-# Mangos: estado y próximos pasos (6 de octubre de 2026)
+# Mangos: estado y próximos pasos (7 de octubre de 2026)
 
 Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales de Fran para Argentina; el nombre es provisorio.
 
 ## Para retomar
-- **Dónde quedó (6/10):**
-  - **Épica de las primeras pantallas** (`docs/specs/2026-10-05-epica-primeras-pantallas.md`): E1 a E5 completas en código. Están el login con código, la bienvenida, las altas, la Billetera y la hoja de carga.
-  - **Épica del detalle de tarjeta** (`docs/specs/2026-10-05-epica-detalle-de-tarjeta.md`, decisiones en `docs/decisiones/2026-10-05-spec-detalle-de-tarjeta.md`): está completa (D-1 a D-6) en código.
-    - D-1: funciones de la base, aplicadas en `mangos`.
-    - D-2: pantalla del detalle.
-    - D-3: pagar y deshacer pagos.
-    - D-4: corregir cierre, editar, favorita, archivar y "Archivadas".
-    - D-5: carga por texto de varias líneas en el detalle (`QuickEntry`, lógica en `packages/core/src/entry/quickBatch.ts`).
-    - D-6: "¿Ya lo pagaste?" en la hoja y en la tanda (`lateImpacts` en core). Migración `20261006120000_expense_payment_ids` aplicada en `mangos`.
-- **Épica de grupos en la app** (`docs/specs/2026-10-06-epica-grupos-en-la-app.md`, decisiones en `docs/decisiones/2026-10-06-spec-grupos-en-la-app.md`): spec aprobada e implementada el 6/10 (G-1 a G-7). La migración `20261006130000_group_app` está aplicada en `mangos`.
-- G-3 hecha: pestañas Billetera y Grupos (`(app)/(tabs)/`), lista de grupos y "Nuevo grupo".
-- G-4 hecha: detalle de grupo de lectura (`(app)/grupo/[id].tsx`).
-- G-5 hecha: gasto de grupo en la hoja de carga (alta, edición y borrado). Pendiente: "¿Ya lo pagaste?" no se combina con un gasto de grupo (ver la spec).
-- G-6 hecha: registrar y anular pagos, con "Mover saldo de…".
-- G-7 hecha: editar, quitar, abandonar y eliminar (`(app)/grupo-editar/[id].tsx`). **La épica de grupos está completa en código.** D5 a D8 están en 02 §7.
-- **Pendientes de la épica:** "¿Ya lo pagaste?" no se combina con un gasto de grupo (G-5); el bloqueo de D5 en la hoja es más estricto que en la base; nada se vio en pantalla.
-- **Épica de la web de invitados** (`docs/specs/2026-10-06-epica-web-de-invitados.md`, decisiones en `docs/decisiones/2026-10-06-spec-web-de-invitados.md`): spec aprobada el 6/10. W-1 hecha (migración `20261007120000_invite_token` aplicada en `mangos` y `guestGroupDetail` en core).
-- W-3 hecha: web de invitados de solo lectura en `/g/[token]`, con las secciones compartidas con el detalle (`components/GroupSections.tsx`).
-- W-5 hecha: "Soy Juan" en la web, con el login por código y `claim_member`.
-- W-6 hecha: "Deshacer" un reclamo en el detalle de grupo.
-- W-2 hecha: la web está publicada en **https://mangos-kohl.vercel.app** (proyecto `mangos` en Vercel, deploy en cada push a `main`). La conexión de Vercel de Claude solo lee: crear proyectos o variables lo hace Fran desde el panel.
-- W-4 hecha: "Compartir link" en el detalle y crear, regenerar o revocar en "Editar grupo". **La épica de la web de invitados está completa** (W-1 a W-6).
-- **Siguiente paso:** probar las cuatro épicas en el teléfono contra `mangos`, con `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app` en `apps/mobile/.env`. El recorrido clave: crear un grupo, compartir el link, abrirlo en otro teléfono, reclamar con un mail nuevo y entrar a la app con ese mail.
-  - Antes de cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
-- **Pendiente de Fran:**
-  - Probar las cuatro épicas en el teléfono contra `mangos`: apuntar `apps/mobile/.env` a `mangos` (con `EXPO_PUBLIC_WEB_URL`), correr `npx expo start` y abrir con Expo Go. Lo más importante: la carga en menos de 10 segundos y el recorrido del invitado.
-- **Mail con el código en `mangos` (hecho el 7/10):** Supabase hosteado solo deja editar las plantillas con un SMTP propio, y la de fábrica manda un link. Se configuró SMTP de Gmail (`smtp.gmail.com:587`, remitente "Mangos", el Gmail de Fran con una contraseña de aplicación) y la plantilla `supabase/templates/codigo.html` en "Magic Link" y "Confirm signup", con el asunto "Tu código para entrar a Mangos". Probado desde https://mangos-kohl.vercel.app: llega el código de 6 números. Límite de Gmail: unos 500 mails por día; rate limit de Supabase en 30 por hora.
-- **Sin verificar en pantalla:** nada se vio todavía en el navegador ni en el teléfono, porque la extensión de Chrome no estaba conectada. Cada parte se probó contra la base local con scripts de supabase-js y un usuario real, usando las mismas consultas que la app.
+- **Dónde quedó (7/10):** las cuatro épicas están completas en código, commiteadas y pusheadas en `main`. Falta verlas en pantalla. Nada se vio todavía en el navegador ni en el teléfono: la extensión de Chrome no conecta, así que cada parte se probó contra la base local con scripts y usuarios reales.
+
+  | Épica | Spec | Estado |
+  |---|---|---|
+  | Primeras pantallas (E1 a E5): login con código, bienvenida, altas, Billetera y hoja de carga | `docs/specs/2026-10-05-epica-primeras-pantallas.md` | Hecha |
+  | Detalle de tarjeta (D-1 a D-6): detalle, pagos, corregir cierre, favorita, archivar, carga por texto de varias líneas y "¿Ya lo pagaste?" | `docs/specs/2026-10-05-epica-detalle-de-tarjeta.md` | Hecha |
+  | Grupos en la app (G-1 a G-7): pestañas, lista, nuevo grupo, detalle, gasto de grupo en la hoja, pagos y editar o abandonar o eliminar | `docs/specs/2026-10-06-epica-grupos-en-la-app.md` | Hecha |
+  | Web de invitados (W-1 a W-6): link guardado, web en Vercel, `/g/[token]`, compartir o regenerar o revocar, "Soy Juan" y deshacer un reclamo | `docs/specs/2026-10-06-epica-web-de-invitados.md` | Hecha |
+
+  Cada spec tiene notas de "Implementado el …" por hija y sus decisiones en `docs/decisiones/`.
+
+- **En curso al cerrar la sesión del 7/10: la primera prueba en el teléfono contra `mangos`.**
+  - En Expo Go, el login decía "Sin conexión. Probá de nuevo.". La causa estaba en `apps/mobile/.env`: la URL apuntaba a la base local (`127.0.0.1`) y la clave era la publicable **local**, así que `mangos` respondía 401 (se vio en los logs de `mangos`: `POST /auth/v1/otp` desde Expo con 401).
+  - Se corrigió el `.env` (no se commitea): `EXPO_PUBLIC_SUPABASE_URL=https://pkhjsrknnijjygzwvtkn.supabase.co`, `EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_CagK7QhEfFLHW5RbQrZyVg_4NKhuUBd` (la publicable de `mangos`) y `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app` (tenía un punto de más al final).
+  - **Primer paso de la próxima sesión:** que Fran reinicie con `npx expo start --clear` en `apps/mobile`, cierre Mangos en Expo Go, vuelva a escanear el QR y pruebe el login. Si falla, mirar los logs de `mangos` con `query_logs` (fuente `edge_logs`, filtro `/auth/v1`).
+  - Después, recorrer: la carga de un gasto en menos de 10 segundos; el detalle de tarjeta; crear un grupo con un provisorio, cargarle gastos y compartir el link; abrir el link en otro teléfono, "Soy Juan" con un mail nuevo, instalar y entrar con ese mail; "Deshacer" el reclamo. Revisar también lo que no se pudo ver: diseño contra `DESIGN.md`, 12 integrantes y nombres largos en 320 de ancho.
+  - El error rojo de `React Native DevTools` (`chrome-sandbox`) al arrancar Expo no afecta a la app: es la herramienta de depuración de escritorio.
+
+- **Arreglo chico pendiente:** en `apps/mobile/src/lib/authErrors.ts`, un 401 (clave mal configurada) se mostró como "Sin conexión. Probá de nuevo.". Conviene que solo los errores de red digan eso y el resto diga "Algo falló. Probá de nuevo.".
+
+- **Pendientes conocidos de las épicas** (están en las specs):
+  - "¿Ya lo pagaste?" no se combina con un gasto de grupo: haría falta una función de la base que guarde las dos cosas juntas.
+  - El bloqueo del monto (D5) en la hoja es más estricto que en la base: la app no ve los gastos personales de otros.
+  - Completar el medio de pago de los "Sin medio de pago" de un reclamo va con la lista de movimientos (tanda futura).
+  - Preview y producción de Vercel usan la misma base `mangos`.
+
+- **Servicios configurados:**
+  - **Supabase `mangos`** (`pkhjsrknnijjygzwvtkn`): migraciones al día hasta `20261007120000_invite_token`. Mail con el código: SMTP de Gmail (`smtp.gmail.com:587`, remitente "Mangos", el Gmail de Fran con una contraseña de aplicación) y la plantilla `supabase/templates/codigo.html` en "Magic Link" y "Confirm signup". Supabase hosteado solo deja editar plantillas con SMTP propio. Probado el 7/10 desde la web: llega el código. Límites: unos 500 mails por día (Gmail) y 30 por hora (Supabase).
+  - **Vercel `mangos`** (equipo `franco-balsamos-projects`): https://mangos-kohl.vercel.app, deploy en cada push a `main`, variables en Production y Preview. **La conexión de Vercel de Claude solo lee** (403 al crear proyectos o variables): esos cambios los hace Fran desde el panel.
+
+- **Siguientes tandas posibles, cada una con su `/spec`:** Inicio, Ajustes (T10: avisos por tarjeta, borrar la cuenta, exportar), la cola sin conexión (T8), la lista de movimientos (con completar los "Sin medio de pago"), y lo de "Antes de la beta" (abajo).
+
+- Antes de cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
 - **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 444 tests pgTAP y 321 de Vitest, el typecheck y el export web.
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.
@@ -42,7 +47,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - colima con 6 GiB de memoria (con 2 GiB se colgó; el 5/10 se cayó una vez igual: en colima hay contenedores de otros proyectos);
   - para que Docker apunte a colima: `export DOCKER_HOST=unix://$HOME/.config/colima/default/docker.sock`;
   - Supabase local: `npx supabase start -x vector,logflare,studio,imgproxy,realtime,storage-api,postgres-meta,supavisor` (el contenedor `vector` no levanta), `npx supabase db reset` y `npx supabase test db`. Si cambia `config.toml`, hace falta `stop` y `start`;
-  - la app: `apps/mobile/.env` (copiar de `.env.example`) y `npx expo start --web` en `apps/mobile`. El código del login llega a Mailpit (http://127.0.0.1:54324). El teléfono no ve la base local (colima publica solo en 127.0.0.1);
+  - la app: `apps/mobile/.env` (copiar de `.env.example`; para el teléfono, los tres valores de `mangos`) y `npx expo start --web` en `apps/mobile`. Al cambiar el `.env`, reiniciar con `npx expo start --clear`: las variables `EXPO_PUBLIC_…` quedan fijadas en el bundle. El código del login llega a Mailpit (http://127.0.0.1:54324). El teléfono no ve la base local (colima publica solo en 127.0.0.1);
   - **rutas tipadas:** al sumar una ruta, `tsc` falla hasta que Expo regenera `.expo/types/router.d.ts`. Para eso hay que levantar `npx expo start` unos segundos (con `CI=1` no lo regenera). No usar `pkill -f "expo start…"`, porque mata a la propia shell: usar `timeout`;
   - los scripts de prueba contra la base local dejan datos (grupos, cuentas) que rompen tests pgTAP con `update` sin `where` (por ejemplo `03_guest`): antes de `npx supabase test db`, correr `npx supabase db reset`;
   - el sistema anda justo de memoria: el servidor de Expo en segundo plano lo cortó Claude Code una vez.
