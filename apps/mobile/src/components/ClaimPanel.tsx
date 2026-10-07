@@ -72,6 +72,15 @@ export function ClaimPanel({ token, memberId, memberName, groupName, onClose, on
     // Con la sesión iniciada, el panel pasa a "Tomar el lugar".
   }
 
+  // Cierra la sesión y vuelve a pedir el mail, sin el mail ni el código anteriores.
+  function switchEmail() {
+    setStep('email');
+    setEmail('');
+    setCode('');
+    setError(null);
+    supabase.auth.signOut();
+  }
+
   async function claim() {
     setError(null);
     setBusy(true);
@@ -108,7 +117,7 @@ export function ClaimPanel({ token, memberId, memberName, groupName, onClose, on
             <Button title="Cancelar" onPress={onClose} disabled={busy} />
             <Button title={`Soy ${memberName}`} variant="primary" onPress={claim} loading={busy} />
           </View>
-          <Button title="Usar otro mail" variant="link" onPress={() => supabase.auth.signOut()} style={styles.start} />
+          <Button title="Usar otro mail" variant="link" onPress={switchEmail} style={styles.start} />
         </>
       ) : step === 'email' ? (
         <>
