@@ -178,7 +178,7 @@ Sistema visual extraído de `prototipo/mangos.html` (1 de octubre de 2026) para 
 - **Teléfono (el destino de la v1):** margen lateral de 16, barra de pestañas abajo con 5 ítems y FAB "+ Gasto" a la derecha, 76 por encima de la barra. Hay que respetar las áreas seguras con `react-native-safe-area-context`.
 - **Ritmo:** 18 entre bloques de una pantalla, 14 dentro de un panel, 10 a 12 entre elementos de una fila, y 6 a 8 entre chips o íconos.
 - **Densidad:** media. Las filas miden unos 58 de alto (ícono de 36 más 11 arriba y 11 abajo).
-- La versión de escritorio del prototipo (menú lateral de 232 y ancho máximo de 1040) no aplica a React Native.
+- La versión de escritorio del prototipo (menú lateral de 232 y ancho máximo de 1040) no aplica en la beta. Queda como referencia para la app completa en la web, que se hace después de la beta con diseño de escritorio (decisión de Fran, 7/10).
 
 ## Elevation & Depth
 

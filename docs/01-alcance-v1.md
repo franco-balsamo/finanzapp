@@ -98,6 +98,7 @@ Si con eso no alcanza, siguen los otros dos recortes del plan B de la revisión 
 | Importar resúmenes en PDF | Fase 2 (Pro) | Cada banco tiene un formato distinto. |
 | Plan Pro y cobros | Fase 2 | Primero retención, después monetización. |
 | Sincronización con Mercado Pago y carga por voz | Fase 3 | Integraciones complejas. |
+| App completa en la web | Después de la beta | Fran quiere Mangos en la web y en el teléfono (7/10). En la beta, la web es solo la de invitados. Hace falta: diseño de escritorio como el del prototipo (menú lateral, más columnas), probar las hojas y la carga rápida con teclado y mouse, avisos de cierre y vencimiento sin notificaciones del teléfono (mail o avisos del navegador) y revisar la sesión guardada en el navegador. Ver [decisiones/2026-10-07-web-completa.md](decisiones/2026-10-07-web-completa.md). |
 | App para otros países | Sin fecha | La v1 es solo para Argentina: la base acepta ARS y USD, las cotizaciones salen de DolarApi y ArgentinaDatos, los textos usan voseo y las tarjetas siguen el modelo argentino. Para abrirla hace falta: país del usuario (de la configuración del teléfono, sin preguntar), monedas abiertas en la base, cotizaciones por país, textos traducibles y tarjetas por país. Con eso, "¿Con qué dólar querés ver tus números?" se pregunta solo a quien está en Argentina (7/10). |
 | Reportes históricos y exportar | Fase 3 | |
 | Logos oficiales de bancos y redes | Antes de publicar | Se usan los archivos oficiales de cada marca, respetando sus reglas. En el prototipo hay iniciales y texto. |
