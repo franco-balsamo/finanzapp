@@ -1,67 +1,70 @@
-# Mangos: estado y próximos pasos (7 de octubre de 2026)
+# Mangos: estado y próximos pasos (cierre del 7 de octubre de 2026)
 
 Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales de Fran para Argentina; el nombre es provisorio.
 
 ## Para retomar
-- **Dónde quedó (7/10):** las cuatro épicas están completas en código, commiteadas y pusheadas en `main`. Falta verlas en pantalla. Nada se vio todavía en el navegador ni en el teléfono: la extensión de Chrome no conecta, así que cada parte se probó contra la base local con scripts y usuarios reales.
+- **Dónde quedó (cierre del 7/10):** las cuatro épicas de la v1 en pantalla están hechas y **probadas en el teléfono contra `mangos`** (Expo Go), con la web de invitados probada en el navegador del celular. Después vino una revisión de diseño contra `DESIGN.md`, también vista en el teléfono. Todo commiteado y pusheado en `main`.
 
   | Épica | Spec | Estado |
   |---|---|---|
-  | Primeras pantallas (E1 a E5): login con código, bienvenida, altas, Billetera y hoja de carga | `docs/specs/2026-10-05-epica-primeras-pantallas.md` | Hecha |
-  | Detalle de tarjeta (D-1 a D-6): detalle, pagos, corregir cierre, favorita, archivar, carga por texto de varias líneas y "¿Ya lo pagaste?" | `docs/specs/2026-10-05-epica-detalle-de-tarjeta.md` | Hecha |
-  | Grupos en la app (G-1 a G-7): pestañas, lista, nuevo grupo, detalle, gasto de grupo en la hoja, pagos y editar o abandonar o eliminar | `docs/specs/2026-10-06-epica-grupos-en-la-app.md` | Hecha |
-  | Web de invitados (W-1 a W-6): link guardado, web en Vercel, `/g/[token]`, compartir o regenerar o revocar, "Soy Juan" y deshacer un reclamo | `docs/specs/2026-10-06-epica-web-de-invitados.md` | Hecha |
+  | Primeras pantallas (E1 a E5): login con código, bienvenida, altas, Billetera y hoja de carga | `docs/specs/2026-10-05-epica-primeras-pantallas.md` | Hecha y probada |
+  | Detalle de tarjeta (D-1 a D-6): detalle, pagos, corregir cierre, favorita, archivar, carga por texto de varias líneas y "¿Ya lo pagaste?" | `docs/specs/2026-10-05-epica-detalle-de-tarjeta.md` | Hecha y probada |
+  | Grupos en la app (G-1 a G-7): pestañas, lista, nuevo grupo, detalle, gasto de grupo en la hoja, pagos y editar o abandonar o eliminar | `docs/specs/2026-10-06-epica-grupos-en-la-app.md` | Hecha y probada |
+  | Web de invitados (W-1 a W-6): link guardado, web en Vercel, `/g/[token]`, compartir o regenerar o revocar, "Soy Juan" y deshacer un reclamo | `docs/specs/2026-10-06-epica-web-de-invitados.md` | Hecha y probada |
 
-  Cada spec tiene notas de "Implementado el …" por hija y sus decisiones en `docs/decisiones/`.
+  Cada spec tiene notas de "Implementado el …" y sus decisiones en `docs/decisiones/` (el índice está en `docs/decisiones/README.md`).
 
-- **En curso al cerrar la sesión del 7/10: la primera prueba en el teléfono contra `mangos`.**
-  - En Expo Go, el login decía "Sin conexión. Probá de nuevo.". La causa estaba en `apps/mobile/.env`: la URL apuntaba a la base local (`127.0.0.1`) y la clave era la publicable **local**, así que `mangos` respondía 401 (se vio en los logs de `mangos`: `POST /auth/v1/otp` desde Expo con 401).
-  - Se corrigió el `.env` (no se commitea): `EXPO_PUBLIC_SUPABASE_URL=https://pkhjsrknnijjygzwvtkn.supabase.co`, `EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_CagK7QhEfFLHW5RbQrZyVg_4NKhuUBd` (la publicable de `mangos`) y `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app` (tenía un punto de más al final).
-  - **Login probado en el teléfono (7/10, segunda sesión):** anda. El mail traía un código de 8 dígitos y la app pide 6: `mangos` tenía "Email OTP Length" en 8 (lo que trae un proyecto nuevo). Fran lo pasó a 6 en el panel (Authentication → Sign In / Providers → Email), igual que `otp_length` en `supabase/config.toml`.
-  - **Bienvenida rehecha y probada en el teléfono:** quedó en un paso (el dólar de referencia). Se sacaron el objetivo y la primera tarjeta, y la moneda del patrimonio pasó a un chip con bandera (🇦🇷 AR$ / 🇺🇸 US$) en la Billetera. Ver `docs/decisiones/2026-10-07-bienvenida-de-un-paso.md`. La idea de abrir la app a otros países quedó en "Queda para después" de `docs/01-alcance-v1.md`.
-  - **Recorrido en el teléfono (7/10, tarde):** probados la carga de gastos (también por texto y en dólares), el detalle de tarjeta, corregir cierre, pagar y deshacer un pago, el alta de cuenta, un grupo con provisorios (Asado: Fran, Juan, Caro), un pago entre personas y el reclamo en la web ("Soy Juan" con `balsamote96+juan@gmail.com`). Arreglos que salieron de ahí, cada uno con su commit y, si corresponde, su nota en `docs/decisiones/`:
-    - las cotizaciones de ArgentinaDatos le ganaban todo el día a DolarApi (migración `20261007150000`, aplicada en `mangos`);
-    - el último resumen cerrado aparece aunque esté vacío ("Sin consumos"), para corregir su cierre;
-    - "Pagar resumen" sin cuentas ofrece "Sumar cuenta";
-    - en la web, iniciar sesión para reclamar mandaba a la Billetera (`_layout.tsx` desmontaba la navegación mientras cargaban los ajustes), y "Usar otro mail" quedaba en el paso del código.
-  - **Cómo se probó la web sin la extensión de Chrome:** export estático (`npx expo export --platform web`) contra la base local, servido como en Vercel (cleanUrls y `/g/:token` → `/g/[token]`), con Chrome headless (`puppeteer-core` y `/usr/bin/google-chrome`) y el código sacado de Mailpit. Ojo: el export cambia `127.0.0.1` por la IP de la red en la URL de Supabase, y el servidor de desarrollo de Expo no tomó los cambios de archivos en esa sesión.
-  - "Deshacer" el reclamo de Juan, probado: en `mangos` quedó con `unclaimed_at` y `unclaimed_by` de Fran, otra vez provisorio. **El recorrido de las cuatro épicas en el teléfono está completo.**
-  - **Revisión de diseño hecha (7/10):** arreglos en `c55bdf4`, detalle en `docs/decisiones/2026-10-07-revision-de-diseno.md`.
-  - **Primer paso de la próxima sesión:** ver en el teléfono los arreglos de diseño y los dos puntos que pueden ser solo de la web (etiquetas de la barra de pestañas cortadas, borde de foco del monto). Después, los íconos de categoría (`react-native-svg` y `CategoryIcon`).
-  - **Web:** Fran quiere Mangos web y móvil; la app completa en la web va después de la beta, con diseño de escritorio (`docs/decisiones/2026-10-07-web-completa.md`). Mientras tanto, la web publicada es solo `/g/…`: lo demás muestra "Mangos está en el teléfono".
-  - El error rojo de `React Native DevTools` (`chrome-sandbox`) al arrancar Expo no afecta a la app: es la herramienta de depuración de escritorio.
+- **Lo que cambió el 7/10** (cada punto con su commit y su nota en `docs/decisiones/`):
+  - **Login:** `mangos` mandaba códigos de 8 dígitos; Fran pasó "Email OTP Length" a 6 en el panel (Authentication → Sign In / Providers → Email), igual que `supabase/config.toml`.
+  - **Bienvenida de un paso** (solo el dólar de referencia): sin objetivo (`goal` queda en la base, sin uso) y sin la primera tarjeta, que se suma desde la Billetera (`2026-10-07-bienvenida-de-un-paso.md`).
+  - **Moneda del patrimonio:** chip con bandera 🇦🇷 AR$ / 🇺🇸 US$ al lado de "Patrimonio", como en Cocos; recalcula sin volver a pedir datos y guarda `display_currency`.
+  - **Cotizaciones:** ArgentinaDatos traía hoy con el cierre de ayer y le ganaba todo el día a DolarApi. Migración `20261007150000_fx_history_closed_days` (aplicada en `mangos`): solo días terminados y corrige los que ya tenía (`2026-10-07-cotizacion-del-dia.md`). **Verificar** que después de las 3:00 del 8/10 `fx-history` no haya guardado filas con fecha 8/10 y que el 7/10 tenga el cierre real.
+  - **Detalle de tarjeta:** el último resumen cerrado aparece aunque esté vacío ("Sin consumos"), para poder corregir su cierre (`2026-10-07-ultimo-resumen-cerrado.md`).
+  - **Pagar resumen** sin cuentas ofrece "Sumar cuenta" y vuelve con la cuenta en la lista.
+  - **Web:** iniciar sesión para reclamar mandaba a la Billetera (`_layout.tsx` desmontaba la navegación mientras cargaban los ajustes); "Usar otro mail" quedaba en el paso del código. Arreglados.
+  - **Web y móvil:** Fran quiere Mangos en los dos. La app completa en la web va **después de la beta**, con diseño de escritorio como el del prototipo (`2026-10-07-web-completa.md`). Mientras tanto la web publicada es solo `/g/…`; lo demás muestra "Mangos está en el teléfono" (`GUEST_WEB_ONLY` en `_layout.tsx`, solo fuera de desarrollo).
+  - **App para otros países:** anotada en "Queda para después" de `01-alcance-v1.md` (hoy todo está atado a Argentina).
+  - **Revisión de diseño** a 320 y 390 con datos reales (`2026-10-07-revision-de-diseno.md`): fila de tarjeta con pesos y dólares en dos líneas, "Cómo saldar" sin cortar a quién pagar, cuotas una por fila, montos en Plex Mono (`components/Mono.tsx`), avatares con colores de categoría, patrimonio en 30 en pantallas angostas y otros arreglos menores. Fran lo vio en el teléfono y anda bien.
 
-- **Arreglo chico pendiente:** en `apps/mobile/src/lib/authErrors.ts`, un 401 (clave mal configurada) se mostró como "Sin conexión. Probá de nuevo.". Conviene que solo los errores de red digan eso y el resto diga "Algo falló. Probá de nuevo.".
+- **Primer paso de la próxima sesión:** elegir la próxima tanda (abajo, "Próximos pasos") y arrancar con su `/spec`. Antes, la verificación rápida de las cotizaciones del punto de arriba.
 
-- **Pendientes conocidos de las épicas** (están en las specs):
-  - "¿Ya lo pagaste?" no se combina con un gasto de grupo: haría falta una función de la base que guarde las dos cosas juntas.
-  - El bloqueo del monto (D5) en la hoja es más estricto que en la base: la app no ve los gastos personales de otros.
-  - Completar el medio de pago de los "Sin medio de pago" de un reclamo va con la lista de movimientos (tanda futura).
+- **Pendientes chicos:**
+  - Íconos de categoría en filas y fichas: falta `react-native-svg` y `CategoryIcon` con los 6 glifos (`DESIGN.md`, "Ícono de categoría").
+  - `apps/mobile/src/lib/authErrors.ts`: un 401 (clave mal configurada) se muestra como "Sin conexión. Probá de nuevo."; solo los errores de red deberían decir eso.
+  - "¿Ya lo pagaste?" no se combina con un gasto de grupo (haría falta una función de la base que guarde las dos cosas juntas).
+  - El bloqueo del monto (D5) en la hoja es más estricto que en la base.
+  - Completar el medio de pago de los "Sin medio de pago" de un reclamo va con la lista de movimientos.
   - Preview y producción de Vercel usan la misma base `mangos`.
 
+- **Datos de prueba en `mangos`:** la cuenta de Fran (`balsamote96@gmail.com`) tiene la tarjeta "Bna Visa" (··2337), la cuenta "Caja De Ahorros - Bna", gastos del 7/10 y el grupo "Asado" (Fran, Juan y Caro provisorios). Existe además el usuario `balsamote96+juan@gmail.com`, que reclamó y deshizo el lugar de Juan. Son datos reales de prueba: no borrarlos sin preguntar.
+
 - **Servicios configurados:**
-  - **Supabase `mangos`** (`pkhjsrknnijjygzwvtkn`): migraciones al día hasta `20261007120000_invite_token`. Mail con el código: SMTP de Gmail (`smtp.gmail.com:587`, remitente "Mangos", el Gmail de Fran con una contraseña de aplicación) y la plantilla `supabase/templates/codigo.html` en "Magic Link" y "Confirm signup". Supabase hosteado solo deja editar plantillas con SMTP propio. Probado el 7/10 desde la web: llega el código. Límites: unos 500 mails por día (Gmail) y 30 por hora (Supabase).
-  - **Vercel `mangos`** (equipo `franco-balsamos-projects`): https://mangos-kohl.vercel.app, deploy en cada push a `main`, variables en Production y Preview. **La conexión de Vercel de Claude solo lee** (403 al crear proyectos o variables): esos cambios los hace Fran desde el panel.
+  - **Supabase `mangos`** (`pkhjsrknnijjygzwvtkn`): migraciones al día hasta `20261007150000_fx_history_closed_days`. Se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. Mail con el código: SMTP de Gmail (remitente "Mangos", contraseña de aplicación) con la plantilla `supabase/templates/codigo.html`; unos 500 mails por día (Gmail) y 30 por hora (Supabase).
+  - **Vercel `mangos`** (equipo `franco-balsamos-projects`): https://mangos-kohl.vercel.app, deploy automático en cada push a `main`. **La conexión de Vercel de Claude solo lee**: cambios de proyecto o variables los hace Fran.
+  - **`apps/mobile/.env`** (no se commitea) apunta a `mangos` para probar en el teléfono: `EXPO_PUBLIC_SUPABASE_URL=https://pkhjsrknnijjygzwvtkn.supabase.co`, la clave publicable de `mangos` y `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app`. Para probar contra la base local, pasar las variables locales al comando (las del entorno le ganan al `.env`).
 
-- **Siguientes tandas posibles, cada una con su `/spec`:** Inicio, Ajustes (T10: avisos por tarjeta, borrar la cuenta, exportar), la cola sin conexión (T8), la lista de movimientos (con completar los "Sin medio de pago"), y lo de "Antes de la beta" (abajo).
+- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 454 tests pgTAP, 325 de Vitest y el typecheck.
 
-- Antes de cualquier decisión visual, leer `DESIGN.md` y `docs/diseno-pantallas-v1.md`, y usar `prototipo/mangos.html` como referencia.
-- **Estado del código:** todo commiteado y pusheado en `main` (`franco-balsamo/finanzapp`). Pasan 444 tests pgTAP y 321 de Vitest, el typecheck y el export web.
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.
   2. Consultas de la app en `apps/mobile/src/lib/`.
   3. Pantallas en `apps/mobile/src/app/`.
-  4. Prueba contra la base local con un script `.mts` temporal: `node --experimental-strip-types` en `apps/mobile`, usuario creado con `admin.auth.admin.generateLink` y la `SERVICE_ROLE_KEY` de `npx supabase status -o json`.
+  4. Prueba contra la base local (scripts o Chrome headless, abajo) y después en el teléfono contra `mangos`.
   5. Commit, push y actualizar esta sección.
+
+- **Cómo probar la web y sacar capturas sin la extensión de Chrome** (la extensión no conecta en esta máquina):
+  - `puppeteer-core` en el scratchpad de la sesión, con `executablePath: '/usr/bin/google-chrome'`; el código del login sale de la API de Mailpit (`http://127.0.0.1:54324/api/v1/messages`).
+  - Pantallas de la app: `npx expo start --web --port 8090 --clear` con las variables locales. **El servidor no toma cambios de archivos en caliente:** reiniciarlo después de cada cambio (o verificar con `grep` en el bundle). El puerto 8081 suele ser el Expo de Fran para el teléfono: no tocarlo.
+  - Lo publicado (con `GUEST_WEB_ONLY`): `npx expo export --platform web --clear --output-dir <dir>` y servirlo como Vercel (cleanUrls y `/g/:token` → `/g/[token].html`). El export cambia `127.0.0.1` por la IP de la red en la URL de Supabase: corregirlo con `sed` en `_expo/static/js/web/*.js`.
+  - Las pantallas largas scrollean por dentro: para capturarlas enteras, usar una ventana alta (por ejemplo 320 × 2600).
+  - Un usuario insertado a mano en `auth.users` necesita los `*_token` y `email_change` en `''` (no null), o GoTrue responde 500.
+
 - **Entorno local:**
-  - colima con 6 GiB de memoria (con 2 GiB se colgó; el 5/10 se cayó una vez igual: en colima hay contenedores de otros proyectos);
-  - para que Docker apunte a colima: `export DOCKER_HOST=unix://$HOME/.config/colima/default/docker.sock`;
-  - Supabase local: `npx supabase start -x vector,logflare,studio,imgproxy,realtime,storage-api,postgres-meta,supavisor` (el contenedor `vector` no levanta), `npx supabase db reset` y `npx supabase test db`. Si cambia `config.toml`, hace falta `stop` y `start`;
-  - la app: `apps/mobile/.env` (copiar de `.env.example`; para el teléfono, los tres valores de `mangos`) y `npx expo start --web` en `apps/mobile`. Al cambiar el `.env`, reiniciar con `npx expo start --clear`: las variables `EXPO_PUBLIC_…` quedan fijadas en el bundle. El código del login llega a Mailpit (http://127.0.0.1:54324). El teléfono no ve la base local (colima publica solo en 127.0.0.1);
-  - **rutas tipadas:** al sumar una ruta, `tsc` falla hasta que Expo regenera `.expo/types/router.d.ts`. Para eso hay que levantar `npx expo start` unos segundos (con `CI=1` no lo regenera). No usar `pkill -f "expo start…"`, porque mata a la propia shell: usar `timeout`;
-  - los scripts de prueba contra la base local dejan datos (grupos, cuentas) que rompen tests pgTAP con `update` sin `where` (por ejemplo `03_guest`): antes de `npx supabase test db`, correr `npx supabase db reset`;
-  - el sistema anda justo de memoria: el servidor de Expo en segundo plano lo cortó Claude Code una vez.
-- **Migraciones en `mangos`:** se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. La última es `20261007120000_invite_token`.
+  - colima con 6 GiB de memoria; para que Docker apunte a colima: `export DOCKER_HOST=unix://$HOME/.config/colima/default/docker.sock`. No hay `psql` instalado: usar `docker exec -i supabase_db_mangos psql -U postgres`.
+  - Supabase local: `npx supabase start -x vector,logflare,studio,imgproxy,realtime,storage-api,postgres-meta,supavisor`, `npx supabase db reset` y `npx supabase test db`. La base local tiene datos de la revisión de diseño (usuario `fran@test.local`, grupo de 12): `npx supabase db reset` antes de correr los tests pgTAP.
+  - **Rutas tipadas:** al sumar una ruta, `tsc` falla hasta que Expo regenera `.expo/types/router.d.ts` (levantar `npx expo start` unos segundos, sin `CI=1`). No usar `pkill -f "expo start…"`, porque mata a la propia shell.
+  - **Formato:** no hay Prettier configurado en el repo; el estilo es comillas simples y ancho 140 (`npx prettier --single-quote --print-width 140`). Varios archivos ya no lo cumplen del todo: formatear solo lo que se toca.
+  - El error rojo de `React Native DevTools` (`chrome-sandbox`) al arrancar Expo no afecta a la app.
 
 ## Dónde está cada cosa
 - **Repo de Fran (fuente de verdad):** `CLAUDE.md`, `DESIGN.md`, `docs/01-alcance-v1.md`, `docs/02-reglas-de-negocio.md`, `docs/03-modelo-de-datos.md`, `docs/04-guia-gstack.md`, `docs/05-plan-tecnico.md`, `docs/producto-y-lanzamiento.md`, `docs/diseno-pantallas-v1.md`, `docs/decisiones/` y `prototipo/mangos.html`. Para revisar algo, Fran pasa los archivos como adjuntos.
@@ -123,22 +126,20 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - T9 confirmado en producción. El secreto de los cron vive solo en Vault (`cron_secret_matches`); 392 tests pgTAP.
 
 ## Próximos pasos
-1. **Pantallas de la app** (`apps/mobile`, Expo Router), siguiendo `DESIGN.md`, `docs/diseno-pantallas-v1.md` y el prototipo:
-   - login por mail con código (Supabase Auth) y onboarding;
-   - Billetera: lista de tarjetas con `CardRow` (sin carrusel), cuentas y patrimonio;
-   - hoja de carga en el orden nuevo, con fichas de medio de pago (favorita, 2 más usados y "Otro…", sin preselección), carga por texto y toast con "Deshacer". Cargar un gasto tiene que llevar menos de 10 segundos;
-   - detalle de tarjeta (con la carga por texto que abre el aviso de cierre) y de grupo;
-   - cola sin conexión con UUID del teléfono (T8);
-   - Ajustes: avisos por tarjeta, no molestar, borrar la cuenta (volver a pedir el código si la base responde "reauthentication required") y exportar el JSON (T10).
-
-   La primera tanda (login, bienvenida, altas, Billetera y hoja de carga) ya tiene spec: `docs/specs/2026-10-05-epica-primeras-pantallas.md`. Lo demás (detalles, varias líneas de texto, T8 y Ajustes) va en tandas siguientes, cada una con su `/spec`.
-2. **Prototipo:** actualizarlo a la v1 (los mismos cambios de arriba) solo si hace falta como referencia antes de las pantallas.
-3. **Antes de la beta:**
+1. **Siguiente tanda de pantallas**, cada una con su `/spec` (Fran elige el orden):
+   - **Inicio:** el resumen del mes y lo que viene de las tarjetas (`docs/diseno-pantallas-v1.md`).
+   - **Lista de movimientos:** con completar los "Sin medio de pago" de un reclamo.
+   - **Ajustes (T10):** perfil, dólar de referencia, tema, avisos por tarjeta, no molestar, tarjetas archivadas, borrar la cuenta (volver a pedir el código si la base responde "reauthentication required") y exportar el JSON.
+   - **Cola sin conexión (T8):** gastos guardados en el teléfono con "Pendiente" y envío automático.
+   - **Íconos de categoría:** `react-native-svg` y `CategoryIcon`.
+2. **Antes de la beta:**
    - T12: plan pago de Supabase y cómo pausa los proyectos;
-   - los índices de las claves foráneas que marcó el advisor (están en `docs/decisiones/2026-10-04-primer-deploy.md`);
+   - los índices de las claves foráneas que marcó el advisor (`docs/decisiones/2026-10-04-primer-deploy.md`);
    - el envío del push de los avisos, cuando la app registre tokens;
    - Maestro (T11);
-   - la Auth de producción: pasar el SMTP de Gmail a un remitente con dominio propio (Resend o Brevo) cuando esté el dominio, y la URL del sitio.
+   - la Auth de producción: remitente con dominio propio (Resend o Brevo) y la URL del sitio;
+   - legal: consultar con un abogado e inscribir la base de datos (Ley 25.326).
+3. **Después de la beta:** la app completa en la web con diseño de escritorio (`docs/decisiones/2026-10-07-web-completa.md`).
 4. **Herramientas:** instalar `codex` (revisión externa en `/spec` y `/review`) y `gh` (subir los specs como issues).
 
 ## Commits
