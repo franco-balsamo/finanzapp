@@ -7,7 +7,7 @@ import {
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { ToastProvider } from '../components/Toast';
 import { SessionProvider, useSession } from '../lib/session';
@@ -42,26 +42,31 @@ export default function RootLayout() {
 function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
   const { loading, session, settings } = useSession();
   const { name, colors } = useTheme();
-  const ready = fontsLoaded && !loading;
+  // Mientras cargan los ajustes de una sesión nueva, quedan los permisos anteriores. Si se
+  // desmontara la navegación, al volver arrancaría en la Billetera y no en la página del grupo
+  // donde se acaba de iniciar sesión para reclamar un lugar (W-5).
+  const guards = useRef<{ signedIn: boolean; onboarded: boolean } | null>(null);
+  if (!loading) guards.current = { signedIn: !!session, onboarded: !!settings?.onboarded_at };
+  const ready = fontsLoaded && guards.current !== null;
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
-  if (!ready) return null;
+  if (!ready || !guards.current) return null;
 
-  const onboarded = !!settings?.onboarded_at;
+  const { signedIn, onboarded } = guards.current;
   return (
     <>
       <StatusBar style={name === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-        <Stack.Protected guard={!!session && onboarded}>
+        <Stack.Protected guard={signedIn && onboarded}>
           <Stack.Screen name="(app)" />
         </Stack.Protected>
-        <Stack.Protected guard={!!session && !onboarded}>
+        <Stack.Protected guard={signedIn && !onboarded}>
           <Stack.Screen name="bienvenida" />
         </Stack.Protected>
-        <Stack.Protected guard={!session}>
+        <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
         <Stack.Screen name="g/[token]" />
