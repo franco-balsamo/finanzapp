@@ -12,6 +12,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Button } from '../../../../components/Button';
 import { Chip } from '../../../../components/Chip';
 import { DateChooser } from '../../../../components/DateChooser';
 import { Sheet } from '../../../../components/Sheet';
@@ -19,7 +20,7 @@ import { SheetFooter } from '../../../../components/SheetFooter';
 import { TextField } from '../../../../components/TextField';
 import { useToast } from '../../../../components/Toast';
 import { cardRateOn } from '../../../../lib/entry';
-import { walletChanged } from '../../../../lib/events';
+import { onWalletChanged, walletChanged } from '../../../../lib/events';
 import { impliedRate, registerPayments, revertPayments, type PaymentDraft } from '../../../../lib/payments';
 import { useSession } from '../../../../lib/session';
 import { loadCardDetail, type CardDetailData } from '../../../../lib/wallet';
@@ -70,6 +71,14 @@ export default function PayStatement() {
       if (s?.pending.USD.minor) setUsd(amountInputText(s.pending.USD.minor));
     }, () => setFailed(true));
   }, [session, settings, cardId, period]);
+
+  // Al volver de "Sumar cuenta", la cuenta nueva aparece sin perder los montos escritos.
+  useEffect(() => {
+    if (!session || !settings || !cardId) return;
+    return onWalletChanged(() => {
+      loadCardDetail(session.user.id, settings, cardId).then(setData, () => {});
+    });
+  }, [session, settings, cardId]);
 
   const statement = data?.detail.statements.find((s) => s.period === period) ?? null;
   const accounts = data ? [...data.accounts.entries()].map(([id, a]) => ({ id, ...a })) : [];
@@ -195,7 +204,10 @@ export default function PayStatement() {
                 ))}
               </View>
               {arsAccounts.length === 0 ? (
-                <Text style={[type.caption, { color: colors.textMuted }]}>No tenés cuentas en pesos. Sumá una desde la Billetera.</Text>
+                <>
+                  <Text style={[type.caption, { color: colors.textMuted }]}>No tenés cuentas en pesos.</Text>
+                  <Button title="Sumar cuenta" variant="link" onPress={() => router.push('/cuenta-nueva')} style={styles.addAccount} />
+                </>
               ) : null}
               {errors.arsAccount ? <Text style={[type.caption, { color: colors.error }]}>{errors.arsAccount}</Text> : null}
             </View>
@@ -231,6 +243,12 @@ export default function PayStatement() {
                   />
                 ))}
               </View>
+              {accounts.length === 0 ? (
+                <>
+                  <Text style={[type.caption, { color: colors.textMuted }]}>No tenés cuentas.</Text>
+                  <Button title="Sumar cuenta" variant="link" onPress={() => router.push('/cuenta-nueva')} style={styles.addAccount} />
+                </>
+              ) : null}
               {errors.usdAccount ? <Text style={[type.caption, { color: colors.error }]}>{errors.usdAccount}</Text> : null}
               {usdInPesos ? (
                 <TextField
@@ -271,6 +289,7 @@ export default function PayStatement() {
 }
 
 const styles = StyleSheet.create({
+  addAccount: { alignSelf: 'flex-start' },
   block: { gap: 6 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
 });

@@ -13,6 +13,7 @@ import {
   validateAccount,
   type AccountFormErrors,
 } from '../../lib/accountForm';
+import { walletChanged } from '../../lib/events';
 import { type } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
@@ -36,6 +37,8 @@ export default function NewAccount() {
     setSaveError(null);
     try {
       await createAccount(value);
+      // La pantalla de pago, si se abrió desde ahí, vuelve a traer las cuentas.
+      walletChanged();
       router.back();
     } catch {
       setSaveError('No pudimos guardar la cuenta. Probá de nuevo.');
