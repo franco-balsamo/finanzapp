@@ -8,12 +8,17 @@ import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { ToastProvider } from '../components/Toast';
 import { SessionProvider, useSession } from '../lib/session';
 import { useTheme } from '../theme/useTheme';
 
 SplashScreen.preventAutoHideAsync();
+
+// La web publicada es solo la de invitados hasta después de la beta (decisión 2026-10-07-web-completa).
+// En desarrollo (`npx expo start --web`) la app completa sigue andando en el navegador.
+const GUEST_WEB_ONLY = Platform.OS === 'web' && !__DEV__;
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -37,7 +42,8 @@ export default function RootLayout() {
 
 /**
  * Sin sesión: ingresar. Con sesión y sin la bienvenida hecha (`onboarded_at`): la bienvenida.
- * Con las dos: la app. La web de invitados (`/g/[token]`) no pide nada.
+ * Con las dos: la app. La web de invitados (`/g/[token]`) no pide nada. En la web publicada, todo lo
+ * demás muestra "Instalá Mangos" (`instala`).
  */
 function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
   const { loading, session, settings } = useSession();
@@ -60,13 +66,16 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
     <>
       <StatusBar style={name === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-        <Stack.Protected guard={signedIn && onboarded}>
+        <Stack.Protected guard={GUEST_WEB_ONLY}>
+          <Stack.Screen name="instala" />
+        </Stack.Protected>
+        <Stack.Protected guard={!GUEST_WEB_ONLY && signedIn && onboarded}>
           <Stack.Screen name="(app)" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !onboarded}>
+        <Stack.Protected guard={!GUEST_WEB_ONLY && signedIn && !onboarded}>
           <Stack.Screen name="bienvenida" />
         </Stack.Protected>
-        <Stack.Protected guard={!signedIn}>
+        <Stack.Protected guard={!GUEST_WEB_ONLY && !signedIn}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
         <Stack.Screen name="g/[token]" />

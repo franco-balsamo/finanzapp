@@ -13,4 +13,6 @@
 - Los avisos de cierre y vencimiento: en la web no hay notificaciones del teléfono (mail o avisos del navegador).
 - La sesión guardada en el navegador: duración y cierre.
 
-**Pendiente para la beta:** qué hacer mientras tanto con la parte de la app que ya se ve en la web (limitar la web publicada a `/g/…` o dejarla).
+**Mientras tanto (decidido el mismo día):** la web publicada es solo la de invitados. En `_layout.tsx`, con `Platform.OS === 'web' && !__DEV__`, las pantallas de la app quedan protegidas y cualquier otra dirección lleva a `instala` ("Mangos está en el teléfono"). `/g/…` y el reclamo siguen igual. En desarrollo (`npx expo start --web`) la app completa sigue andando en el navegador. Cuando se haga la web completa, se saca `GUEST_WEB_ONLY`.
+
+Probado con el export estático contra la base local: `/`, `/ingresar`, `/grupos` y `/bienvenida` llevan a `/instala`; `/g/<token>` muestra el grupo y el reclamo con mail y código sigue en la página. Las direcciones con id (`/grupo/<id>`) o desconocidas dan 404, porque no hay archivo para ellas.

@@ -26,8 +26,8 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
     - en la web, iniciar sesión para reclamar mandaba a la Billetera (`_layout.tsx` desmontaba la navegación mientras cargaban los ajustes), y "Usar otro mail" quedaba en el paso del código.
   - **Cómo se probó la web sin la extensión de Chrome:** export estático (`npx expo export --platform web`) contra la base local, servido como en Vercel (cleanUrls y `/g/:token` → `/g/[token]`), con Chrome headless (`puppeteer-core` y `/usr/bin/google-chrome`) y el código sacado de Mailpit. Ojo: el export cambia `127.0.0.1` por la IP de la red en la URL de Supabase, y el servidor de desarrollo de Expo no tomó los cambios de archivos en esa sesión.
   - "Deshacer" el reclamo de Juan, probado: en `mangos` quedó con `unclaimed_at` y `unclaimed_by` de Fran, otra vez provisorio. **El recorrido de las cuatro épicas en el teléfono está completo.**
-  - **Primer paso de la próxima sesión:** decidir lo de la web (abajo) y revisar lo que falta ver: diseño contra `DESIGN.md`, 12 integrantes y nombres largos en 320 de ancho.
-  - **Decisión pendiente:** la web publicada contiene la app entera: con sesión, desde `/` se usa la Billetera en el navegador. `01-alcance-v1.md` dice que la web es solo para invitados. Decidir si se limita a `/g/…` o se deja.
+  - **Primer paso de la próxima sesión:** revisar lo que falta ver: diseño contra `DESIGN.md`, 12 integrantes y nombres largos en 320 de ancho.
+  - **Web:** Fran quiere Mangos web y móvil; la app completa en la web va después de la beta, con diseño de escritorio (`docs/decisiones/2026-10-07-web-completa.md`). Mientras tanto, la web publicada es solo `/g/…`: lo demás muestra "Mangos está en el teléfono".
   - El error rojo de `React Native DevTools` (`chrome-sandbox`) al arrancar Expo no afecta a la app: es la herramienta de depuración de escritorio.
 
 - **Arreglo chico pendiente:** en `apps/mobile/src/lib/authErrors.ts`, un 401 (clave mal configurada) se mostró como "Sin conexión. Probá de nuevo.". Conviene que solo los errores de red digan eso y el resto diga "Algo falló. Probá de nuevo.".
