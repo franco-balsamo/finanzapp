@@ -8,11 +8,10 @@ export interface UserSettings {
   display_currency: 'ARS' | 'USD';
   fx_reference: 'mep' | 'oficial' | 'blue';
   theme: 'system' | 'light' | 'dark';
-  goal: 'control' | 'save' | 'invest' | null;
   onboarded_at: string | null;
 }
 
-const SETTINGS_COLUMNS = 'name, display_currency, fx_reference, theme, goal, onboarded_at';
+const SETTINGS_COLUMNS = 'name, display_currency, fx_reference, theme, onboarded_at';
 
 interface SessionState {
   /** true hasta saber si hay sesión y, si la hay, hasta traer los ajustes. */

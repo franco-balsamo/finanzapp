@@ -59,7 +59,7 @@ erDiagram
 | theme | system/light/dark | |
 | notify_push | bool | |
 | quiet_from, quiet_to | smallint | Horario de "no molestar" |
-| goal | control/save/invest | Elegido en la bienvenida |
+| goal | control/save/invest | Sin uso: la bienvenida ya no lo pregunta (7/10). Queda en la base, siempre null para usuarios nuevos |
 
 En la base es `user_settings`, con `user_id` → `auth.users` (nombre y mail viven en `auth.users`). Se crea sola al registrarse. Avisos por mail y WhatsApp y el resumen semanal quedan fuera de la v1.
 
