@@ -23,6 +23,7 @@
 | [2026-10-06-spec-grupos-en-la-app.md](2026-10-06-spec-grupos-en-la-app.md) | /spec de grupos en la app (épica G-1 a G-7): pestañas, lista y crear grupo, detalle 1A, gasto de grupo en la hoja con `save_group_expense_with_movement`, pagos que mueven una cuenta, editar, abandonar y eliminar. La web de invitados y el reclamo, en la tanda siguiente |
 | [2026-10-06-spec-web-de-invitados.md](2026-10-06-spec-web-de-invitados.md) | /spec de la web de invitados (épica W-1 a W-6): Vercel con `EXPO_PUBLIC_WEB_URL`, `groups.invite_token` para volver a compartir el link, web de solo lectura en `/g/[token]`, compartir, regenerar y revocar, reclamar en la web con el código por mail y deshacer un reclamo en la app |
 | [2026-10-07-bienvenida-de-un-paso.md](2026-10-07-bienvenida-de-un-paso.md) | La bienvenida pasa a 1 paso (el dólar) y la moneda del patrimonio se cambia con un chip con bandera en la Billetera: sin objetivo, porque `goal` no se usaba, y sin tarjeta, que se suma desde la Billetera |
+| [2026-10-07-cotizacion-del-dia.md](2026-10-07-cotizacion-del-dia.md) | ArgentinaDatos solo guarda días terminados y corrige los que ya tenía: antes, la fila de hoy traía el cierre de ayer y le ganaba todo el día a DolarApi |
 
 La fuente de verdad es `02-reglas-de-negocio.md` junto con `03-modelo-de-datos.md`.
 
