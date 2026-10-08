@@ -21,7 +21,9 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - La fila de tarjeta de la Billetera muestra la pill "Vencido" o "A pagar" en lugar de "cierra 24/10" si hay un resumen cerrado sin pagar (`WalletCard.dueStatus`; decisión de Fran, anotada en `DESIGN.md`, "Fila de tarjeta").
   - La barra de pestañas mide 56 más el borde seguro (`layout.tabBarHeight`): con el alto por defecto (49), en la web el texto quedaba cortado.
 
-- **Primer paso de la próxima sesión:** implementar la lista de movimientos, empezando por L-1 (reglas en `docs/02` §5). Spec lista: `docs/specs/2026-10-08-epica-lista-de-movimientos.md`.
+- **Lista de movimientos (8/10):** hechas L-1 (`docs/02` §5, "Editar y borrar un gasto") y L-2 (`movementList` en core, 353 tests de Vitest).
+
+- **Primer paso de la próxima sesión:** seguir con L-3 (`update_expense_with_payments` en la base). Spec: `docs/specs/2026-10-08-epica-lista-de-movimientos.md`.
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
