@@ -16,7 +16,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Cotizaciones (8/10):** verificado que `fx-history` ya no guarda filas del día. El historial de ArgentinaDatos ahora se guarda a las 00:00 de su fecha, así el cierre de DolarApi le gana (`docs/decisiones/2026-10-08-historial-al-abrir-el-dia.md`). Aplicado en `mangos`.
 
-- **Primer paso de la próxima sesión:** elegir la próxima tanda (abajo, "Próximos pasos") y arrancar con su `/spec`.
+- **Primer paso de la próxima sesión:** implementar la épica de Inicio (`docs/specs/2026-10-08-epica-inicio.md`), empezando por I-1 (íconos), I-2 (`home()` en core, con `tdd`) e I-3 (pestañas). Decisiones en `docs/decisiones/2026-10-08-spec-inicio.md`.
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -67,7 +67,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 ## Próximos pasos
 1. **Siguiente tanda de pantallas**, cada una con su `/spec` (Fran elige el orden):
-   - **Inicio:** el resumen del mes y lo que viene de las tarjetas (`docs/diseno-pantallas-v1.md`).
+   - **Inicio:** spec hecho el 8/10, falta implementarlo.
    - **Lista de movimientos:** con completar los "Sin medio de pago" de un reclamo.
    - **Ajustes (T10):** perfil, dólar de referencia, tema, avisos por tarjeta, no molestar, tarjetas archivadas, borrar la cuenta (volver a pedir el código si la base responde "reauthentication required") y exportar el JSON.
    - **Cola sin conexión (T8):** gastos guardados en el teléfono con "Pendiente" y envío automático.

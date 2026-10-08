@@ -350,7 +350,7 @@ patrimonio = Σ saldos de cuentas (convertidos)
            + Σ tu saldo en cada grupo (positivo o negativo)
 ```
 
-Se muestra en pesos o en dólares. En la Billetera, al lado de "Patrimonio", un chip muestra la moneda actual (🇦🇷 AR$ o 🇺🇸 US$); tocarlo pasa todo el total a la otra moneda y la elección queda guardada (`display_currency`). Arranca en pesos (7/10).
+Se muestra en pesos o en dólares. En Inicio (antes en la Billetera; spec de Inicio, 8/10), al lado de "Patrimonio", un chip muestra la moneda actual (🇦🇷 AR$ o 🇺🇸 US$); tocarlo pasa todo el total a la otra moneda y la elección queda guardada (`display_currency`). Arranca en pesos (7/10).
 
 > **✅ Decidido** (2/10, después del /review): cada componente se convierte **una sola vez** a la moneda en que se muestra el inicio, nunca de ida y vuelta.
 > - **En pesos:** la deuda en dólares de las tarjetas, × **dólar tarjeta**; las cuentas y los saldos de grupo en dólares, × **dólar de referencia**.
