@@ -183,6 +183,8 @@ Implementado el 8/10: `supabase/migrations/20261009120000_update_expense.sql`, c
 - Entradas: "Ver movimientos" (`Button` `link`) en la Billetera, arriba de las tarjetas; y en Inicio, en el encabezado de "Gastos del mes", con `month` = mes en curso.
 - Tocar una fila según `action`: `edit` y `complete` → `/cargar?movementId=…`; `group` → `/cargar?groupExpenseId=…`; `none` → nada.
 
+Implementado el 8/10: `apps/mobile/src/app/(app)/movimientos.tsx`. Los meses se eligen en un panel de fichas que se abre debajo del chip del mes, no en una hoja aparte. La edición de grupo necesita también `groupId`: sale de los grupos que ya trae `loadWalletInput`. La búsqueda por monto es por prefijo ("12000" también encuentra $120.000), porque filtra mientras se escribe. `/cargar?movementId=` todavía no hace nada: es L-5. Probado en Chrome headless contra la base local (320 y 390, claro y oscuro).
+
 ### L-5. Hoja de carga en modo editar
 
 En `cargar.tsx`, con el param nuevo `movementId`:

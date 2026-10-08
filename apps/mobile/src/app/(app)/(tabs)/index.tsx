@@ -8,6 +8,7 @@ import {
   money,
   moneyInWords,
   SYSTEM_CATEGORY_IDS,
+  todayInArgentina,
   UNCATEGORIZED,
   zero,
   type HomeDue,
@@ -288,7 +289,11 @@ export default function Home() {
             </Section>
 
             {/* D4: gastos del mes. */}
-            <Section title="Gastos del mes">
+            <Section
+              title="Gastos del mes"
+              link="Ver movimientos"
+              onLink={() => router.push({ pathname: '/movimientos', params: { month: todayInArgentina().slice(0, 7) } })}
+            >
               {!data.spend ? (
                 <Text style={muted}>Falta la cotización del dólar para sumar los gastos en dólares.</Text>
               ) : data.spend.total.minor === 0 ? (

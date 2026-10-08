@@ -77,6 +77,7 @@ export default function Wallet() {
           </View>
         ) : null}
 
+        <Button title="Ver movimientos" variant="link" onPress={() => router.push('/movimientos')} style={styles.add} />
         <Tabs options={TABS} value={tab} onChange={setTab} />
 
         {failed ? (
