@@ -92,7 +92,7 @@ export interface WalletData extends Wallet {
 export async function loadWalletInput(
   userId: string,
   settings: Pick<UserSettings, 'fx_reference' | 'display_currency'>,
-): Promise<{ input: WalletInput; referenceRate: LatestRate | null }> {
+): Promise<{ input: WalletInput; referenceRate: LatestRate | null; rates: Awaited<ReturnType<typeof latestRates>> }> {
   const [cards, accounts, movements, payments, overrides, groups, rates] = await Promise.all([
     // También las archivadas: su deuda sigue contando hasta la purga (02 §3).
     supabase.from('cards').select(CARD_COLUMNS),
@@ -108,6 +108,7 @@ export async function loadWalletInput(
     input: {
       today: todayInArgentina(),
       display: settings.display_currency,
+      reference: settings.fx_reference,
       referenceRate: reference?.sell ?? null,
       fxCard: rates.tarjeta?.sell ?? null,
       cards: rows<DbWalletCard>(cards),
@@ -118,6 +119,7 @@ export async function loadWalletInput(
       groups,
     },
     referenceRate: reference,
+    rates,
   };
 }
 

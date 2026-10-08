@@ -2,7 +2,7 @@
 // viene en cada tarjeta y el patrimonio (02 §2, §3 y §8). La usa la app; no accede a la base.
 
 import { todayInArgentina } from '../notices/fromDb.ts';
-import { cardState } from '../cards/state.ts';
+import { cardState, type CardState } from '../cards/state.ts';
 import { closeDate, statementFor } from '../cards/schedule.ts';
 import { lateExpenseImpact, type LateExpenseImpact } from '../cards/late.ts';
 import type { ByCurrency, CardExpense, CreditCard, StatementOverride, StatementPayment, StatementStatus } from '../cards/types.ts';
@@ -12,7 +12,7 @@ import { coreGroupFromDb } from './groups.ts';
 import { fromDbNumeric, money, rate, zero, type Currency, type Money, type Rate } from '../money.ts';
 import { accountBalance } from '../personal/accountBalance.ts';
 import { netWorth, type NetWorth } from '../personal/netWorth.ts';
-import type { Account, Movement, MovementType } from '../personal/types.ts';
+import type { Account, FxReference, Movement, MovementType } from '../personal/types.ts';
 import type { CardNetwork } from '../entry/paymentMethods.ts';
 
 export interface DbWalletCard {
@@ -122,6 +122,8 @@ export interface DbWalletGroup {
 export interface WalletInput {
   today: ISODate;
   display: Currency;
+  /** El dólar de referencia de la persona: convierte los gastos en dólares del mes (02 §6). */
+  reference: FxReference;
   /** Última venta del dólar de referencia y del dólar tarjeta; null si todavía no hay. */
   referenceRate: Rate | null;
   fxCard: Rate | null;
@@ -194,7 +196,8 @@ function movementFromDb(m: DbWalletMovement): Movement {
   };
 }
 
-function myGroupBalance(g: DbWalletGroup): Money {
+/** Tu saldo exacto en el grupo, en su moneda. */
+export function myGroupBalance(g: DbWalletGroup): Money {
   const { group, expenses, payments } = coreGroupFromDb(g);
   return groupBalances(group, expenses, payments)[g.my_member_id] ?? zero(g.currency);
 }
@@ -259,6 +262,20 @@ function stateOf(row: DbWalletCard, input: WalletInput, prepared: ReturnType<typ
     today: input.today,
     fxCard: input.fxCard ?? UNUSED_RATE,
   });
+}
+
+/** Movimientos y tarjetas (también las archivadas) en los tipos de core, para el gasto del mes de Inicio. */
+export function coreMovementsAndCards(input: WalletInput): {
+  movements: Movement[];
+  cards: { card: CreditCard; overrides: StatementOverride[] }[];
+} {
+  return { movements: prepare(input).movements, cards: input.cards.map((row) => cardFromDb(row, input)) };
+}
+
+/** El estado de cada tarjeta no archivada, para Inicio (home.ts). */
+export function activeCardStates(input: WalletInput): { row: DbWalletCard; state: CardState }[] {
+  const prepared = prepare(input);
+  return input.cards.filter((row) => !row.archived_at).map((row) => ({ row, state: stateOf(row, input, prepared) }));
 }
 
 /**

@@ -27,3 +27,4 @@ export * from './entry/toast.ts';
 export * from './a11y/words.ts';
 export * from './wallet/groups.ts';
 export * from './wallet/wallet.ts';
+export * from './wallet/home.ts';

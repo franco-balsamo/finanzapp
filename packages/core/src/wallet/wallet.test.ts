@@ -28,7 +28,7 @@ function movement(fields: Partial<DbWalletMovement> & Pick<DbWalletMovement, 'id
 
 function input(fields: Partial<WalletInput> = {}): WalletInput {
   return {
-    today, display: 'ARS', referenceRate: rate('1500'), fxCard: rate('2028'),
+    today, display: 'ARS', reference: 'mep', referenceRate: rate('1500'), fxCard: rate('2028'),
     cards: [visa], accounts: [pesos, dolares], payments: [], overrides: [], groups: [],
     movements: [
       movement({ id: 'm1', amount: '187000.00', card_id: 'visa' }),

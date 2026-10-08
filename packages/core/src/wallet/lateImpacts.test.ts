@@ -41,7 +41,7 @@ function payment(id: string, period: string, amount: string, from: string, paidO
 // Septiembre: $100.000 pagados con $60.000 (Galicia, 3/10) y $40.000 (Mercado Pago, 6/10).
 function input(fields: Partial<WalletInput> = {}): WalletInput {
   return {
-    today, display: 'ARS', referenceRate: rate('1500'), fxCard: rate('2028'),
+    today, display: 'ARS', reference: 'mep', referenceRate: rate('1500'), fxCard: rate('2028'),
     cards: [visa], accounts: [galicia, mp], overrides: [], groups: [],
     movements: [movement('heladera', '2026-09-15', '100000.00')],
     payments: [payment('p1', '2026-09', '60000.00', 'galicia', '2026-10-03'), payment('p2', '2026-09', '40000.00', 'mp', '2026-10-06')],

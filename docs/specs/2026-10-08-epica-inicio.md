@@ -108,6 +108,17 @@ I-1, I-2 e I-3 son independientes. I-4 necesita las tres. I-5 se apoya en la pan
 - En `categories.ts` se suma `icon` y `colorIndex` a cada categoría, según la tabla de DESIGN.md.
 - Ícono de la pestaña Inicio: el `home` del prototipo (línea 1073) con `react-native-svg`. Billetera y Grupos siguen como están.
 
+### I-1 a I-5: implementado el 8/10
+
+**Implementado el 8/10.** Notas:
+- `CategoryIcon` arma el svg con `SvgXml` a partir de los paths del prototipo, tal cual. Tiene una prop `color` opcional para `inline`.
+- `home()` usa tres helpers de `wallet.ts`: `activeCardStates`, `coreMovementsAndCards` y `myGroupBalance`. El resumen en curso entra en vencimientos si le falta pagar algo (`pending`), no solo si tiene consumos.
+- "Cerró tu Visa" también se ve si el resumen cerró sin consumos: el aviso pregunta si falta cargar algo. Solo se va al pagarlo o al vencer.
+- `spend` es null solo si no hay cotización de hoy y algún gasto en dólares del mes no tiene la suya. Los gastos sin categoría se muestran como "Otros".
+- Los grupos se ordenan por los centavos absolutos, sin convertir: un grupo en dólares compite con los de pesos por su número.
+- `markNoticeRead` pone la hora del teléfono en `read_at`.
+- 17 tests en `home.test.ts`. Probado en Chrome headless a 320 y 390, en claro y oscuro, contra la base local: tocar un aviso le pone `read_at` y el banner abre la tarjeta. Falta probarlo en el teléfono contra `mangos`.
+
 ### I-2. Core: `home()`
 
 `packages/core/src/wallet/home.ts`, exportado en el index:

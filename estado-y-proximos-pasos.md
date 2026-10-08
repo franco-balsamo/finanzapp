@@ -16,12 +16,14 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Cotizaciones (8/10):** verificado que `fx-history` ya no guarda filas del día. El historial de ArgentinaDatos ahora se guarda a las 00:00 de su fecha, así el cierre de DolarApi le gana (`docs/decisiones/2026-10-08-historial-al-abrir-el-dia.md`). Aplicado en `mangos`.
 
-- **Primer paso de la próxima sesión:** implementar la épica de Inicio (`docs/specs/2026-10-08-epica-inicio.md`), empezando por I-1 (íconos), I-2 (`home()` en core, con `tdd`) e I-3 (pestañas). Decisiones en `docs/decisiones/2026-10-08-spec-inicio.md`.
+- **Inicio (8/10):** implementado (I-1 a I-5, `docs/specs/2026-10-08-epica-inicio.md`). Es la primera pestaña; la Billetera ya no muestra el patrimonio. Probado en Chrome headless contra la base local.
+
+- **Primer paso de la próxima sesión:** probar Inicio en el teléfono contra `mangos` (punto 12 de la definición de terminado). Después, Fran elige la próxima pantalla.
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
 - **Pendientes chicos:**
-  - Íconos de categoría en filas y fichas: falta `react-native-svg` y `CategoryIcon` con los 6 glifos (`DESIGN.md`, "Ícono de categoría").
+  - `CategoryIcon` ya existe (Inicio), pero las filas de movimientos y las fichas todavía no lo usan.
   - `apps/mobile/src/lib/authErrors.ts`: un 401 (clave mal configurada) se muestra como "Sin conexión. Probá de nuevo."; solo los errores de red deberían decir eso.
   - "¿Ya lo pagaste?" no se combina con un gasto de grupo (haría falta una función de la base que guarde las dos cosas juntas).
   - El bloqueo del monto (D5) en la hoja es más estricto que en la base.
@@ -35,7 +37,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - **Vercel `mangos`** (equipo `franco-balsamos-projects`): https://mangos-kohl.vercel.app, deploy automático en cada push a `main`. **La conexión de Vercel de Claude solo lee**: cambios de proyecto o variables los hace Fran.
   - **`apps/mobile/.env`** (no se commitea) apunta a `mangos` para probar en el teléfono: `EXPO_PUBLIC_SUPABASE_URL=https://pkhjsrknnijjygzwvtkn.supabase.co`, la clave publicable de `mangos` y `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app`. Para probar contra la base local, pasar las variables locales al comando (las del entorno le ganan al `.env`).
 
-- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 458 tests pgTAP, 325 de Vitest y el typecheck.
+- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 458 tests pgTAP, 342 de Vitest y el typecheck.
 
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.
@@ -67,11 +69,11 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 ## Próximos pasos
 1. **Siguiente tanda de pantallas**, cada una con su `/spec` (Fran elige el orden):
-   - **Inicio:** spec hecho el 8/10, falta implementarlo.
+   - **Inicio:** hecho el 8/10; falta probarlo en el teléfono.
    - **Lista de movimientos:** con completar los "Sin medio de pago" de un reclamo.
    - **Ajustes (T10):** perfil, dólar de referencia, tema, avisos por tarjeta, no molestar, tarjetas archivadas, borrar la cuenta (volver a pedir el código si la base responde "reauthentication required") y exportar el JSON.
    - **Cola sin conexión (T8):** gastos guardados en el teléfono con "Pendiente" y envío automático.
-   - **Íconos de categoría:** `react-native-svg` y `CategoryIcon`.
+   - **Íconos de categoría en filas y fichas:** usar `CategoryIcon`, que ya está.
 2. **Antes de la beta:**
    - T12: plan pago de Supabase y cómo pausa los proyectos;
    - los índices de las claves foráneas que marcó el advisor (`docs/decisiones/2026-10-04-primer-deploy.md`);

@@ -266,6 +266,7 @@ Firmas implementadas en la épica del 2/10 ([spec](specs/2026-10-02-epica-core.m
 | `savedToastText` | resumen donde entra o cuenta | texto del toast después de guardar (9A) |
 | `parseShortDate(text, today)` | "ayer", "28/09", "28/09/26" | la fecha (la más reciente que no sea futura para `dd/mm`), `invalid` o null; la usan la carga por texto y la hoja |
 | `wallet(input)` / `cardStatementFor(input, cardId, date)` / `cardDetail(input, cardId)` | filas de la base (montos como texto), cotizaciones | tarjetas con lo que viene, archivadas (su deuda sigue contando), cuentas con su saldo y patrimonio / el resumen donde entra un gasto, con su total / el detalle de 6A: resúmenes con consumos, pagos vigentes y mínimo, el resumen que se abre, cuotas que siguen y límite |
+| `home(input, notifications)` | las filas de `wallet` (con `reference`) y los últimos avisos | Inicio: patrimonio, hasta 4 vencimientos, gasto del mes por categoría, hasta 3 grupos con saldo, los "Cerró tu Visa" vigentes y los 3 avisos más recientes |
 | `moneyInWords(money)` | monto | el monto en palabras para el lector de pantalla (12A) |
 
 - Son funciones en **TypeScript puro, sin dependencias ni acceso a la base**: reciben filas y devuelven resultados con `Money`.

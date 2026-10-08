@@ -1,15 +1,23 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet, View, type ColorValue } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { fonts, layout } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
 
-type IconName = 'wallet' | 'groups';
+type IconName = 'home' | 'wallet' | 'groups';
 
 /**
- * Íconos dibujados con View hasta que esté react-native-svg (spec de grupos, G-3): una billetera
- * y dos personas, como en el prototipo. Trazo de 1.7, en el color de la pestaña.
+ * Inicio usa el `home` del prototipo en svg. La billetera y las dos personas siguen dibujadas con View
+ * (spec de grupos, G-3). Trazo de 1.7, en el color de la pestaña.
  */
 function TabIcon({ name, color }: { name: IconName; color: ColorValue }) {
+  if (name === 'home') {
+    return (
+      <Svg width={22} height={22} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-3.5v-4.5h-5V17H4a1 1 0 0 1-1-1Z" />
+      </Svg>
+    );
+  }
   if (name === 'wallet') {
     return (
       <View style={[styles.wallet, { borderColor: color }]}>
@@ -43,6 +51,10 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name="index"
+        options={{ title: 'Inicio', tabBarIcon: ({ color }) => <TabIcon name="home" color={color} /> }}
+      />
+      <Tabs.Screen
+        name="billetera"
         options={{ title: 'Billetera', tabBarIcon: ({ color }) => <TabIcon name="wallet" color={color} /> }}
       />
       <Tabs.Screen
