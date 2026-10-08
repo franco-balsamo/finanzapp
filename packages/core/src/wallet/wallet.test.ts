@@ -22,7 +22,7 @@ function movement(fields: Partial<DbWalletMovement> & Pick<DbWalletMovement, 'id
   return {
     type: 'expense', date: '2026-10-02', description: 'gasto', currency: 'ARS', card_id: null, account_id: null, to_account_id: null,
     installments: 1, category_id: null, my_share: null, group_expense_id: null, fx_mep: null, fx_oficial: null,
-    fx_blue: null, fx_pending: false, debited_amount: null, ...fields,
+    fx_blue: null, fx_pending: false, debited_amount: null, origin: 'manual', group_payment_id: null, ...fields,
   };
 }
 

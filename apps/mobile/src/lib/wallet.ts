@@ -22,7 +22,7 @@ const CARD_COLUMNS =
 const ACCOUNT_COLUMNS = 'id, name, type, currency, opening_balance::text, created_at';
 const MOVEMENT_COLUMNS =
   'id, type, date, description, amount::text, currency, card_id, account_id, to_account_id, installments, category_id, ' +
-  'my_share::text, group_expense_id, fx_mep::text, fx_oficial::text, fx_blue::text, fx_pending, debited_amount::text';
+  'my_share::text, group_expense_id, fx_mep::text, fx_oficial::text, fx_blue::text, fx_pending, debited_amount::text, origin, group_payment_id';
 const PAYMENT_COLUMNS =
   'id, card_id, period, applies_to, amount::text, from_account_id, debited_amount::text, fx_card_rate::text, paid_at, reverted_at';
 

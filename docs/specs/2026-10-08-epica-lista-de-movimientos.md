@@ -162,6 +162,8 @@ export function movementList(input: WalletInput, filter: MovementFilter): Moveme
 - "cuota k/N" usa el mismo cálculo que el detalle de la tarjeta (resumen en curso contra el de la compra), con `k` entre 1 y N. Si todas las cuotas ya cerraron, "N cuotas de $X".
 - Las tarjetas archivadas siguen dando nombre ("Visa ·· 2337").
 
+Implementado el 8/10: `packages/core/src/wallet/movements.ts`, con 10 tests. Un `origin = claim` da siempre `complete`, aunque ya tenga medio de pago: la hoja (L-5) precarga el medio si lo tiene. Los tests de `lateImpacts` sin el propio gasto y de borrar en un resumen pagado van con L-5, que es donde se arma el input sin el gasto.
+
 ### L-3. Base: `update_expense_with_payments(expense jsonb, payments jsonb)`
 
 Migración nueva `20261009120000_update_expense.sql`, `security invoker`, `search_path = ''`, con tests pgTAP:

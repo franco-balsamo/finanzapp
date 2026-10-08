@@ -61,6 +61,10 @@ export interface DbWalletMovement {
   fx_blue: string | null;
   fx_pending: boolean;
   debited_amount: string | null;
+  /** 'claim': entró al reclamar un lugar en un grupo ("Sin medio de pago", 02 §7). */
+  origin: 'manual' | 'text' | 'claim' | 'purge';
+  /** Lo generó un pago de grupo que movió el saldo de una cuenta. */
+  group_payment_id: string | null;
 }
 
 export interface DbWalletPayment {
