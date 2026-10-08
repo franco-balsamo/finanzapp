@@ -60,6 +60,14 @@ describe('Billetera', () => {
     expect(w.netWorth?.cards).toEqual(ars(30_000));
   });
 
+  it('avisa si hay un resumen cerrado sin pagar: a pagar antes del vencimiento, vencido después', () => {
+    const cerrado = movement({ id: 'cerrado', amount: '80000.00', card_id: 'visa', date: '2026-09-10' });
+    // El resumen de septiembre vence el 6/10.
+    expect(wallet(input({ movements: [cerrado] })).cards[0]).toMatchObject({ currentTotal: { ARS: ars(0) }, dueStatus: 'to_pay' });
+    expect(wallet(input({ today: '2026-10-07', movements: [cerrado] })).cards[0]!.dueStatus).toBe('overdue');
+    expect(wallet(input()).cards[0]!.dueStatus).toBeNull();
+  });
+
   it('la favorita primero y después en el orden de carga', () => {
     expect(wallet(input({ cards: [visa, master] })).cards.map((c) => c.id)).toEqual(['master', 'visa']);
   });

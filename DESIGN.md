@@ -497,6 +497,7 @@ Se definió en `/plan-design-review` (1/10). La ubicación y el comportamiento e
 - Usa la misma grilla que `MovementRow`. En lugar del ícono va una **miniatura del plástico** de 56 × 36, radio `xs`, con el degradado `base` → `end` de `cardColors` y sin el patrón de anillos.
 - Al medio: nombre de la tarjeta en `bodyStrong` (con ★ si es la favorita) y "·· 2337" en `moneySm` `textMuted`.
 - A la derecha: lo que viene en el resumen en curso, en `money`, y debajo "cierra 24/10" en `caption`.
+- Si la tarjeta tiene un resumen cerrado sin pagar, en lugar de "cierra 24/10" va una `Pill`: "Vencido" (`error`) si alguno venció, o "A pagar" (`warning`). El monto sigue siendo lo que viene (decisión de Fran, 8/10).
 - Estados: los de `MovementRow` (presionada en `surface2`). Una tarjeta archivada se ve con opacidad 0.5 y la pastilla "Se borra en N días" (I-11).
 
 ### Toast con acción

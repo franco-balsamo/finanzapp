@@ -146,6 +146,8 @@ export interface WalletCard {
   currentTotal: ByCurrency;
   /** Cierre del resumen en curso. */
   closeDate: ISODate;
+  /** Algún resumen cerrado sin pagar: 'overdue' si alguno venció; si no, 'to_pay'. */
+  dueStatus: 'overdue' | 'to_pay' | null;
 }
 
 export interface WalletAccount {
@@ -311,6 +313,7 @@ export function wallet(input: WalletInput): Wallet {
         isFavorite: row.is_favorite,
         currentTotal: current.total,
         closeDate: current.closeDate,
+        dueStatus: state.toPay.some((s) => s.status === 'overdue') ? 'overdue' : state.toPay.length ? 'to_pay' : null,
       };
       return { view, pending: state.pendingTotal, archivedAt: row.archived_at };
     });
