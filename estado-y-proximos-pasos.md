@@ -1,4 +1,4 @@
-# Mangos: estado y próximos pasos (cierre del 7 de octubre de 2026)
+# Mangos: estado y próximos pasos (cierre del 8 de octubre de 2026)
 
 Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales de Fran para Argentina; el nombre es provisorio.
 
@@ -16,14 +16,26 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Cotizaciones (8/10):** verificado que `fx-history` ya no guarda filas del día. El historial de ArgentinaDatos ahora se guarda a las 00:00 de su fecha, así el cierre de DolarApi le gana (`docs/decisiones/2026-10-08-historial-al-abrir-el-dia.md`). Aplicado en `mangos`.
 
-- **Inicio (8/10):** implementado (I-1 a I-5, `docs/specs/2026-10-08-epica-inicio.md`). Es la primera pestaña; la Billetera ya no muestra el patrimonio. Probado en Chrome headless contra la base local.
+- **Inicio (8/10):** implementado (I-1 a I-5, `docs/specs/2026-10-08-epica-inicio.md`). Es la primera pestaña; la Billetera ya no muestra el patrimonio. Probado en Chrome headless contra la base local (320 y 390, claro y oscuro), **todavía no en el teléfono**.
+- **Arreglos del 8/10, después de Inicio:**
+  - La fila de tarjeta de la Billetera muestra la pill "Vencido" o "A pagar" en lugar de "cierra 24/10" si hay un resumen cerrado sin pagar (`WalletCard.dueStatus`; decisión de Fran, anotada en `DESIGN.md`, "Fila de tarjeta").
+  - La barra de pestañas mide 56 más el borde seguro (`layout.tabBarHeight`): con el alto por defecto (49), en la web el texto quedaba cortado.
 
-- **Primer paso de la próxima sesión:** probar Inicio en el teléfono contra `mangos` (punto 12 de la definición de terminado). Después, Fran elige la próxima pantalla.
+- **Primer paso de la próxima sesión:** probar en el teléfono contra `mangos` (punto 12 de la definición de terminado de Inicio):
+  1. Inicio: saludo, patrimonio y chip de moneda, dólar del día, vencimientos, gastos del mes con íconos, grupos y avisos, a lo ancho del teléfono.
+  2. Tocar un aviso le saca el punto; "Cerró tu Visa" abre la tarjeta.
+  3. La Billetera: sin patrimonio y con las pills de "Vencido" o "A pagar".
+  4. La barra de pestañas un poco más alta: que no se vea rara y que el botón "+ Gasto" no la tape.
+  En `mangos` la app todavía no tiene avisos propios de Fran salvo los que haya mandado la Edge Function; si no hay, el panel muestra el texto de vacío.
+  Después, Fran elige la próxima pantalla.
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
 - **Pendientes chicos:**
   - `CategoryIcon` ya existe (Inicio), pero las filas de movimientos y las fichas todavía no lo usan.
+  - Inicio ordena los grupos por los centavos absolutos sin convertir: un grupo en dólares compite con los de pesos por su número (marcado como `shortcut:` en `home.ts`).
+  - `markNoticeRead` guarda la hora del teléfono en `read_at`, no `now()` de la base.
+  - No se pasó `ponytail-review` sobre los cambios del 8/10.
   - `apps/mobile/src/lib/authErrors.ts`: un 401 (clave mal configurada) se muestra como "Sin conexión. Probá de nuevo."; solo los errores de red deberían decir eso.
   - "¿Ya lo pagaste?" no se combina con un gasto de grupo (haría falta una función de la base que guarde las dos cosas juntas).
   - El bloqueo del monto (D5) en la hoja es más estricto que en la base.
@@ -37,7 +49,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - **Vercel `mangos`** (equipo `franco-balsamos-projects`): https://mangos-kohl.vercel.app, deploy automático en cada push a `main`. **La conexión de Vercel de Claude solo lee**: cambios de proyecto o variables los hace Fran.
   - **`apps/mobile/.env`** (no se commitea) apunta a `mangos` para probar en el teléfono: `EXPO_PUBLIC_SUPABASE_URL=https://pkhjsrknnijjygzwvtkn.supabase.co`, la clave publicable de `mangos` y `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app`. Para probar contra la base local, pasar las variables locales al comando (las del entorno le ganan al `.env`).
 
-- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 458 tests pgTAP, 342 de Vitest y el typecheck.
+- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 458 tests pgTAP, 343 de Vitest y el typecheck.
 
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.
@@ -49,13 +61,14 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - **Cómo probar la web y sacar capturas sin la extensión de Chrome** (la extensión no conecta en esta máquina):
   - `puppeteer-core` en el scratchpad de la sesión, con `executablePath: '/usr/bin/google-chrome'`; el código del login sale de la API de Mailpit (`http://127.0.0.1:54324/api/v1/messages`).
   - Pantallas de la app: `npx expo start --web --port 8090 --clear` con las variables locales. **El servidor no toma cambios de archivos en caliente:** reiniciarlo después de cada cambio (o verificar con `grep` en el bundle). El puerto 8081 suele ser el Expo de Fran para el teléfono: no tocarlo.
+  - **Las pantallas de la app en el export:** en un build de producción la web es solo de invitados (`GUEST_WEB_ONLY = web && !__DEV__`). Para ver Inicio, la Billetera, etc. exportar con `--dev`: `npx expo export --platform web --dev --clear --output-dir <dir>`, con `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY` (ese es el nombre de la variable de la clave) apuntando a la base local. El 8/10 no hizo falta corregir la IP.
   - Lo publicado (con `GUEST_WEB_ONLY`): `npx expo export --platform web --clear --output-dir <dir>` y servirlo como Vercel (cleanUrls y `/g/:token` → `/g/[token].html`). El export cambia `127.0.0.1` por la IP de la red en la URL de Supabase: corregirlo con `sed` en `_expo/static/js/web/*.js`.
   - Las pantallas largas scrollean por dentro: para capturarlas enteras, usar una ventana alta (por ejemplo 320 × 2600).
   - Un usuario insertado a mano en `auth.users` necesita los `*_token` y `email_change` en `''` (no null), o GoTrue responde 500.
 
 - **Entorno local:**
   - colima con 6 GiB de memoria; para que Docker apunte a colima: `export DOCKER_HOST=unix://$HOME/.config/colima/default/docker.sock`. No hay `psql` instalado: usar `docker exec -i supabase_db_mangos psql -U postgres`.
-  - Supabase local: `npx supabase start -x vector,logflare,studio,imgproxy,realtime,storage-api,postgres-meta,supavisor`, `npx supabase db reset` y `npx supabase test db`. La base local tiene datos de la revisión de diseño (usuario `fran@test.local`, grupo de 12): `npx supabase db reset` antes de correr los tests pgTAP.
+  - Supabase local: `npx supabase start -x vector,logflare,studio,imgproxy,realtime,storage-api,postgres-meta,supavisor`, `npx supabase db reset` y `npx supabase test db`. La base local tiene datos de prueba de Inicio (usuario `fran@test.local` con nombre "Fran", Visa con cierre 4 y Master con cierre 24 y un resumen vencido, dos cuentas, el grupo "Asado", cotizaciones y 3 avisos): `npx supabase db reset` antes de correr los tests pgTAP.
   - **Rutas tipadas:** al sumar una ruta, `tsc` falla hasta que Expo regenera `.expo/types/router.d.ts` (levantar `npx expo start` unos segundos, sin `CI=1`). No usar `pkill -f "expo start…"`, porque mata a la propia shell.
   - **Formato:** no hay Prettier configurado en el repo; el estilo es comillas simples y ancho 140 (`npx prettier --single-quote --print-width 140`). Varios archivos ya no lo cumplen del todo: formatear solo lo que se toca.
   - El error rojo de `React Native DevTools` (`chrome-sandbox`) al arrancar Expo no afecta a la app.
