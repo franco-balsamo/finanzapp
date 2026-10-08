@@ -29,6 +29,7 @@
 | [2026-10-07-revision-de-diseno.md](2026-10-07-revision-de-diseno.md) | Revisión de diseño a 320 y 390 con datos reales: fila de tarjeta, cómo saldar, cuotas, montos en Plex Mono, avatares con colores de categoría y otros arreglos |
 | [2026-10-08-historial-al-abrir-el-dia.md](2026-10-08-historial-al-abrir-el-dia.md) | El historial de ArgentinaDatos se guarda a las 00:00 de su fecha, así el cierre de DolarApi del día le gana |
 | [2026-10-08-spec-inicio.md](2026-10-08-spec-inicio.md) | Spec de Inicio: primera pestaña, el patrimonio sale de la Billetera, vencimientos, gastos del mes con íconos, grupos, "Cerró tu Visa" y avisos recientes |
+| [2026-10-08-spec-lista-de-movimientos.md](2026-10-08-spec-lista-de-movimientos.md) | Spec de la lista de movimientos: pantalla `/movimientos`, editar y borrar gastos, completar los "Sin medio de pago" y `update_expense_with_payments` |
 | [2026-10-07-historial-estado.md](2026-10-07-historial-estado.md) | Historial movido desde `estado-y-proximos-pasos.md`: lo que cambió el 7/10 y lo hecho hasta el primer deploy |
 
 La fuente de verdad es `02-reglas-de-negocio.md` junto con `03-modelo-de-datos.md`.

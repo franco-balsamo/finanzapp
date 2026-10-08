@@ -21,7 +21,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - La fila de tarjeta de la Billetera muestra la pill "Vencido" o "A pagar" en lugar de "cierra 24/10" si hay un resumen cerrado sin pagar (`WalletCard.dueStatus`; decisión de Fran, anotada en `DESIGN.md`, "Fila de tarjeta").
   - La barra de pestañas mide 56 más el borde seguro (`layout.tabBarHeight`): con el alto por defecto (49), en la web el texto quedaba cortado.
 
-- **Primer paso de la próxima sesión:** Fran elige la próxima pantalla (ver "Próximos pasos").
+- **Primer paso de la próxima sesión:** implementar la lista de movimientos, empezando por L-1 (reglas en `docs/02` §5). Spec lista: `docs/specs/2026-10-08-epica-lista-de-movimientos.md`.
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -77,7 +77,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 ## Próximos pasos
 1. **Siguiente tanda de pantallas**, cada una con su `/spec` (Fran elige el orden):
    - **Inicio:** hecho y probado en el teléfono el 8/10.
-   - **Lista de movimientos:** con completar los "Sin medio de pago" de un reclamo.
+   - **Lista de movimientos:** spec lista el 8/10 (L-1 a L-5), con editar y borrar gastos y completar los "Sin medio de pago" de un reclamo.
    - **Ajustes (T10):** perfil, dólar de referencia, tema, avisos por tarjeta, no molestar, tarjetas archivadas, borrar la cuenta (volver a pedir el código si la base responde "reauthentication required") y exportar el JSON.
    - **Cola sin conexión (T8):** gastos guardados en el teléfono con "Pendiente" y envío automático.
    - **Íconos de categoría en filas y fichas:** usar `CategoryIcon`, que ya está.
