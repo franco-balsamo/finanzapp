@@ -65,8 +65,8 @@ select is(
 );
 select is(
   (select row(rate_date, fetched_at) from public.fx_rates where source = 'argentinadatos' and kind = 'mep'),
-  row('2026-09-25'::date, '2026-09-25 23:59:59-03'::timestamptz),
-  'el historial queda en su fecha, a las 23:59:59 de Argentina'
+  row('2026-09-25'::date, '2026-09-25 00:00:00-03'::timestamptz),
+  'el historial queda en su fecha, a las 00:00 de Argentina'
 );
 
 -- 01:00 UTC del sábado son las 22:00 del viernes en Argentina.

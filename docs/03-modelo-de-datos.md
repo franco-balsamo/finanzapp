@@ -152,7 +152,7 @@ En la beta hay 6 categorías fijas (`is_system`), del sistema (`user_id` nulo) y
 Cotizaciones que guarda el backend.
 | source (dolarapi, argentinadatos) | kind (mep, oficial, blue, tarjeta, ccl, cripto) | buy | sell | fetched_at | rate_date |
 
-- **`fetched_at`** es la hora que informa la fuente, no la del cron: el sábado DolarApi sigue devolviendo la del viernes. El historial de ArgentinaDatos se guarda a las 23:59:59 de Argentina de su fecha, así el cierre le gana a las del día.
+- **`fetched_at`** es la hora que informa la fuente, no la del cron: el sábado DolarApi sigue devolviendo la del viernes. El historial de ArgentinaDatos se guarda a las 00:00 de Argentina de su fecha (lo que se conocía al abrir el día), así cualquier cotización de DolarApi de ese día le gana; los días sin DolarApi usan el historial.
 - **`rate_date`** se genera con el día de `fetched_at` en hora de Argentina. Hay un único por (source, kind, fetched_at), así que la misma respuesta dos veces no duplica.
 - **Cron** (pg_cron, T6, migración `20261002150000_fx_rates.sql`):
   - `fx-rates` cada 10 minutos, que llama a la Edge Function del mismo nombre (DolarApi);
