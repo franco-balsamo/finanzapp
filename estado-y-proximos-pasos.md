@@ -21,9 +21,9 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - La fila de tarjeta de la Billetera muestra la pill "Vencido" o "A pagar" en lugar de "cierra 24/10" si hay un resumen cerrado sin pagar (`WalletCard.dueStatus`; decisión de Fran, anotada en `DESIGN.md`, "Fila de tarjeta").
   - La barra de pestañas mide 56 más el borde seguro (`layout.tabBarHeight`): con el alto por defecto (49), en la web el texto quedaba cortado.
 
-- **Lista de movimientos (8/10):** hechas L-1 (`docs/02` §5, "Editar y borrar un gasto") y L-2 (`movementList` en core, 353 tests de Vitest).
+- **Lista de movimientos (8/10):** hechas L-1 (`docs/02` §5, "Editar y borrar un gasto"), L-2 (`movementList` en core, 353 tests de Vitest) y L-3 (`update_expense_with_payments`, 476 tests pgTAP, aplicada en `mangos`).
 
-- **Primer paso de la próxima sesión:** seguir con L-3 (`update_expense_with_payments` en la base). Spec: `docs/specs/2026-10-08-epica-lista-de-movimientos.md`.
+- **Primer paso de la próxima sesión:** seguir con L-4 (pantalla `/movimientos` y sus entradas). Spec: `docs/specs/2026-10-08-epica-lista-de-movimientos.md`.
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -41,11 +41,11 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - **Datos de prueba en `mangos`:** la cuenta de Fran (`balsamote96@gmail.com`) tiene la tarjeta "Bna Visa" (··2337), la cuenta "Caja De Ahorros - Bna", gastos del 7/10 y el grupo "Asado" (Fran, Juan y Caro provisorios). Existe además el usuario `balsamote96+juan@gmail.com`, que reclamó y deshizo el lugar de Juan. Son datos reales de prueba: no borrarlos sin preguntar.
 
 - **Servicios configurados:**
-  - **Supabase `mangos`** (`pkhjsrknnijjygzwvtkn`): migraciones al día hasta `20261008120000_fx_history_start_of_day`. Se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. Mail con el código: SMTP de Gmail (remitente "Mangos", contraseña de aplicación) con la plantilla `supabase/templates/codigo.html`; unos 500 mails por día (Gmail) y 30 por hora (Supabase).
+  - **Supabase `mangos`** (`pkhjsrknnijjygzwvtkn`): migraciones al día hasta `20261009120000_update_expense`. Se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. Mail con el código: SMTP de Gmail (remitente "Mangos", contraseña de aplicación) con la plantilla `supabase/templates/codigo.html`; unos 500 mails por día (Gmail) y 30 por hora (Supabase).
   - **Vercel `mangos`** (equipo `franco-balsamos-projects`): https://mangos-kohl.vercel.app, deploy automático en cada push a `main`. **La conexión de Vercel de Claude solo lee**: cambios de proyecto o variables los hace Fran.
   - **`apps/mobile/.env`** (no se commitea) apunta a `mangos` para probar en el teléfono: `EXPO_PUBLIC_SUPABASE_URL=https://pkhjsrknnijjygzwvtkn.supabase.co`, la clave publicable de `mangos` y `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app`. Para probar contra la base local, pasar las variables locales al comando (las del entorno le ganan al `.env`).
 
-- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 458 tests pgTAP, 343 de Vitest y el typecheck.
+- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 476 tests pgTAP, 353 de Vitest y el typecheck.
 
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.

@@ -174,6 +174,8 @@ Migración nueva `20261009120000_update_expense.sql`, `security invoker`, `searc
 - El trigger `movements_fx` recalcula las cotizaciones si cambia la fecha (ya corre `before update`). Verificarlo con un test.
 - Todo en una transacción: si falla un pago, el gasto no cambia.
 
+Implementado el 8/10: `supabase/migrations/20261009120000_update_expense.sql`, con 18 tests pgTAP (`supabase/tests/19_update_expense.test.sql`). Devuelve `void`. Aplicada en `mangos`.
+
 ### L-4. Pantalla `/movimientos`
 
 - Ruta `apps/mobile/src/app/(app)/movimientos.tsx`, push normal. Param opcional `month`.
