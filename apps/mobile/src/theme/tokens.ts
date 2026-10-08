@@ -114,6 +114,7 @@ export const layout = {
   rowIcon: 36,
   rowPaddingV: 11,
   tabBarIconGap: 3,
+  tabBarHeight: 56,
   fabOffsetFromTabBar: 76,
   minTouch: 44,
 } as const;

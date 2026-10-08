@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet, View, type ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { fonts, layout } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
@@ -38,13 +39,15 @@ function TabIcon({ name, color }: { name: IconName; color: ColorValue }) {
 /** Barra de pestañas (DESIGN.md): `surface` con borde `line`, texto de 11 en `textMuted` y el activo en `primary`. */
 export default function TabsLayout() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1 },
+        // El alto por defecto (49) no entra ícono, separación y texto: en la web el texto quedaba cortado.
+        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, height: layout.tabBarHeight + insets.bottom },
         tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11, marginTop: layout.tabBarIconGap },
         sceneStyle: { backgroundColor: colors.bg },
       }}
