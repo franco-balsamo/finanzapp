@@ -16,18 +16,12 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Cotizaciones (8/10):** verificado que `fx-history` ya no guarda filas del día. El historial de ArgentinaDatos ahora se guarda a las 00:00 de su fecha, así el cierre de DolarApi le gana (`docs/decisiones/2026-10-08-historial-al-abrir-el-dia.md`). Aplicado en `mangos`.
 
-- **Inicio (8/10):** implementado (I-1 a I-5, `docs/specs/2026-10-08-epica-inicio.md`). Es la primera pestaña; la Billetera ya no muestra el patrimonio. Probado en Chrome headless contra la base local (320 y 390, claro y oscuro), **todavía no en el teléfono**.
+- **Inicio (8/10):** implementado (I-1 a I-5, `docs/specs/2026-10-08-epica-inicio.md`). Es la primera pestaña; la Billetera ya no muestra el patrimonio. Probado en Chrome headless contra la base local (320 y 390, claro y oscuro) y **en el teléfono contra `mangos` el 8/10**: Inicio, tocar un aviso le saca el punto y la barra de pestañas con "+ Gasto" se ven bien. Sin probar en el teléfono, por falta de datos en `mangos`: que "Cerró tu Visa" abra la tarjeta y las pills "Vencido" o "A pagar" (sí probadas en headless).
 - **Arreglos del 8/10, después de Inicio:**
   - La fila de tarjeta de la Billetera muestra la pill "Vencido" o "A pagar" en lugar de "cierra 24/10" si hay un resumen cerrado sin pagar (`WalletCard.dueStatus`; decisión de Fran, anotada en `DESIGN.md`, "Fila de tarjeta").
   - La barra de pestañas mide 56 más el borde seguro (`layout.tabBarHeight`): con el alto por defecto (49), en la web el texto quedaba cortado.
 
-- **Primer paso de la próxima sesión:** probar en el teléfono contra `mangos` (punto 12 de la definición de terminado de Inicio):
-  1. Inicio: saludo, patrimonio y chip de moneda, dólar del día, vencimientos, gastos del mes con íconos, grupos y avisos, a lo ancho del teléfono.
-  2. Tocar un aviso le saca el punto; "Cerró tu Visa" abre la tarjeta.
-  3. La Billetera: sin patrimonio y con las pills de "Vencido" o "A pagar".
-  4. La barra de pestañas un poco más alta: que no se vea rara y que el botón "+ Gasto" no la tape.
-  En `mangos` la app todavía no tiene avisos propios de Fran salvo los que haya mandado la Edge Function; si no hay, el panel muestra el texto de vacío.
-  Después, Fran elige la próxima pantalla.
+- **Primer paso de la próxima sesión:** Fran elige la próxima pantalla (ver "Próximos pasos").
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -82,7 +76,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 ## Próximos pasos
 1. **Siguiente tanda de pantallas**, cada una con su `/spec` (Fran elige el orden):
-   - **Inicio:** hecho el 8/10; falta probarlo en el teléfono.
+   - **Inicio:** hecho y probado en el teléfono el 8/10.
    - **Lista de movimientos:** con completar los "Sin medio de pago" de un reclamo.
    - **Ajustes (T10):** perfil, dólar de referencia, tema, avisos por tarjeta, no molestar, tarjetas archivadas, borrar la cuenta (volver a pedir el código si la base responde "reauthentication required") y exportar el JSON.
    - **Cola sin conexión (T8):** gastos guardados en el teléfono con "Pendiente" y envío automático.
