@@ -117,6 +117,8 @@ Agregar "Editar y borrar un gasto" con L5 a L9 y dos ejemplos numéricos:
 - *Resumen de septiembre de la Visa: $100.000, pagado completo. Editás "farmacia" de $12.000 (dentro de esos $100.000) a $15.000 → el resumen pasa a $103.000 y se pregunta "¿Ya lo pagaste?" por $3.000.*
 - *Mismo resumen. Borrás "farmacia" ($12.000) → el resumen pasa a $88.000 con $100.000 pagados: figura "Pagado" y los pagos no cambian.*
 
+Implementado el 8/10: `docs/02` §5, "Editar y borrar un gasto".
+
 ### L-2. Core: `movementList()`
 
 En `packages/core/src/wallet/` (junto a `home()`), con tests Vitest:

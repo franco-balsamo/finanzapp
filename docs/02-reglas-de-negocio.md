@@ -183,6 +183,20 @@ La pregunta aparece solo para gastos con fecha anterior al último cierre, así 
 - **Medio de pago en la hoja de carga** (diseño, 1/10): se muestran la favorita, los dos medios más usados en 30 días y "Otro…". Ninguno viene marcado.
 - **Sin conexión** (diseño y eng review, 1/10): el gasto se guarda en el teléfono y se envía cuando vuelve la señal. Cada gasto tiene un identificador que genera el teléfono, así que reintentar **nunca lo duplica**. Si el envío falla por otra causa, el gasto queda como "No se pudo guardar", con Reintentar o Editar.
 
+### Editar y borrar un gasto
+
+> **✅ Decidido** (spec de la lista de movimientos, 8/10, L5 a L10).
+
+- Se editan y se borran desde la lista de movimientos **solo los gastos personales**. Los ingresos, los ajustes, los movimientos que generan los pagos de grupo y los pagos de tarjetas eliminadas no se editan. Un gasto de grupo propio se edita desde el grupo (§7).
+- **Editar** usa las mismas validaciones que la carga. Se puede cambiar todo: monto, moneda, fecha, descripción, categoría, medio de pago y cuotas (estas, solo con tarjeta de crédito). Si cambia la fecha, se vuelve a guardar la cotización de la nueva fecha.
+- **Completar un "Sin medio de pago"** (los que entran al reclamar, §7): se abre la misma hoja con el medio de pago vacío y obligatorio. Se pueden cambiar el medio de pago, las cuotas, la descripción y la categoría. El **monto, la moneda y la fecha quedan bloqueados**, porque copian el gasto del grupo y se cambian desde el grupo. Sigue siendo un gasto del reclamo: si se deshace el reclamo, se borra igual (§7).
+- **Editar y "¿Ya lo pagaste?":** se aplica la regla de los gastos que se cargan tarde (§3), calculada **sin el propio gasto**. Es decir, se compara lo que el gasto editado suma en cada resumen ya pagado contra lo que ese resumen tenía sin él. Cambiar solo la descripción o la categoría no pregunta nada. Si el gasto pasa a otra tarjeta, a un resumen ya pagado, se pregunta por el total.
+- **Borrar** pide confirmación ("¿Borrás este gasto? No se puede deshacer.") y **no toca ningún pago**, igual que cargar un gasto tarde. Si un resumen queda con pagos mayores a su total, figura "Pagado"; en la v1 no se registra saldo a favor.
+
+**Ejemplo al editar:** el resumen de septiembre de la Visa es de $100.000 y está pagado completo. Dentro de esos $100.000 está "farmacia" por $12.000. La editás a $15.000: el resumen pasa a $103.000 y se pregunta "¿Ya lo pagaste?" por **$3.000**. Con **Sí**, se registra un pago nuevo de $3.000 con la cuenta y la fecha del último pago, y el resumen vuelve a "Pagado". Con **No**, queda en "Pago parcial" (o "Vencido") con $3.000 pendientes.
+
+**Ejemplo al borrar:** mismo resumen. Borrás "farmacia" ($12.000): el resumen pasa a $88.000 con $100.000 pagados. Figura "Pagado" y los pagos no cambian.
+
 ### Carga por texto
 
 > **✅ Decidido** (office hours, 1/10): es un campo opcional arriba del formulario, funciona con reglas y sin IA, y no agrega pasos a la carga común.
