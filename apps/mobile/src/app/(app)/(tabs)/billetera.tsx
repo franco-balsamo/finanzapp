@@ -14,7 +14,7 @@ import { unarchiveCard } from '../../../lib/cardActions';
 import { onWalletChanged, walletChanged } from '../../../lib/events';
 import { useSession } from '../../../lib/session';
 import { loadWalletInput, type WalletData } from '../../../lib/wallet';
-import { layout, radius, type } from '../../../theme/tokens';
+import { radius, type } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
 
 type Tab = 'cards' | 'accounts';
@@ -26,12 +26,11 @@ const TABS = [
 /** Billetera (E4): tarjetas con lo que viene y cuentas con su saldo. El patrimonio está en Inicio. */
 export default function Wallet() {
   const { colors } = useTheme();
-  const { session, settings, signOut } = useSession();
+  const { session, settings } = useSession();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>('cards');
   const [loaded, setLoaded] = useState<Awaited<ReturnType<typeof loadWalletInput>> | null>(null);
   const [failed, setFailed] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const userId = session?.user.id;
   const fxReference = settings?.fx_reference;
@@ -64,18 +63,9 @@ export default function Wallet() {
   return (
     <View style={styles.flex}>
       <Screen>
-        <View style={styles.header}>
-          <Text style={[type.display, { color: colors.text }]} accessibilityRole="header">
-            Billetera
-          </Text>
-          <Button title="⋯" variant="ghost" onPress={() => setMenuOpen(!menuOpen)} accessibilityLabel="Más opciones" />
-        </View>
-        {menuOpen ? (
-          <View style={[styles.menu, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            <Text style={[type.caption, { color: colors.textMuted }]}>{session?.user.email}</Text>
-            <Button title="Cerrar sesión" onPress={signOut} />
-          </View>
-        ) : null}
+        <Text style={[type.display, { color: colors.text }]} accessibilityRole="header">
+          Billetera
+        </Text>
 
         <Button title="Ver movimientos" variant="link" onPress={() => router.push('/movimientos')} style={styles.add} />
         <Tabs options={TABS} value={tab} onChange={setTab} />
@@ -163,8 +153,6 @@ export default function Wallet() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  menu: { borderWidth: 1, borderRadius: radius.lg, padding: layout.panelPadding, gap: 10 },
   skeletonRow: { height: 46, borderRadius: radius.md, marginVertical: 6 },
   state: { gap: 12, paddingVertical: 16, paddingHorizontal: 4 },
   add: { alignSelf: 'flex-start', marginTop: 4 },

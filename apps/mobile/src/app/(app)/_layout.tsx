@@ -14,6 +14,7 @@ export default function AppLayout() {
       <Stack.Screen name="tarjeta/[id]" />
       <Stack.Screen name="grupo/[id]" />
       <Stack.Screen name="movimientos" />
+      <Stack.Screen name="ajustes" />
       <Stack.Screen name="cargar" options={sheet} />
       <Stack.Screen name="tarjeta-nueva" options={sheet} />
       <Stack.Screen name="cuenta-nueva" options={sheet} />

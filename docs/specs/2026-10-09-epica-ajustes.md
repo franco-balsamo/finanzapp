@@ -195,6 +195,12 @@ Mantiene el orden de `cards`. Tests Vitest (de los ejemplos de 02 §9):
 - `apps/mobile/src/app/(app)/(tabs)/billetera.tsx:71`: se borran el botón ⋯, `menuOpen` y el menú.
 - Correr Expo unos segundos para que regenere las rutas tipadas.
 
+Implementado el 9/10. Diferencias con lo de arriba:
+- Las horas de no molestar se eligen en una grilla de 24 `Chip` que se abre debajo de "De 22:00 a 08:00" (como el selector de mes de Movimientos), no en una `Sheet`: la `Sheet` de la app es una ruta `formSheet` y habría que devolver la hora elegida entre pantallas.
+- `Section` pasó de Inicio a `components/Section.tsx`, para usarla también en Ajustes.
+- "Tus datos" y "Borrar mi cuenta" quedan para A-5 y A-6.
+- Probado en Chrome headless contra la base local (390 y 320, claro y oscuro): dólar Blue, cierre de la Master apagado y 4 días en la Visa (filas en `alerts`), no molestar 22 a 7, nombre vacío con "Poné un nombre." y cerrar sesión.
+
 ### A-5. Exportar mis datos
 
 - `npx expo install expo-file-system expo-sharing`.

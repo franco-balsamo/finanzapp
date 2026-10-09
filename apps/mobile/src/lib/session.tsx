@@ -9,9 +9,12 @@ export interface UserSettings {
   fx_reference: 'mep' | 'oficial' | 'blue';
   theme: 'system' | 'light' | 'dark';
   onboarded_at: string | null;
+  /** No molestar (02 §9): hora de 0 a 23, o null sin horario. */
+  quiet_from: number | null;
+  quiet_to: number | null;
 }
 
-const SETTINGS_COLUMNS = 'name, display_currency, fx_reference, theme, onboarded_at';
+const SETTINGS_COLUMNS = 'name, display_currency, fx_reference, theme, onboarded_at, quiet_from, quiet_to';
 
 interface SessionState {
   /** true hasta saber si hay sesión y, si la hay, hasta traer los ajustes. */

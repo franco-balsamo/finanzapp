@@ -17,8 +17,9 @@ import {
   type WalletInput,
 } from '@mangos/core';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { Button } from '../../../components/Button';
 import { CategoryIcon } from '../../../components/CategoryIcon';
 import { Chip } from '../../../components/Chip';
@@ -26,6 +27,7 @@ import { Fab, FAB_SPACE } from '../../../components/Fab';
 import { absMoney } from '../../../components/GroupSections';
 import { Pill } from '../../../components/Pill';
 import { Screen } from '../../../components/Screen';
+import { Section } from '../../../components/Section';
 import { useToast } from '../../../components/Toast';
 import { CATEGORIES, categoryLabel } from '../../../lib/categories';
 import { onWalletChanged } from '../../../lib/events';
@@ -142,11 +144,26 @@ export default function Home() {
   return (
     <View style={styles.flex}>
       <Screen>
-        <View>
-          <Text style={[type.display, { color: colors.text }]} accessibilityRole="header">
-            {name ? `Hola, ${name}` : 'Hola'}
-          </Text>
-          <Text style={[type.caption, { color: colors.textMuted }]}>{longDate()}</Text>
+        <View style={styles.header}>
+          <View style={styles.rowMiddle}>
+            <Text style={[type.display, { color: colors.text }]} accessibilityRole="header">
+              {name ? `Hola, ${name}` : 'Hola'}
+            </Text>
+            <Text style={[type.caption, { color: colors.textMuted }]}>{longDate()}</Text>
+          </View>
+          <Pressable
+            onPress={() => router.push('/ajustes')}
+            accessibilityRole="button"
+            accessibilityLabel="Ajustes"
+            style={({ pressed }) => [styles.gear, pressed && { backgroundColor: colors.surface2 }]}
+          >
+            {({ pressed }) => (
+              <Svg width={22} height={22} viewBox="0 0 20 20" fill="none" stroke={pressed ? colors.text : colors.textMuted} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                <Circle cx={10} cy={10} r={2.6} />
+                <Path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4" />
+              </Svg>
+            )}
+          </Pressable>
         </View>
 
         {failed ? (
@@ -377,22 +394,6 @@ export default function Home() {
   );
 }
 
-/** Un panel de Inicio con su título y, si hay, un link a la pestaña que amplía. */
-function Section({ title, link, onLink, children }: { title: string; link?: string; onLink?: () => void; children: ReactNode }) {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-      <View style={styles.sectionHead}>
-        <Text style={[type.label, { color: colors.textMuted }]} accessibilityRole="header">
-          {title}
-        </Text>
-        {link && onLink ? <Button title={link} variant="link" onPress={onLink} /> : null}
-      </View>
-      {children}
-    </View>
-  );
-}
-
 /** D4: el total y cada categoría con gasto, de mayor a menor, con una barra de su parte. */
 function SpendList({ spend }: { spend: NonNullable<ReturnType<typeof home>['spend']> }) {
   const { colors } = useTheme();
@@ -435,6 +436,9 @@ function SpendList({ spend }: { spend: NonNullable<ReturnType<typeof home>['spen
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // Botón `icon` de DESIGN.md: padding 7 y área de toque de 44.
+  gear: { width: layout.minTouch, height: layout.minTouch, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm },
   gap: { gap: 10 },
   start: { alignSelf: 'flex-start' },
   pressed: { opacity: 0.7 },
