@@ -1,5 +1,5 @@
 import { toDbNumeric, type DbPart, type ISODate, type Money, type Rate } from '@mangos/core';
-import { isNetworkError, type SaveError } from './entry';
+import { isNetworkError, paymentJson, type LatePayment, type SaveError } from './entry';
 import { supabase } from './supabase';
 
 /** Tu gasto personal vinculado al gasto de grupo (`movement` de `save_group_expense_with_movement`). */
@@ -36,8 +36,11 @@ export interface GroupExpenseDraft {
 
 export type GroupSaveError = SaveError | 'payer_only';
 
-/** Gasto de grupo, partes y tu gasto personal en una transacción (G-1). Reintentar no duplica. */
-export async function saveGroupExpense(draft: GroupExpenseDraft): Promise<GroupSaveError | null> {
+/**
+ * Gasto de grupo, partes, tu gasto personal y los pagos de "¿Ya lo pagaste?" en una transacción (G-1).
+ * Reintentar no duplica.
+ */
+export async function saveGroupExpense(draft: GroupExpenseDraft, payments: readonly LatePayment[] = []): Promise<GroupSaveError | null> {
   try {
     const { error } = await supabase.rpc('save_group_expense_with_movement', {
       expense_id: draft.id,
@@ -52,6 +55,7 @@ export async function saveGroupExpense(draft: GroupExpenseDraft): Promise<GroupS
       category_id: draft.categoryId,
       parts: draft.parts,
       movement: draft.movement,
+      payments: payments.map(paymentJson),
     });
     if (!error) return null;
     if (error.code === '42501' && /only the payer/.test(error.message)) return 'payer_only';

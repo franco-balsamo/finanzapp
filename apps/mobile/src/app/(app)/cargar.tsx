@@ -28,6 +28,7 @@ import {
   convert,
   type Currency,
   type DbWalletGroup,
+  type ProposedPayment,
   type GroupExpense,
   type ISODate,
   type PaymentMethod,
@@ -74,6 +75,7 @@ import {
   loadMoneyLocked,
   loadMyGroupMovement,
   saveGroupExpense,
+  type GroupExpenseDraft,
   type MovementChange,
   type MyGroupMovement,
 } from '../../lib/groupExpense';
@@ -169,7 +171,8 @@ export default function AddExpense() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [otherOpen, setOtherOpen] = useState(false);
   // "¿Ya lo pagaste?" (D-6): reemplaza al pie. Los pagos llevan su id desde que aparece la pregunta.
-  const [question, setQuestion] = useState<{ draft: ExpenseDraft; payments: LatePayment[] } | null>(null);
+  // `save` guarda con los pagos que se eligieron: ninguno con "No".
+  const [question, setQuestion] = useState<{ payments: LatePayment[]; save: (payments: LatePayment[]) => Promise<void> } | null>(null);
   const [paidAmount, setPaidAmount] = useState('');
   const [paidError, setPaidError] = useState<string | null>(null);
 
@@ -493,20 +496,21 @@ export default function AddExpense() {
       ]);
       setSaving(false);
       const impact = impacts?.[0];
-      if (impact?.askAlreadyPaid) {
-        const payments = withIds(impact.proposedPayments, randomUUID);
-        setQuestion({ draft, payments });
-        setPaidAmount(amountInputText(payments[0]!.debitedAmount.minor));
-        setPaidError(null);
-        return;
-      }
+      if (impact?.askAlreadyPaid) return ask(impact.proposedPayments, (payments) => commit(draft, payments));
     }
     await commit(draft, []);
   }
 
+  function ask(proposed: readonly ProposedPayment[], save: (payments: LatePayment[]) => Promise<void>) {
+    const payments = withIds(proposed, randomUUID);
+    setQuestion({ payments, save });
+    setPaidAmount(amountInputText(payments[0]!.debitedAmount.minor));
+    setPaidError(null);
+  }
+
   /** Gasto de grupo (G-5): el gasto, las partes y, si pagaste vos, tu gasto personal en una transacción. */
   async function saveGroup(g: DbWalletGroup, n: number, debitedMinor: number | null) {
-    if (!ctx || !expenseDate || !payerId || !amountMinor) return;
+    if (!ctx || !session || !settings || !expenseDate || !payerId || !amountMinor) return;
     const amountMoney = money(amountMinor, currency);
     const fxRate = groupNeedsFx ? textToRate(fxText) : null;
     const parts = splitParts(splitDraft, memberIds);
@@ -523,9 +527,7 @@ export default function AddExpense() {
       movement = { remove: true };
     }
 
-    setSaving(true);
-    setSaveError(null);
-    const failure = await saveGroupExpense({
+    const draft: GroupExpenseDraft = {
       id,
       groupId: g.id,
       date: expenseDate,
@@ -537,7 +539,27 @@ export default function AddExpense() {
       categoryId: categoryId ?? SYSTEM_CATEGORY_IDS.otros,
       parts,
       movement,
-    });
+    };
+
+    // Tu gasto con tarjeta en un resumen que ya cerró: la misma pregunta que en un gasto personal.
+    if (movement && 'id' in movement && movement.card_id && mayBeLate(ctx, movement.card_id, expenseDate)) {
+      setSaving(true);
+      const impacts = await loadLateImpacts(session.user.id, settings, [
+        { id: movement.id, cardId: movement.card_id, date: expenseDate, amount: amountMoney, installments: movement.installments },
+      ]);
+      setSaving(false);
+      const impact = impacts?.[0];
+      if (impact?.askAlreadyPaid) return ask(impact.proposedPayments, (payments) => commitGroup(g, draft, payments));
+    }
+    await commitGroup(g, draft, []);
+  }
+
+  async function commitGroup(g: DbWalletGroup, draft: GroupExpenseDraft, payments: LatePayment[]) {
+    if (!ctx) return;
+    const { amount: amountMoney, fxRate, payerMemberId, parts, movement } = draft;
+    setSaving(true);
+    setSaveError(null);
+    const failure = await saveGroupExpense(draft, payments);
     if (failure) {
       setSaving(false);
       setSaveError(
@@ -557,23 +579,25 @@ export default function AddExpense() {
     router.back();
 
     if (groupExpenseId) {
-      toast('Gasto actualizado');
+      toast('Gasto actualizado' + paymentsToastSuffix(payments));
       return;
     }
     const expense: GroupExpense = {
       id,
       amount: amountMoney,
       fxRate,
-      payerMemberId: payerId,
-      splitMode,
+      payerMemberId,
+      splitMode: draft.splitMode,
       parts: parts.map((p) => ({ memberId: p.member_id, value: p.value ? fromDbNumeric(p.value, currency) : null })),
     };
     const createdMovement = movement && 'id' in movement ? movement.id : null;
-    toast(savedToastText({ kind: 'group', ...expenseShareFor(g, expense) }), {
+    toast(savedToastText({ kind: 'group', ...expenseShareFor(g, expense) }) + paymentsToastSuffix(payments), {
       label: 'Deshacer',
       onPress: async () => {
-        // Justo después de guardar, "Deshacer" borra los dos (D6).
-        let ok = await deleteGroupExpense(id);
+        // Justo después de guardar, "Deshacer" borra los dos (D6) y revierte los pagos.
+        let ok = true;
+        if (payments.length) ok = await revertPayments(payments.map((p) => p.id)).then(() => true, () => false);
+        if (ok) ok = await deleteGroupExpense(draft.id);
         if (ok && createdMovement) ok = await deleteExpense(createdMovement);
         walletChanged();
         toast(ok ? 'Gasto borrado' : 'No se pudo borrar el gasto. Probá de nuevo.');
@@ -622,7 +646,7 @@ export default function AddExpense() {
       payments = [editLatePayment(proposed, minor)];
     }
     setPaidError(null);
-    await commit(question.draft, payments);
+    await question.save(payments);
   }
 
   async function commit(draft: ExpenseDraft, payments: LatePayment[]) {
@@ -997,7 +1021,7 @@ export default function AddExpense() {
             ) : null}
             <View style={styles.questionButtons}>
               <Button title="Volver" variant="ghost" onPress={() => setQuestion(null)} disabled={saving} />
-              <Button title="No" onPress={() => commit(question.draft, [])} disabled={saving} />
+              <Button title="No" onPress={() => question.save([])} disabled={saving} />
               <Button title="Sí" variant="primary" onPress={answerYes} loading={saving} />
             </View>
           </View>

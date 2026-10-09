@@ -181,7 +181,7 @@ export async function loadLateImpacts(userId: string, settings: UserSettings, dr
   }
 }
 
-function paymentJson(p: LatePayment) {
+export function paymentJson(p: LatePayment) {
   return {
     id: p.id,
     period: `${p.period}-01`,

@@ -31,7 +31,6 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - `CategoryIcon` ya existe (Inicio), pero las filas de movimientos y las fichas todavía no lo usan.
   - `markNoticeRead` guarda la hora del teléfono en `read_at`, no `now()` de la base. No se arregla mientras `read_at` se use solo como "leído o no"; si algún día se muestra la hora, pasarlo a la base.
   - No se pasó `ponytail-review` sobre los cambios del 8/10.
-  - "¿Ya lo pagaste?" no se combina con un gasto de grupo (haría falta una función de la base que guarde las dos cosas juntas).
   - Preview y producción de Vercel usan la misma base `mangos`.
 
 - **Datos de prueba en `mangos`:** la cuenta de Fran (`balsamote96@gmail.com`) tiene la tarjeta "Bna Visa" (··2337), la cuenta "Caja De Ahorros - Bna", gastos del 7/10 y el grupo "Asado" (Fran, Juan y Caro provisorios). Existe además el usuario `balsamote96+juan@gmail.com`, que reclamó y deshizo el lugar de Juan. Son datos reales de prueba: no borrarlos sin preguntar.
