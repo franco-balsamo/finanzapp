@@ -191,7 +191,13 @@ export default function Movements() {
                     {dayLabel(day.date, today)}
                   </Text>
                   {day.rows.map((row, i) => (
-                    <MovementRow key={row.id} row={row} last={i === day.rows.length - 1} onPress={() => open(row)} />
+                    <MovementRow
+                      key={row.id}
+                      // Un grupo que abandonaste ya no se ve: su gasto no se puede abrir.
+                      row={row.action === 'group' && !groupOf.has(row.groupExpenseId!) ? { ...row, action: 'none' } : row}
+                      last={i === day.rows.length - 1}
+                      onPress={() => open(row)}
+                    />
                   ))}
                 </View>
               ))
