@@ -1,6 +1,6 @@
 ---
 spec_kind: epic
-status: ready
+status: done
 date: 2026-10-08
 ---
 
@@ -237,3 +237,5 @@ Implementado el 9/10: `cargar.tsx` con `movementId`, `loadExpense` y `updateExpe
 10. Borrar pide confirmación, saca el gasto de la lista y no cambia ningún pago.
 11. Pasan los tests nuevos y los existentes (458 pgTAP y 343 Vitest a hoy) y el typecheck.
 12. Probado en Chrome headless contra la base local y en el teléfono contra `mangos`.
+
+Terminada el 9/10: probada en Chrome headless contra la base local y en el teléfono contra `mangos` (Fran: "todo ok"). En el teléfono no se pudo probar completar un "Sin medio de pago" ni "¿Ya lo pagaste?" al editar, porque `mangos` no tiene esos datos.

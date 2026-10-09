@@ -21,9 +21,9 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - La fila de tarjeta de la Billetera muestra la pill "Vencido" o "A pagar" en lugar de "cierra 24/10" si hay un resumen cerrado sin pagar (`WalletCard.dueStatus`; decisión de Fran, anotada en `DESIGN.md`, "Fila de tarjeta").
   - La barra de pestañas mide 56 más el borde seguro (`layout.tabBarHeight`): con el alto por defecto (49), en la web el texto quedaba cortado.
 
-- **Lista de movimientos (8/10):** hechas L-1 (`docs/02` §5, "Editar y borrar un gasto"), L-2 (`movementList` en core, 353 tests de Vitest) L-3 (`update_expense_with_payments`, 476 tests pgTAP, aplicada en `mangos`) L-4 (pantalla `/movimientos`) y L-5 (editar, borrar y completar desde la hoja de carga), probadas en headless el 9/10. **Falta probar la épica en el teléfono contra `mangos`** (puntos 6 a 10 de la definición de terminado del spec). Datos de prueba de la base local para la lista: `seed.sql` en el scratchpad de la sesión del 8/10 (después de `db reset` hay que volver a cargarlos).
+- **Lista de movimientos (8 y 9/10):** hecha (L-1 a L-5, `docs/specs/2026-10-08-epica-lista-de-movimientos.md`) y **probada en el teléfono contra `mangos` el 9/10**. Incluye `docs/02` §5 "Editar y borrar un gasto", `movementList` en core, `update_expense_with_payments` (aplicada en `mangos`), la pantalla `/movimientos` (desde Inicio y la Billetera) y la hoja de carga en modo editar, con borrar y completar los "Sin medio de pago". Sin probar en el teléfono, por falta de datos en `mangos`: completar un "Sin medio de pago" y "¿Ya lo pagaste?" al editar (sí probados en headless). Los datos de prueba locales de la lista estaban en el scratchpad de la sesión del 8/10: después de un `db reset` hay que armarlos de nuevo.
 
-- **Primer paso de la próxima sesión:** probar la lista de movimientos en el teléfono contra `mangos` y, si anda, elegir la épica siguiente (Ajustes, cola sin conexión o íconos de categoría en las filas). Spec: `docs/specs/2026-10-08-epica-lista-de-movimientos.md`.
+- **Primer paso de la próxima sesión:** que Fran elija la épica siguiente: Ajustes (T10), cola sin conexión (T8) o íconos de categoría en las filas y fichas. Cada una arranca con su `/spec`.
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -78,7 +78,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 ## Próximos pasos
 1. **Siguiente tanda de pantallas**, cada una con su `/spec` (Fran elige el orden):
    - **Inicio:** hecho y probado en el teléfono el 8/10.
-   - **Lista de movimientos:** spec lista el 8/10 (L-1 a L-5), con editar y borrar gastos y completar los "Sin medio de pago" de un reclamo.
+   - **Lista de movimientos:** hecha y probada en el teléfono el 9/10.
    - **Ajustes (T10):** perfil, dólar de referencia, tema, avisos por tarjeta, no molestar, tarjetas archivadas, borrar la cuenta (volver a pedir el código si la base responde "reauthentication required") y exportar el JSON.
    - **Cola sin conexión (T8):** gastos guardados en el teléfono con "Pendiente" y envío automático.
    - **Íconos de categoría en filas y fichas:** usar `CategoryIcon`, que ya está.
