@@ -1,4 +1,4 @@
-# Mangos: estado y próximos pasos (cierre del 8 de octubre de 2026)
+# Mangos: estado y próximos pasos (cierre del 9 de octubre de 2026)
 
 Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales de Fran para Argentina; el nombre es provisorio.
 
@@ -23,6 +23,8 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Lista de movimientos (8 y 9/10):** hecha (L-1 a L-5, `docs/specs/2026-10-08-epica-lista-de-movimientos.md`) y **probada en el teléfono contra `mangos` el 9/10**. Incluye `docs/02` §5 "Editar y borrar un gasto", `movementList` en core, `update_expense_with_payments` (aplicada en `mangos`), la pantalla `/movimientos` (desde Inicio y la Billetera) y la hoja de carga en modo editar, con borrar y completar los "Sin medio de pago". Sin probar en el teléfono, por falta de datos en `mangos`: completar un "Sin medio de pago" y "¿Ya lo pagaste?" al editar (sí probados en headless). Los datos de prueba locales de la lista estaban en el scratchpad de la sesión del 8/10: después de un `db reset` hay que armarlos de nuevo.
 
+- **Pendientes chicos cerrados (9/10):** Inicio ordena los grupos en dólares por su saldo en pesos; la hoja bloquea el monto de un gasto de grupo solo si otro lo tiene en sus finanzas (`group_expense_money_locked`); "¿Ya lo pagaste?" también funciona en un gasto de grupo con tarjeta (`save_group_expense_with_movement` recibe `payments`); en el login, un 5xx dice "Algo falló" y no "Sin conexión"; `ponytail-review` de los cambios del 8/10, con un arreglo en la lista de movimientos. Migraciones aplicadas en `mangos`. **Sin probar en el teléfono:** la pregunta en un gasto de grupo y el monto habilitado cuando el que pagó no lo sumó a sus finanzas.
+
 - **Primer paso de la próxima sesión:** que Fran elija la épica siguiente: Ajustes (T10), cola sin conexión (T8) o íconos de categoría en las filas y fichas. Cada una arranca con su `/spec`.
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
@@ -30,17 +32,16 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - **Pendientes chicos:**
   - `CategoryIcon` ya existe (Inicio), pero las filas de movimientos y las fichas todavía no lo usan.
   - `markNoticeRead` guarda la hora del teléfono en `read_at`, no `now()` de la base. No se arregla mientras `read_at` se use solo como "leído o no"; si algún día se muestra la hora, pasarlo a la base.
-  - No se pasó `ponytail-review` sobre los cambios del 8/10.
   - Preview y producción de Vercel usan la misma base `mangos`.
 
 - **Datos de prueba en `mangos`:** la cuenta de Fran (`balsamote96@gmail.com`) tiene la tarjeta "Bna Visa" (··2337), la cuenta "Caja De Ahorros - Bna", gastos del 7/10 y el grupo "Asado" (Fran, Juan y Caro provisorios). Existe además el usuario `balsamote96+juan@gmail.com`, que reclamó y deshizo el lugar de Juan. Son datos reales de prueba: no borrarlos sin preguntar.
 
 - **Servicios configurados:**
-  - **Supabase `mangos`** (`pkhjsrknnijjygzwvtkn`): migraciones al día hasta `20261009120000_update_expense`. Se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. Mail con el código: SMTP de Gmail (remitente "Mangos", contraseña de aplicación) con la plantilla `supabase/templates/codigo.html`; unos 500 mails por día (Gmail) y 30 por hora (Supabase).
+  - **Supabase `mangos`** (`pkhjsrknnijjygzwvtkn`): migraciones al día hasta `20261009150000_group_expense_payments`. Se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. Mail con el código: SMTP de Gmail (remitente "Mangos", contraseña de aplicación) con la plantilla `supabase/templates/codigo.html`; unos 500 mails por día (Gmail) y 30 por hora (Supabase).
   - **Vercel `mangos`** (equipo `franco-balsamos-projects`): https://mangos-kohl.vercel.app, deploy automático en cada push a `main`. **La conexión de Vercel de Claude solo lee**: cambios de proyecto o variables los hace Fran.
   - **`apps/mobile/.env`** (no se commitea) apunta a `mangos` para probar en el teléfono: `EXPO_PUBLIC_SUPABASE_URL=https://pkhjsrknnijjygzwvtkn.supabase.co`, la clave publicable de `mangos` y `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app`. Para probar contra la base local, pasar las variables locales al comando (las del entorno le ganan al `.env`).
 
-- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 476 tests pgTAP, 357 de Vitest y el typecheck.
+- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 486 tests pgTAP, 359 de Vitest y el typecheck.
 
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.
