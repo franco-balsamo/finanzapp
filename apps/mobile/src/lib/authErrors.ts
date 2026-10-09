@@ -12,8 +12,7 @@ export function authErrorMessage(error: AuthError): string {
     case 'validation_failed':
       return 'Revisá el mail.';
     default:
-      return error.status === 0 || error.name === 'AuthRetryableFetchError'
-        ? 'Sin conexión. Probá de nuevo.'
-        : 'Algo falló. Probá de nuevo.';
+      // status 0: el fetch ni llegó al servidor; un 5xx también es AuthRetryableFetchError, pero hubo conexión.
+      return error.status === 0 ? 'Sin conexión. Probá de nuevo.' : 'Algo falló. Probá de nuevo.';
   }
 }

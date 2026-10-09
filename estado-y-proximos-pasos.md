@@ -30,9 +30,8 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - **Pendientes chicos:**
   - `CategoryIcon` ya existe (Inicio), pero las filas de movimientos y las fichas todavía no lo usan.
   - Inicio ordena los grupos por los centavos absolutos sin convertir: un grupo en dólares compite con los de pesos por su número (marcado como `shortcut:` en `home.ts`).
-  - `markNoticeRead` guarda la hora del teléfono en `read_at`, no `now()` de la base.
+  - `markNoticeRead` guarda la hora del teléfono en `read_at`, no `now()` de la base. No se arregla mientras `read_at` se use solo como "leído o no"; si algún día se muestra la hora, pasarlo a la base.
   - No se pasó `ponytail-review` sobre los cambios del 8/10.
-  - `apps/mobile/src/lib/authErrors.ts`: un 401 (clave mal configurada) se muestra como "Sin conexión. Probá de nuevo."; solo los errores de red deberían decir eso.
   - "¿Ya lo pagaste?" no se combina con un gasto de grupo (haría falta una función de la base que guarde las dos cosas juntas).
   - El bloqueo del monto (D5) en la hoja es más estricto que en la base.
   - Preview y producción de Vercel usan la misma base `mangos`.
