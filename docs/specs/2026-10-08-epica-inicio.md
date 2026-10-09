@@ -60,7 +60,7 @@ Esta épica agrega:
   El texto es el `body` del aviso, tal cual. Tocarla abre `/tarjeta/[id]` de la primera tarjeta vigente y marca el aviso leído. No tiene botón de cerrar: se va sola al pagar o al vencer.
 - **D7. Avisos recientes: los últimos 3** de `notifications` por `created_at`, leídos o no. El no leído lleva un punto `primary` a la izquierda. Tocar un aviso pone `read_at = now()` si estaba en nulo y, si tiene `data.card_ids`, abre el detalle de la primera tarjeta no archivada. Un aviso de grupo solo se marca leído. No hay campanita, pantalla de Alertas ni "Ver todos": van con Ajustes.
 - **D8. Dólar del día:** una fila con las ventas de MEP, oficial, blue y tarjeta en Plex Mono, y debajo "Actualizado a las HH:MM" (la hora más reciente de las cuatro). No hay flecha de variación. Si un tipo no tiene cotización, muestra "—". La app solo lee `fx_rates`.
-- **D9. Grupos:** hasta 3 grupos con saldo distinto de cero (`displayBalance`), ordenados por el valor absoluto del saldo. Cada fila muestra el nombre y "Te deben $X" o "Debés $X", en la moneda del grupo. Tocar una fila abre `/grupo/[id]`.
+- **D9. Grupos:** hasta 3 grupos con saldo distinto de cero (`displayBalance`), ordenados por el valor absoluto del saldo (los de dólares, pasados a pesos al dólar de referencia; arreglo del 9/10). Cada fila muestra el nombre y "Te deben $X" o "Debés $X", en la moneda del grupo. Tocar una fila abre `/grupo/[id]`.
   - Si hay grupos pero ninguno tiene saldo: "Estás al día en todos tus grupos."
   - Sin grupos, la sección no aparece.
 - **D10. Una sola carga.** Inicio usa `loadWalletInput` (más `notifications`) y calcula todo en core con una función nueva, `home(input, notices)`. No hay consultas nuevas por sección ni vistas en la base.

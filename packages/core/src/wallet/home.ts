@@ -6,7 +6,7 @@ import { daysBetween, periodOf, type ISODate, type Period } from '../dates.ts';
 import type { CardNetwork } from '../entry/paymentMethods.ts';
 import { displayBalance } from '../groups/balances.ts';
 import { todayInArgentina } from '../notices/fromDb.ts';
-import { rate, type Money } from '../money.ts';
+import { convert, rate, type Money } from '../money.ts';
 import { categorySpend, type CategorySpend } from '../personal/categorySpend.ts';
 import type { NetWorth } from '../personal/netWorth.ts';
 import { activeCardStates, coreMovementsAndCards, myGroupBalance, wallet, type WalletInput } from './wallet.ts';
@@ -115,13 +115,16 @@ function spend(input: WalletInput): CategorySpend | null {
 
 const MAX_GROUPS = 3;
 
-/** D9: los grupos donde no estás al día, el saldo más grande primero. */
+/**
+ * D9: los grupos donde no estás al día, el saldo más grande primero. Los de dólares se comparan en pesos
+ * al dólar de referencia (02 §8); sin esa cotización, por su número.
+ */
 function groups(input: WalletInput): HomeGroup[] {
-  // shortcut: compara centavos de pesos y de dólares como si fueran lo mismo; alcanza mientras casi todos los grupos sean en pesos.
+  const inPesos = (m: Money) => Math.abs(input.referenceRate ? convert(m, input.referenceRate, 'ARS').minor : m.minor);
   return input.groups
     .map((g) => ({ id: g.id, name: g.name, balance: displayBalance(myGroupBalance(g)) }))
     .filter((g) => g.balance.minor !== 0)
-    .sort((a, b) => Math.abs(b.balance.minor) - Math.abs(a.balance.minor))
+    .sort((a, b) => inPesos(b.balance) - inPesos(a.balance))
     .slice(0, MAX_GROUPS);
 }
 

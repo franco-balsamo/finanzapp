@@ -146,6 +146,15 @@ describe('Inicio', () => {
       expect(h.hasGroups).toBe(true);
     });
 
+    it('un grupo en dólares compite por su saldo en pesos al dólar de referencia', () => {
+      // US$ 100 a favor × MEP 1.500 = $150.000, más que los $140.000 que debés en el asado.
+      const viaje = { ...group('viaje', '200.00'), currency: 'USD' as const };
+      viaje.expenses = viaje.expenses.map((e) => ({ ...e, currency: 'USD' as const }));
+      const h = home(input({ groups: [group('asado', '280000.00', 'juan'), viaje] }), []);
+      expect(h.groups.map((g) => g.id)).toEqual(['viaje', 'asado']);
+      expect(h.groups[0]!.balance).toEqual(usd(100));
+    });
+
     it('todos al día: ninguno en la lista, pero hay grupos', () => {
       const h = home(input({ groups: [group('al-dia', '1.50')] }), []);
       expect([h.groups, h.hasGroups]).toEqual([[], true]);
