@@ -1,7 +1,7 @@
 import type { CardAlertSettings } from '@mangos/core';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { Chip } from '../../components/Chip';
 import { Mono } from '../../components/Mono';
@@ -12,7 +12,7 @@ import { Switch } from '../../components/Switch';
 import { TextField } from '../../components/TextField';
 import { useToast } from '../../components/Toast';
 import { useSession, type UserSettings } from '../../lib/session';
-import { loadCardAlerts, setCardAlert } from '../../lib/settings';
+import { exportAccount, loadCardAlerts, setCardAlert } from '../../lib/settings';
 import { layout, radius, type } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
@@ -45,6 +45,7 @@ export default function Settings() {
   const [alerts, setAlerts] = useState<CardAlertSettings[] | null>(null);
   const [alertsFailed, setAlertsFailed] = useState(false);
   const [editingHour, setEditingHour] = useState<'quiet_from' | 'quiet_to' | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const loadAlerts = useCallback(() => {
     setAlertsFailed(false);
@@ -102,6 +103,16 @@ export default function Settings() {
     setEditingHour(null);
     // Dos horas iguales no son un horario: se apaga.
     save(changes.quiet_from === changes.quiet_to ? { quiet_from: null, quiet_to: null } : changes);
+  }
+
+  async function exportData() {
+    setExporting(true);
+    try {
+      if ((await exportAccount()) === 'unavailable') toast('No se puede compartir desde este dispositivo.');
+    } catch {
+      toast('No se pudo exportar. Probá de nuevo.');
+    }
+    setExporting(false);
   }
 
   const quietOn = current.quiet_from !== null && current.quiet_to !== null;
@@ -244,6 +255,16 @@ export default function Settings() {
           ) : null}
         </View>
       </Section>
+
+      {/* En la web no se exporta (la web de producción es solo de invitados). */}
+      {Platform.OS !== 'web' ? (
+        <Section title="Tus datos">
+          <View style={styles.field}>
+            <Button title={exporting ? 'Exportando…' : 'Exportar mis datos'} onPress={exportData} disabled={exporting} style={styles.start} />
+            <Text style={help}>Un archivo con todo lo que cargaste.</Text>
+          </View>
+        </Section>
+      ) : null}
 
       <Section title="Cuenta">
         <Button title="Cerrar sesión" onPress={signOut} style={styles.start} />

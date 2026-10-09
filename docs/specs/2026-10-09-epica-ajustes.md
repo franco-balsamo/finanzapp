@@ -208,6 +208,8 @@ Implementado el 9/10. Diferencias con lo de arriba:
 - Si `Sharing.isAvailableAsync()` da `false`: toast "No se puede compartir desde este dispositivo.".
 - En la web no hay botón (la web de producción es solo de invitados).
 
+Implementado el 9/10 con la API nueva de `expo-file-system` (`File` y `Paths.cache`). `expo install` sumó el plugin `expo-sharing` a `app.json`. Sin probar en el teléfono.
+
 ### A-6. Borrar mi cuenta
 
 - `deleteAccount()` en `lib/settings.ts`: `supabase.rpc('delete_account')`. Devuelve `'deleted' | 'reauth'`; con `error.code === '42501'` es `'reauth'`; cualquier otro error se lanza.
