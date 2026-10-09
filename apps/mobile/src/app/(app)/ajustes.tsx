@@ -268,6 +268,7 @@ export default function Settings() {
 
       <Section title="Cuenta">
         <Button title="Cerrar sesión" onPress={signOut} style={styles.start} />
+        <Button title="Borrar mi cuenta" variant="danger" onPress={() => router.push('/borrar-cuenta')} style={styles.start} />
       </Section>
     </Screen>
   );

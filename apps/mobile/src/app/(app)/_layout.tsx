@@ -24,6 +24,7 @@ export default function AppLayout() {
       <Stack.Screen name="grupo-nuevo" options={sheet} />
       <Stack.Screen name="grupo-pago/[groupId]" options={sheet} />
       <Stack.Screen name="grupo-editar/[id]" options={sheet} />
+      <Stack.Screen name="borrar-cuenta" options={sheet} />
     </Stack>
   );
 }

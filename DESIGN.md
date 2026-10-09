@@ -355,6 +355,7 @@ Los estados de hover del prototipo pasan a ser **presionado** (`Pressable` con `
 | `icon` | sin fondo, ícono `textMuted`, padding 7 | fondo `surface2`, ícono `text` | opacidad 0.45 | — |
 | `fab` | `primary`, radio `full`, padding 12 × 18, sombra `float`; texto "+ Gasto" | opacidad 0.9 | — | — |
 | `link` | texto `primary` 13 / 500, sin fondo | subrayado | — | — |
+| `danger` | `surface`, borde y texto `error`; solo para lo que no se deshace ("Borrar mi cuenta", spec de Ajustes, 9/10) | opacidad 0.8 | opacidad 0.45 | igual que default |
 | `add` | 52 × 52, radio `lg`, borde punteado de 1.5 en `primary`, ícono `primary` | fondo `primarySoft` | — | — |
 
 - `icon` puede llevar un punto de aviso: 8 × 8 en `error`, con borde de 2 en `bg`.

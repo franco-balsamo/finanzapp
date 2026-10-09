@@ -217,6 +217,12 @@ Implementado el 9/10 con la API nueva de `expo-file-system` (`File` y `Paths.cac
 - Para saber si está en algún grupo activo: el mismo dato que ya usa la lista de grupos (`loadGroupList`); si no se puede leer, se muestra el texto sin la frase de grupos.
 - Después de borrar: `signOut()`; el `_layout` ya manda al login sin sesión.
 
+Implementado el 9/10. Diferencias con lo de arriba:
+- La hoja es una ruta `formSheet` (`app/(app)/borrar-cuenta.tsx`), como las demás hojas de la app, y no un componente suelto.
+- El error del código es el de `authErrorMessage`: "El código no es válido o ya venció.".
+- `Button` suma la variante `danger` (borde y texto `error`), anotada en `DESIGN.md`, y `SheetFooter` la recibe en `actionVariant`.
+- Probado en Chrome headless contra la base local con `borrar@test.local` en un grupo con Fran. El primer `delete_account` se forzó a `42501` interceptando la llamada. Se probaron la frase de grupos, el paso del código, un código mal con "Mandar otro código", el código bien, el toast y la vuelta a `/ingresar`. En la base, el usuario ya no está, su lugar quedó con `user_id` null y el dueño pasó a Fran.
+
 ## Testing
 
 | Capa | Qué | Cantidad |

@@ -34,6 +34,17 @@ export async function loadCardAlerts(): Promise<CardAlertSettings[]> {
   return cardAlerts(cards.data, alerts.data as DbAlert[]);
 }
 
+/**
+ * Borrar mi cuenta (02 §10). 'reauth' si el código del mail tiene más de 10 minutos: la app lo pide
+ * y vuelve a llamar. Cualquier otro error se lanza.
+ */
+export async function deleteAccount(): Promise<'deleted' | 'reauth'> {
+  const { error } = await supabase.rpc('delete_account');
+  if (error?.code === '42501') return 'reauth';
+  if (error) throw error;
+  return 'deleted';
+}
+
 export async function setCardAlert(cardId: string, type: DbAlert['type'], enabled: boolean, daysBefore?: number): Promise<void> {
   const { error } = await supabase.rpc('set_card_alert', { card_id: cardId, alert_type: type, enabled, days_before: daysBefore });
   if (error) throw error;

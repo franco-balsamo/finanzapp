@@ -8,10 +8,12 @@ interface Props {
   onAction: () => void;
   onCancel: () => void;
   loading?: boolean;
+  /** `danger` para una acción que no se deshace. */
+  actionVariant?: 'primary' | 'danger';
 }
 
 /** Botones de una hoja: "Cancelar" y la acción con su verbo, a la derecha (DESIGN.md, Botón). */
-export function SheetFooter({ actionTitle, onAction, onCancel, loading }: Props) {
+export function SheetFooter({ actionTitle, onAction, onCancel, loading, actionVariant = 'primary' }: Props) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   return (
@@ -22,7 +24,7 @@ export function SheetFooter({ actionTitle, onAction, onCancel, loading }: Props)
       ]}
     >
       <Button title="Cancelar" onPress={onCancel} disabled={loading} />
-      <Button title={actionTitle} variant="primary" onPress={onAction} loading={loading} />
+      <Button title={actionTitle} variant={actionVariant} onPress={onAction} loading={loading} />
     </View>
   );
 }
