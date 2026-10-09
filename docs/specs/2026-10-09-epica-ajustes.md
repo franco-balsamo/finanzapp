@@ -131,7 +131,7 @@ begin
   end if;
   if not exists (
     select 1 from public.cards c
-    where c.id = set_card_alert.card_id and c.user_id = (select auth.uid()) and c.kind = 'credit'
+    where c.id = set_card_alert.card_id and c.user_id = (select auth.uid())
   ) then
     raise exception 'card not found' using errcode = '42501';
   end if;
@@ -154,6 +154,8 @@ grant execute on function public.set_card_alert(uuid, text, boolean, integer) to
 - `security invoker`: corre con la RLS de `alerts` (`own_rows`) y de `cards`.
 - `days_before` fuera de 1 a 5: lo rechaza el `check` que ya tiene la tabla (`23514`).
 - Un `card_due` sin `days_before` guarda 2.
+
+Implementado el 9/10: `cards` no tiene `kind` (todas son de crédito), así que la función no lo filtra. Los tests están en `supabase/tests/22_set_card_alert.test.sql` (8).
 
 Tests pgTAP (`supabase/tests/set_card_alert.test.sql`):
 1. Sin fila, apagar el cierre crea una fila con `enabled = false`.
@@ -186,7 +188,7 @@ Mantiene el orden de `cards`. Tests Vitest (de los ejemplos de 02 §9):
 - `apps/mobile/src/components/Switch.tsx`: el de `DESIGN.md` (40 × 22, pista `line` apagado y `primary` prendido, perilla blanca de 16 que se corre 18 en `motion.micro`). `accessibilityRole="switch"`, `accessibilityState={{ checked }}` y una etiqueta.
 - `apps/mobile/src/lib/session.tsx`: `SETTINGS_COLUMNS` y `UserSettings` suman `quiet_from` y `quiet_to` (`number | null`).
 - `apps/mobile/src/lib/settings.ts` (nuevo):
-  - `loadCardAlerts()`: lee las tarjetas de crédito activas (`id, name, last4`, `kind = 'credit'`, `archived_at is null`, en el orden de la Billetera: favorita primero y después `created_at`) y `alerts`, y devuelve `cardAlerts(...)`.
+  - `loadCardAlerts()`: lee las tarjetas de crédito activas (`id, name, last4`, `archived_at is null`, en el orden de la Billetera: favorita primero y después `created_at`) y `alerts`, y devuelve `cardAlerts(...)`.
   - `setCardAlert(cardId, type, enabled, daysBefore?)`: `supabase.rpc('set_card_alert', …)`.
 - `apps/mobile/src/app/(app)/ajustes.tsx` (nueva): la pantalla del orden de lectura. Cada cambio es optimista: actualiza el estado, guarda y, si falla, vuelve atrás con el toast.
 - `apps/mobile/src/app/(app)/(tabs)/index.tsx:144`: el encabezado pasa a fila: "Hola, Fran" + la fecha a la izquierda y el botón engranaje (`accessibilityLabel="Ajustes"`, ícono SVG como el del prototipo, área de toque de 44) a la derecha.

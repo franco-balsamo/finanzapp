@@ -25,9 +25,9 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Pendientes chicos cerrados (9/10):** Inicio ordena los grupos en dólares por su saldo en pesos; la hoja bloquea el monto de un gasto de grupo solo si otro lo tiene en sus finanzas (`group_expense_money_locked`); "¿Ya lo pagaste?" también funciona en un gasto de grupo con tarjeta (`save_group_expense_with_movement` recibe `payments`); en el login, un 5xx dice "Algo falló" y no "Sin conexión"; `ponytail-review` de los cambios del 8/10, con un arreglo en la lista de movimientos. Migraciones aplicadas en `mangos`. **Sin probar en el teléfono:** la pregunta en un gasto de grupo y el monto habilitado cuando el que pagó no lo sumó a sus finanzas.
 
-- **Ajustes (9/10):** spec aprobada (`docs/specs/2026-10-09-epica-ajustes.md`, hijas A-1 a A-6; decisiones en `docs/decisiones/2026-10-09-spec-ajustes.md`). Sin implementar.
+- **Ajustes (9/10):** spec aprobada (`docs/specs/2026-10-09-epica-ajustes.md`, hijas A-1 a A-6; decisiones en `docs/decisiones/2026-10-09-spec-ajustes.md`). Hechas A-1 (docs), A-2 (`set_card_alert`, aplicada en `mangos`) y A-3 (`cardAlerts` en core).
 
-- **Primer paso de la próxima sesión:** implementar Ajustes en orden: A-1 (docs), A-2 (`set_card_alert`, con `tdd`), A-3 (`cardAlerts`, con `tdd`), A-4 (pantalla), A-5 (exportar) y A-6 (borrar la cuenta).
+- **Primer paso de la próxima sesión:** seguir con Ajustes: A-4 (pantalla, `Switch` y engranaje en Inicio), A-5 (exportar) y A-6 (borrar la cuenta).
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -39,11 +39,11 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - **Datos de prueba en `mangos`:** la cuenta de Fran (`balsamote96@gmail.com`) tiene la tarjeta "Bna Visa" (··2337), la cuenta "Caja De Ahorros - Bna", gastos del 7/10 y el grupo "Asado" (Fran, Juan y Caro provisorios). Existe además el usuario `balsamote96+juan@gmail.com`, que reclamó y deshizo el lugar de Juan. Son datos reales de prueba: no borrarlos sin preguntar.
 
 - **Servicios configurados:**
-  - **Supabase `mangos`** (`pkhjsrknnijjygzwvtkn`): migraciones al día hasta `20261009150000_group_expense_payments`. Se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. Mail con el código: SMTP de Gmail (remitente "Mangos", contraseña de aplicación) con la plantilla `supabase/templates/codigo.html`; unos 500 mails por día (Gmail) y 30 por hora (Supabase).
+  - **Supabase `mangos`** (`pkhjsrknnijjygzwvtkn`): migraciones al día hasta `20261009160000_set_card_alert`. Se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. Mail con el código: SMTP de Gmail (remitente "Mangos", contraseña de aplicación) con la plantilla `supabase/templates/codigo.html`; unos 500 mails por día (Gmail) y 30 por hora (Supabase).
   - **Vercel `mangos`** (equipo `franco-balsamos-projects`): https://mangos-kohl.vercel.app, deploy automático en cada push a `main`. **La conexión de Vercel de Claude solo lee**: cambios de proyecto o variables los hace Fran.
   - **`apps/mobile/.env`** (no se commitea) apunta a `mangos` para probar en el teléfono: `EXPO_PUBLIC_SUPABASE_URL=https://pkhjsrknnijjygzwvtkn.supabase.co`, la clave publicable de `mangos` y `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app`. Para probar contra la base local, pasar las variables locales al comando (las del entorno le ganan al `.env`).
 
-- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 486 tests pgTAP, 359 de Vitest y el typecheck.
+- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 494 tests pgTAP, 362 de Vitest y el typecheck.
 
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.

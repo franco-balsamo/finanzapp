@@ -17,6 +17,7 @@ export * from './personal/netWorth.ts';
 export * from './notices/format.ts';
 export * from './notices/notices.ts';
 export * from './notices/fromDb.ts';
+export * from './notices/cardAlerts.ts';
 export * from './entry/alreadyPaid.ts';
 export * from './entry/amount.ts';
 export * from './entry/categories.ts';

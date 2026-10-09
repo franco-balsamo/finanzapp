@@ -110,7 +110,7 @@ El orden de lectura, los estados y los componentes nuevos de las pantallas princ
 | Pantalla | Qué tiene | Cambio respecto del prototipo |
 |---|---|---|
 | Inicio | Patrimonio, vencimientos, gastos del mes por categoría, grupos, avisos, tarjeta "Cerró tu Visa" hasta el vencimiento | Sin presupuestos; suma el aviso de cierre |
-| Billetera, pestaña Tarjetas | Lista de tarjetas de crédito con miniatura (`CardRow`), la favorita primero; al tocar abre el detalle. Movimientos con filtros | Lista en vez de carrusel; sin débito ni prepagas |
+| Billetera, pestaña Tarjetas | Lista de tarjetas de crédito con miniatura (`CardRow`), la favorita primero; al tocar abre el detalle. Las archivadas, para recuperarlas. Movimientos con filtros | Lista en vez de carrusel; sin débito ni prepagas |
 | Billetera, pestaña Cuentas | Saldos por cuenta en pesos y en dólares | — |
 | Detalle de tarjeta de crédito | Resumen por mes con su estado, consumos, cuotas futuras, pagos (totales o parciales), corregir cierre real, límite, editar y archivar. Es la pantalla que abre el aviso de cierre, con el campo de carga por texto | Suma el campo de texto |
 | Grupos | Saldo total en una línea, lista de grupos | — |
@@ -119,7 +119,7 @@ El orden de lectura, los estados y los componentes nuevos de las pantallas princ
 | Gasto de grupo (hoja) | Quién pagó, cómo se divide, con qué pagaste | — |
 | Web de invitados | Gastos y saldos del grupo, "soy Juan" y botón para instalar la app y reclamar el lugar. Solo lectura | Nueva (web, no app) |
 | Reclamar lugar | "¿Sos Juan?" al abrir el link con la app instalada | Nueva |
-| Ajustes | Perfil, dólar de referencia, tema, notificaciones (cierre y vencimiento por tarjeta), tarjetas archivadas para desarchivar, borrar mi cuenta y exportar mis datos | Sin edición de categorías ni creación de alertas |
+| Ajustes | Perfil, dólar de referencia, tema, avisos por tarjeta (cierre y vencimiento) y no molestar, exportar mis datos, cerrar sesión y borrar mi cuenta. Se abre con el engranaje de Inicio | Sin edición de categorías ni creación de alertas |
 | Bienvenida | Dólar de referencia | De 4 pasos a 1 (sin objetivo ni tarjeta, 7/10); sin datos de ejemplo |
 
 ## Decisiones abiertas para la revisión

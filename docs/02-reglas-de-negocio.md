@@ -142,7 +142,7 @@ La pregunta aparece solo para gastos con fecha anterior al último cierre, así 
 
 ### Archivar y eliminar
 - Eliminar una tarjeta de crédito la **archiva por 7 días**: deja de verse en la Billetera y en los medios de pago, pero su deuda pendiente sigue contando.
-- Durante esos 7 días se puede **desarchivar** desde Ajustes y vuelve todo como estaba.
+- Durante esos 7 días se puede **desarchivar** desde la Billetera y vuelve todo como estaba.
 - Pasados los 7 días se **elimina definitivamente**, con todos sus consumos y pagos. **Antes de borrar** (eng review, 1/10), cada pago no revertido pasa a ser un movimiento de la cuenta de la que salió ("Pago de tarjeta Visa ··2337 (eliminada)"), con el mismo monto y fecha, para que el saldo de las cuentas no cambie. La purga corre todos los días a las 3:30; si una tarjeta no se puede borrar, queda registrada para revisarla y se reintenta al día siguiente (T7, 4/10).
 - Al archivar se avisa cuántos consumos tiene y cuándo se borra.
 
@@ -399,7 +399,8 @@ Se muestra en pesos o en dólares. En Inicio (antes en la Billetera; spec de Ini
   - Si el aviso no salió el día del cierre, sale al día siguiente: "Ayer cerró tu Visa: te vienen $187.000. ¿Te falta cargar algo?". Más tarde, no.
 - **Sin configurar:** los dos avisos están prendidos y el de vencimiento sale 2 días antes. Las tarjetas archivadas no reciben avisos.
 - **Canales:** notificación en la v1; mail y WhatsApp en el plan Pro.
-- **No molestar:** entre la hora de inicio y la de fin, los avisos se guardan y salen al terminar.
+- **No molestar:** entre la hora de inicio y la de fin, los avisos se guardan y salen al terminar. Al prenderlo en Ajustes, va de 22:00 a 8:00; si se eligen dos horas iguales, se apaga (spec de Ajustes, 9/10).
+- **Configuración en Ajustes** (spec de Ajustes, 9/10): por cada tarjeta de crédito activa, el aviso de cierre (sí/no) y el de vencimiento (sí/no y días antes, de 1 a 5). Al apagar el de vencimiento, se guardan los días para cuando se vuelva a prender. Sin el interruptor general de notificaciones hasta que se mande el push.
 - Las alertas **informan hechos, nunca recomiendan** comprar o vender, para no entrar en asesoramiento regulado por la CNV.
 
 ## 10. Tu cuenta y tus datos
@@ -410,7 +411,7 @@ Se muestra en pesos o en dólares. En Inicio (antes en la Billetera; spec de Ini
   - Borra las cuentas, tarjetas, movimientos y preferencias del usuario.
   - En cada grupo, su lugar pasa a ser un **integrante sin cuenta con el mismo nombre**, así los saldos de los demás no cambian.
   - Si era dueño de un grupo, el rol pasa al azar a otro integrante con cuenta, igual que al abandonar, aunque tenga saldo pendiente. Si no queda nadie con cuenta, el grupo queda sin dueño.
-  - Solo se puede borrar habiendo ingresado el código del mail en los últimos 10 minutos; si no, la app lo vuelve a pedir (T10, 4/10).
-- **Exportar mis datos:** arma un archivo JSON con todo lo del usuario. De los grupos donde está, trae lo mismo que ve en la app (nombres, gastos, partes y pagos), sin el alias ni la cuenta de los demás; de los grupos que dejó, solo el nombre y su lugar (T10, 4/10).
+  - Solo se puede borrar habiendo ingresado el código del mail en los últimos 10 minutos; si no, la app lo vuelve a pedir (T10, 4/10). La app intenta borrar primero y pide el código solo si la base lo rechaza por eso; con el código, vuelve a intentar. Después de borrar, se cierra la sesión (spec de Ajustes, 9/10).
+- **Exportar mis datos:** arma un archivo JSON (`mangos-AAAA-MM-DD.json`, con la fecha de Argentina) con todo lo del usuario y abre la hoja de compartir del teléfono. De los grupos donde está, trae lo mismo que ve en la app (nombres, gastos, partes y pagos), sin el alias ni la cuenta de los demás; de los grupos que dejó, solo el nombre y su lugar (T10, 4/10).
 
 **Ejemplo:** Ana borra su cuenta. En "Cabaña" sigue apareciendo "Ana" con su saldo de −$10.000, ahora como integrante sin cuenta, y los demás ven las mismas transferencias en "Cómo saldar".
