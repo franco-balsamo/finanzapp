@@ -53,7 +53,9 @@ const monthOf = (date: ISODate): Period => date.slice(0, 7);
 
 const isMissingMethod = (m: DbWalletMovement) => m.origin === 'claim' && m.card_id === null && m.account_id === null;
 
-function actionOf(m: DbWalletMovement): MovementAction {
+function actionOf(m: DbWalletMovement, card: Card | undefined): MovementAction {
+  // La hoja de carga no ofrece las tarjetas archivadas: editar obligaría a cambiar el medio de pago.
+  if (card?.row.archived_at) return 'none';
   if (m.origin === 'claim') return 'complete';
   if (m.type !== 'expense' || m.origin === 'purge') return 'none';
   return m.group_expense_id === null ? 'edit' : 'group';
@@ -96,7 +98,7 @@ function rowOf(m: DbWalletMovement, cards: Map<string, Card>, accountNames: Map<
     installmentsLabel: m.type === 'expense' ? installmentsLabel(m, amount, card) : null,
     myShare: m.group_expense_id !== null && m.my_share !== null ? fromDbNumeric(m.my_share, m.currency) : null,
     isGroup: m.group_expense_id !== null,
-    action: actionOf(m),
+    action: actionOf(m, card),
     groupExpenseId: m.group_expense_id,
   };
 }

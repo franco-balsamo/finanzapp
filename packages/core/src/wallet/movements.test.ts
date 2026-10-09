@@ -128,6 +128,15 @@ describe('lista de movimientos', () => {
     });
   });
 
+  it('un gasto de una tarjeta archivada no se edita: la hoja no la ofrece como medio de pago', () => {
+    const vieja: DbWalletCard = { ...visa, id: 'vieja', archived_at: '2026-10-05T12:00:00Z' };
+    const list = movementList(input([
+      movement({ id: 'archivada', amount: '1.00', card_id: 'vieja' }),
+      movement({ id: 'reclamo', amount: '1.00', card_id: 'vieja', origin: 'claim', group_expense_id: 'ge', my_share: '0.50' }),
+    ], { cards: [visa, vieja] }), october);
+    expect(Object.fromEntries(list.days[0]!.rows.map((r) => [r.id, r.action]))).toEqual({ archivada: 'none', reclamo: 'none' });
+  });
+
   it('la ficha "Sin medio de pago" muestra solo esos, en todos los meses', () => {
     const movements = [
       movement({ id: 'visa', amount: '1.00' }),

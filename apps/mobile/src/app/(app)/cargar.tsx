@@ -395,6 +395,8 @@ export default function AddExpense() {
 
   function onAmountChange(text: string) {
     setErrors((e) => ({ ...e, amount: undefined }));
+    // Lo descontado de la cuenta sigue al monto, también al editar (como al cambiar la moneda).
+    setDebitedTouched(false);
     // Un texto pegado se lee con las reglas de la carga por texto: lo ambiguo se marca (11A).
     if (text.length - amount.length > 1) {
       const parsed = parseAmountMinor(text);
