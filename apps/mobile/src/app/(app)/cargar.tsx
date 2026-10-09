@@ -53,15 +53,18 @@ import {
   editLatePayment,
   learnCategory,
   loadEntryContext,
+  loadExpense,
   loadLateImpacts,
   mayBeLate,
   rateOn,
   saveExpense,
   toastFor,
+  updateExpense,
   withIds,
   type EntryContext,
   type ExpenseDraft,
   type LatePayment,
+  type SavedExpense,
   WARNING_TEXT,
 } from '../../lib/entry';
 import { CATEGORIES } from '../../lib/categories';
@@ -124,15 +127,17 @@ export default function AddExpense() {
   const { session, settings } = useSession();
   // Desde el detalle de una tarjeta, la hoja abre con esa tarjeta elegida (02 §5).
   // Desde el detalle de un grupo, abre con ese grupo; con `groupExpenseId`, edita ese gasto (G-5).
-  const { cardId, groupId: groupParam, groupExpenseId } = useLocalSearchParams<{
+  // Con `movementId`, edita un gasto personal o completa un "Sin medio de pago" (L-5).
+  const { cardId, groupId: groupParam, groupExpenseId, movementId: editId } = useLocalSearchParams<{
     cardId?: string;
     groupId?: string;
     groupExpenseId?: string;
+    movementId?: string;
   }>();
 
   // El id lo genera el teléfono al abrir la hoja: reintentar nunca duplica (02 §5).
   const newId = useRef(randomUUID()).current;
-  const id = groupExpenseId ?? newId;
+  const id = groupExpenseId ?? editId ?? newId;
   // Tu gasto personal cuando el gasto es de grupo y pagaste vos: otro id, también estable.
   const movementId = useRef(randomUUID()).current;
   const amountRef = useRef<TextInput>(null);
@@ -182,6 +187,9 @@ export default function AddExpense() {
   const [fxFound, setFxFound] = useState<boolean | null>(null);
   const [editing, setEditing] = useState<EditState | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // El gasto personal que se edita (L-5). Del reclamo: monto, moneda y fecha copian el grupo (L7).
+  const [saved, setSaved] = useState<SavedExpense | null>(null);
+  const locked = saved?.origin === 'claim';
   const defaultsFor = useRef<string | null>(null);
 
   const load = useCallback(() => {
@@ -193,6 +201,7 @@ export default function AddExpense() {
 
   useEffect(() => {
     // El foco va al monto (regla de los 10 segundos). Con un pequeño retraso, para que la hoja ya esté abierta.
+    if (editId) return;
     const timer = setTimeout(() => amountRef.current?.focus(), 350);
     return () => clearTimeout(timer);
   }, []);
@@ -247,7 +256,7 @@ export default function AddExpense() {
   }, [needsDebited, debitedTouched, cardRate, amountMinor, currency, account]);
 
   // ── Gasto de grupo (G-5) ──
-  const wantsGroups = !!groupParam || detailsOpen;
+  const wantsGroups = !!groupParam || (detailsOpen && !editId);
   const loadGroupsList = useCallback(() => {
     if (!session) return;
     setGroupsFailed(false);
@@ -330,6 +339,31 @@ export default function AddExpense() {
       () => setGroupsFailed(true),
     );
   }, [groupExpenseId, groupParam, groups, ctx, editing]);
+
+  // Editar un gasto personal: la hoja abre con todo lo guardado, también el medio actual en las fichas.
+  useEffect(() => {
+    if (!editId || !ctx || saved) return;
+    loadExpense(editId).then(
+      (e) => {
+        setSaved(e);
+        setAmount(amountInputText(fromDbNumeric(e.amount, e.currency).minor));
+        setCurrency(e.currency);
+        setDescription(e.description);
+        setPickedCategory(e.category_id);
+        setDate(e.date === ctx.today ? null : e.date);
+        const current = e.card_id ?? e.account_id;
+        setMethodId(current);
+        setExtraChipId(current);
+        setInstallments(String(e.installments));
+        const debitedIn = e.account_id ? ctx.accounts.get(e.account_id)?.currency : undefined;
+        if (e.debited_amount && debitedIn) {
+          setDebited(amountInputText(fromDbNumeric(e.debited_amount, debitedIn).minor));
+          setDebitedTouched(true);
+        }
+      },
+      () => setSaveError('No pudimos traer el gasto. Probá de nuevo.'),
+    );
+  }, [editId, ctx, saved]);
 
   // Gasto en otra moneda que el grupo: se propone tu dólar de referencia de la fecha (D8), editable.
   useEffect(() => {
@@ -558,6 +592,21 @@ export default function AddExpense() {
     toast(editing?.movement ? 'Borraste el gasto del grupo · en tus finanzas cuenta completo' : 'Borraste el gasto del grupo');
   }
 
+  /** Borrar un gasto personal (L9 y L10): no toca ningún pago. */
+  async function removeExpense() {
+    setSaving(true);
+    setSaveError(null);
+    const ok = await deleteExpense(id);
+    if (!ok) {
+      setSaving(false);
+      setSaveError('No pudimos borrar el gasto. Probá de nuevo.');
+      return;
+    }
+    walletChanged();
+    router.back();
+    toast('Borraste el gasto');
+  }
+
   /** "Sí": con el monto corregido si hay un solo pago. */
   async function answerYes() {
     if (!question) return;
@@ -577,19 +626,25 @@ export default function AddExpense() {
     if (!ctx || !session || !settings) return;
     setSaving(true);
     setSaveError(null);
-    const failure = await saveExpense(draft, payments);
+    const failure = editId ? await updateExpense(draft, payments) : await saveExpense(draft, payments);
     if (failure) {
       setSaving(false);
       setSaveError(failure === 'offline' ? 'Sin conexión. Probá de nuevo.' : 'No pudimos guardar el gasto. Probá de nuevo.');
       return;
     }
 
-    if (pickedCategory && pickedCategory !== deduced) {
+    // Al editar, enseña solo si la categoría cambió respecto de la guardada.
+    if (pickedCategory && pickedCategory !== deduced && pickedCategory !== saved?.category_id) {
       learnCategory(description, pickedCategory, ctx.methods).catch(() => {});
     }
     walletChanged();
     router.back();
 
+    // Editar no tiene "Deshacer" (fuera de alcance de la lista de movimientos).
+    if (editId) {
+      toast('Guardaste los cambios' + paymentsToastSuffix(payments));
+      return;
+    }
     const text = await toastFor(draft, session.user.id, settings);
     toast(text + paymentsToastSuffix(payments), {
       label: 'Deshacer',
@@ -610,7 +665,7 @@ export default function AddExpense() {
     <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
       <View style={styles.head}>
         <Text style={[type.title, { color: colors.text }]} accessibilityRole="header">
-          {groupExpenseId ? 'Editar gasto' : group ? 'Gasto de grupo' : 'Cargar gasto'}
+          {groupExpenseId || editId ? 'Editar gasto' : group ? 'Gasto de grupo' : 'Cargar gasto'}
         </Text>
         <Button title="✕" variant="ghost" onPress={() => router.back()} accessibilityLabel="Cerrar" />
       </View>
@@ -621,8 +676,8 @@ export default function AddExpense() {
         keyboardShouldPersistTaps="handled"
         bottomOffset={90}
       >
-        {/* 1. Carga por texto, plegada: no se lleva el foco. Al editar un gasto de grupo no va. */}
-        {groupExpenseId ? null : quickOpen ? (
+        {/* 1. Carga por texto, plegada: no se lleva el foco. Al editar no va. */}
+        {groupExpenseId || editId ? null : quickOpen ? (
           <View style={styles.block}>
             <TextField
               label="Carga por texto"
@@ -660,10 +715,10 @@ export default function AddExpense() {
               placeholder="0"
               style={type.moneyInput}
               maxFontSizeMultiplier={1.3}
-              editable={!editing?.payerLocked}
+              editable={!editing?.payerLocked && !locked}
             />
           </View>
-          {editing?.payerLocked ? null : (
+          {editing?.payerLocked || locked ? null : (
             <View style={styles.currency}>
               <Segmented options={CURRENCY_OPTIONS} value={currency} onChange={(c) => { setCurrency(c); setDebitedTouched(false); }} accessibilityLabel="Moneda" />
             </View>
@@ -671,6 +726,8 @@ export default function AddExpense() {
         </View>
         {editing?.payerLocked ? (
           <Text style={[type.caption, { color: colors.textMuted }]}>El monto y la moneda los puede cambiar solo quien pagó.</Text>
+        ) : locked ? (
+          <Text style={[type.caption, { color: colors.textMuted }]}>El monto, la moneda y la fecha se cambian desde el grupo.</Text>
         ) : null}
 
         {/* 3. Medio de pago: ninguna ficha marcada al abrir. En un gasto de grupo, solo si pagaste vos. */}
@@ -829,16 +886,19 @@ export default function AddExpense() {
         {/* 7. Fecha, plegada. */}
         <Pressable
           onPress={() => setDetailsOpen(!detailsOpen)}
+          disabled={locked}
           accessibilityRole="button"
-          accessibilityState={{ expanded: detailsOpen }}
+          accessibilityState={{ expanded: detailsOpen, disabled: locked }}
           hitSlop={8}
           style={styles.details}
         >
           <Text style={[type.small, { color: errors.date ? colors.error : colors.textMuted }]}>
-            {detailsOpen ? '▾' : '▸'} {expenseDate && today ? dateLabel(expenseDate, today) : 'Hoy'} · {group ? group.name : 'Sin grupo'}
+            {locked ? '' : detailsOpen ? '▾ ' : '▸ '}
+            {expenseDate && today ? dateLabel(expenseDate, today) : 'Hoy'}
+            {editId ? '' : ` · ${group ? group.name : 'Sin grupo'}`}
           </Text>
         </Pressable>
-        {detailsOpen && today && expenseDate ? (
+        {detailsOpen && !locked && today && expenseDate ? (
           <DateChooser
             today={today}
             value={expenseDate}
@@ -848,7 +908,7 @@ export default function AddExpense() {
           />
         ) : null}
         {/* Grupo: fichas de los 3 grupos con actividad más reciente. Al editar, el grupo no cambia. */}
-        {detailsOpen && !groupExpenseId ? (
+        {detailsOpen && !groupExpenseId && !editId ? (
           <View style={styles.block}>
             <Text style={[type.caption, { color: colors.textMuted }]}>Grupo</Text>
             {groupsFailed ? (
@@ -890,6 +950,21 @@ export default function AddExpense() {
             </View>
           ) : (
             <Button title="Borrar gasto" variant="link" onPress={() => setConfirmDelete(true)} style={styles.start} />
+          )
+        ) : null}
+
+        {/* Borrar un gasto personal (L10), con confirmación en la misma hoja y sin "Deshacer". */}
+        {editId && saved ? (
+          confirmDelete ? (
+            <View style={[styles.confirm, { borderColor: colors.line }]} accessibilityLiveRegion="polite">
+              <Text style={[type.body, { color: colors.text }]}>¿Borrás este gasto? No se puede deshacer.</Text>
+              <View style={styles.questionButtons}>
+                <Button title="Cancelar" onPress={() => setConfirmDelete(false)} disabled={saving} />
+                <Button title="Borrar" variant="primary" onPress={removeExpense} loading={saving} />
+              </View>
+            </View>
+          ) : (
+            <Button title="Eliminar gasto" variant="link" onPress={() => setConfirmDelete(true)} style={styles.start} />
           )
         ) : null}
       </KeyboardAwareScrollView>
@@ -935,7 +1010,13 @@ export default function AddExpense() {
         ) : (
           <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.line, paddingBottom: 12 + insets.bottom }]}>
             <Button title="Cancelar" onPress={() => router.back()} disabled={saving} />
-            <Button title="Guardar gasto" variant="primary" onPress={save} loading={saving} disabled={!ctx} />
+            <Button
+              title={editId ? 'Guardar cambios' : 'Guardar gasto'}
+              variant="primary"
+              onPress={save}
+              loading={saving}
+              disabled={!ctx || (!!editId && !saved)}
+            />
           </View>
         )}
       </KeyboardStickyView>

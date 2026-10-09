@@ -3,6 +3,7 @@ import { ars, usd } from '../cards/fixtures.ts';
 import { alreadyPaidQuestion, paymentsToastSuffix, proposedPaymentText } from '../entry/alreadyPaid.ts';
 import { rate } from '../money.ts';
 import {
+  cardDetail,
   lateImpacts,
   type DbWalletAccount,
   type DbWalletCard,
@@ -122,5 +123,41 @@ describe('textos de "¿Ya lo pagaste?"', () => {
     expect(paymentsToastSuffix([])).toBe('');
     expect(paymentsToastSuffix([p])).toBe(' · pago de $12.000 registrado');
     expect(paymentsToastSuffix([p, p, p])).toBe(' · pagos de $36.000 registrados');
+  });
+});
+
+describe('editar y borrar un gasto (L8 y L9, 02 §5)', () => {
+  // Septiembre: $100.000 con "farmacia" ($12.000) adentro, pagado completo.
+  const withFarmacia = (fields: Partial<WalletInput> = {}) =>
+    input({ movements: [movement('heladera', '2026-09-15', '88000.00'), movement('farmacia', '2026-09-28', '12000.00')], ...fields });
+
+  it('editar sin cambiar el monto no pregunta nada: el gasto se cuenta una sola vez', () => {
+    expect(lateImpacts(withFarmacia(), [draft('farmacia', '2026-09-28')])[0]).toMatchObject({ askAlreadyPaid: false, proposedPayments: [] });
+  });
+
+  it('de $12.000 a $15.000 propone un pago de $3.000 desde la cuenta del último pago', () => {
+    const [impact] = lateImpacts(withFarmacia(), [draft('farmacia', '2026-09-28', ars(15_000))]);
+    expect(impact!.proposedPayments).toEqual([
+      { period: '2026-09', appliesTo: 'ARS', amount: ars(3_000), fromAccountId: 'mp', debitedAmount: ars(3_000), fxCardRate: null, paidAt: '2026-10-06' },
+    ]);
+  });
+
+  it('pasarlo de otra tarjeta a un resumen pagado pregunta por el total', () => {
+    const master: DbWalletCard = { ...visa, id: 'master', last4: '0763', is_favorite: false };
+    const fields = {
+      cards: [visa, master],
+      movements: [movement('heladera', '2026-09-15', '100000.00'), { ...movement('farmacia', '2026-09-28', '12000.00'), card_id: 'master' }],
+    };
+    const [impact] = lateImpacts(input(fields), [draft('farmacia', '2026-09-28')]);
+    expect(impact!.proposedPayments).toEqual([
+      { period: '2026-09', appliesTo: 'ARS', amount: ars(12_000), fromAccountId: 'mp', debitedAmount: ars(12_000), fxCardRate: null, paidAt: '2026-10-06' },
+    ]);
+  });
+
+  it('borrar "farmacia" deja el resumen en $88.000 con $100.000 pagados: figura "Pagado"', () => {
+    const september = cardDetail(input({ movements: [movement('heladera', '2026-09-15', '88000.00')] }), 'visa').statements.find(
+      (s) => s.period === '2026-09',
+    );
+    expect(september).toMatchObject({ status: 'paid', total: { ARS: ars(88_000) }, paid: { ARS: ars(100_000) } });
   });
 });

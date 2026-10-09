@@ -195,6 +195,8 @@ En `cargar.tsx`, con el param nuevo `movementId`:
 - "Eliminar gasto" (`Button` `ghost` con texto `error`) → confirmación en línea (L10) → `delete` de esa fila → vuelve y toast.
 - Sin conexión al guardar o borrar: toast "Sin conexión. Probá de nuevo." y la hoja queda abierta con lo escrito (la cola sin conexión es la T8).
 
+Implementado el 9/10: `cargar.tsx` con `movementId`, `loadExpense` y `updateExpense` en `lib/entry.ts`. L8 ya lo cumplía core: `lateExpenseImpact` saca de los guardados el gasto con el mismo id que el borrador (`cards/late.ts:92`), así que la hoja manda el id del gasto y no hace falta armar otro input; 4 tests nuevos en `lateImpacts.test.ts` lo fijan (sin cambios, $12.000 → $15.000, cambio de tarjeta y borrar en un resumen pagado). Diferencias con lo escrito: "Eliminar gasto" es un `Button` `link`, como "Borrar gasto" del grupo (`Button` no tiene variante con texto `error`); sin conexión, el error queda escrito en la hoja como en la carga, no en un toast. Si el gasto usa una tarjeta archivada, no aparece en las fichas y hay que elegir otro medio. Probado en Chrome headless contra la base local: editar $9.000 → $12.000 en un resumen pagado pregunta por $3.000 y con "Sí" registra el pago; completar un "Sin medio de pago" con la Visa en 3 cuotas deja `origin = claim`, monto y fecha; borrar saca el gasto sin tocar pagos; un gasto de grupo abre su edición.
+
 ## Testing
 
 | Capa | Qué | Cantidad |

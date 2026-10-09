@@ -194,13 +194,8 @@ function paymentJson(p: LatePayment) {
   };
 }
 
-/**
- * Guarda el gasto con el id que generó el teléfono al abrir la hoja. Si ese id ya existe (un reintento
- * que sí había llegado), cuenta como guardado: nunca se duplica (02 §5). Con pagos ("¿Ya lo pagaste?"
- * → Sí), gasto y pagos van juntos en `save_expense_with_payments`.
- */
-export async function saveExpense(draft: ExpenseDraft, payments: readonly LatePayment[] = []): Promise<SaveError | null> {
-  const row = {
+function expenseRow(draft: ExpenseDraft) {
+  return {
     id: draft.id,
     type: 'expense',
     origin: draft.origin,
@@ -214,6 +209,15 @@ export async function saveExpense(draft: ExpenseDraft, payments: readonly LatePa
     category_id: draft.categoryId,
     debited_amount: draft.debited ? toDbNumeric(draft.debited) : null,
   };
+}
+
+/**
+ * Guarda el gasto con el id que generó el teléfono al abrir la hoja. Si ese id ya existe (un reintento
+ * que sí había llegado), cuenta como guardado: nunca se duplica (02 §5). Con pagos ("¿Ya lo pagaste?"
+ * → Sí), gasto y pagos van juntos en `save_expense_with_payments`.
+ */
+export async function saveExpense(draft: ExpenseDraft, payments: readonly LatePayment[] = []): Promise<SaveError | null> {
+  const row = expenseRow(draft);
   try {
     const { error } = payments.length
       ? await supabase.rpc('save_expense_with_payments', { expense: row, payments: payments.map(paymentJson) })
@@ -223,6 +227,45 @@ export async function saveExpense(draft: ExpenseDraft, payments: readonly LatePa
   } catch (error) {
     return isNetworkError(error) ? 'offline' : 'failed';
   }
+}
+
+/**
+ * Editar un gasto (L-5): el gasto y los pagos de "¿Ya lo pagaste?" en una transacción. En un gasto del
+ * reclamo, la base deja el monto, la moneda y la fecha como estaban (L7).
+ */
+export async function updateExpense(draft: ExpenseDraft, payments: readonly LatePayment[] = []): Promise<SaveError | null> {
+  try {
+    const { error } = await supabase.rpc('update_expense_with_payments', { expense: expenseRow(draft), payments: payments.map(paymentJson) });
+    if (!error) return null;
+    return isNetworkError(error) ? 'offline' : 'failed';
+  } catch (error) {
+    return isNetworkError(error) ? 'offline' : 'failed';
+  }
+}
+
+/** El gasto que se edita, como lo guardó la base (montos como texto). */
+export interface SavedExpense {
+  origin: 'manual' | 'text' | 'claim' | 'purge';
+  date: ISODate;
+  description: string;
+  amount: string;
+  currency: Currency;
+  card_id: string | null;
+  account_id: string | null;
+  installments: number;
+  category_id: string | null;
+  debited_amount: string | null;
+}
+
+export async function loadExpense(id: string): Promise<SavedExpense> {
+  return check(
+    await supabase
+      .from('movements')
+      .select('origin, date, description, amount::text, currency, card_id, account_id, installments, category_id, debited_amount::text')
+      .eq('id', id)
+      .eq('type', 'expense')
+      .single(),
+  ) as SavedExpense;
 }
 
 /** Por qué una línea de la carga por texto (o la hoja) pide revisión. */

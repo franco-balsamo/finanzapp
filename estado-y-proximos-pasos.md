@@ -21,9 +21,9 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - La fila de tarjeta de la Billetera muestra la pill "Vencido" o "A pagar" en lugar de "cierra 24/10" si hay un resumen cerrado sin pagar (`WalletCard.dueStatus`; decisión de Fran, anotada en `DESIGN.md`, "Fila de tarjeta").
   - La barra de pestañas mide 56 más el borde seguro (`layout.tabBarHeight`): con el alto por defecto (49), en la web el texto quedaba cortado.
 
-- **Lista de movimientos (8/10):** hechas L-1 (`docs/02` §5, "Editar y borrar un gasto"), L-2 (`movementList` en core, 353 tests de Vitest) L-3 (`update_expense_with_payments`, 476 tests pgTAP, aplicada en `mangos`) y L-4 (pantalla `/movimientos`, probada en headless). Datos de prueba de la base local para la lista: `seed.sql` en el scratchpad de la sesión del 8/10 (después de `db reset` hay que volver a cargarlos).
+- **Lista de movimientos (8/10):** hechas L-1 (`docs/02` §5, "Editar y borrar un gasto"), L-2 (`movementList` en core, 353 tests de Vitest) L-3 (`update_expense_with_payments`, 476 tests pgTAP, aplicada en `mangos`) L-4 (pantalla `/movimientos`) y L-5 (editar, borrar y completar desde la hoja de carga), probadas en headless el 9/10. **Falta probar la épica en el teléfono contra `mangos`** (puntos 6 a 10 de la definición de terminado del spec). Datos de prueba de la base local para la lista: `seed.sql` en el scratchpad de la sesión del 8/10 (después de `db reset` hay que volver a cargarlos).
 
-- **Primer paso de la próxima sesión:** seguir con L-5 (hoja de carga en modo editar, borrar y completar los "Sin medio de pago"). Spec: `docs/specs/2026-10-08-epica-lista-de-movimientos.md`.
+- **Primer paso de la próxima sesión:** probar la lista de movimientos en el teléfono contra `mangos` y, si anda, elegir la épica siguiente (Ajustes, cola sin conexión o íconos de categoría en las filas). Spec: `docs/specs/2026-10-08-epica-lista-de-movimientos.md`.
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -35,7 +35,6 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - `apps/mobile/src/lib/authErrors.ts`: un 401 (clave mal configurada) se muestra como "Sin conexión. Probá de nuevo."; solo los errores de red deberían decir eso.
   - "¿Ya lo pagaste?" no se combina con un gasto de grupo (haría falta una función de la base que guarde las dos cosas juntas).
   - El bloqueo del monto (D5) en la hoja es más estricto que en la base.
-  - Completar el medio de pago de los "Sin medio de pago" de un reclamo va con la lista de movimientos.
   - Preview y producción de Vercel usan la misma base `mangos`.
 
 - **Datos de prueba en `mangos`:** la cuenta de Fran (`balsamote96@gmail.com`) tiene la tarjeta "Bna Visa" (··2337), la cuenta "Caja De Ahorros - Bna", gastos del 7/10 y el grupo "Asado" (Fran, Juan y Caro provisorios). Existe además el usuario `balsamote96+juan@gmail.com`, que reclamó y deshizo el lugar de Juan. Son datos reales de prueba: no borrarlos sin preguntar.
@@ -45,7 +44,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - **Vercel `mangos`** (equipo `franco-balsamos-projects`): https://mangos-kohl.vercel.app, deploy automático en cada push a `main`. **La conexión de Vercel de Claude solo lee**: cambios de proyecto o variables los hace Fran.
   - **`apps/mobile/.env`** (no se commitea) apunta a `mangos` para probar en el teléfono: `EXPO_PUBLIC_SUPABASE_URL=https://pkhjsrknnijjygzwvtkn.supabase.co`, la clave publicable de `mangos` y `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app`. Para probar contra la base local, pasar las variables locales al comando (las del entorno le ganan al `.env`).
 
-- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 476 tests pgTAP, 353 de Vitest y el typecheck.
+- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 476 tests pgTAP, 357 de Vitest y el typecheck.
 
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.
