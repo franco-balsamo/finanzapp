@@ -189,6 +189,7 @@ export default function AddExpense() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   // El gasto personal que se edita (L-5). Del reclamo: monto, moneda y fecha copian el grupo (L7).
   const [saved, setSaved] = useState<SavedExpense | null>(null);
+  const [savedFailed, setSavedFailed] = useState(false);
   const locked = saved?.origin === 'claim';
   const defaultsFor = useRef<string | null>(null);
 
@@ -342,7 +343,7 @@ export default function AddExpense() {
 
   // Editar un gasto personal: la hoja abre con todo lo guardado, también el medio actual en las fichas.
   useEffect(() => {
-    if (!editId || !ctx || saved) return;
+    if (!editId || !ctx || saved || savedFailed) return;
     loadExpense(editId).then(
       (e) => {
         setSaved(e);
@@ -361,9 +362,9 @@ export default function AddExpense() {
           setDebitedTouched(true);
         }
       },
-      () => setSaveError('No pudimos traer el gasto. Probá de nuevo.'),
+      () => setSavedFailed(true),
     );
-  }, [editId, ctx, saved]);
+  }, [editId, ctx, saved, savedFailed]);
 
   // Gasto en otra moneda que el grupo: se propone tu dólar de referencia de la fecha (D8), editable.
   useEffect(() => {
@@ -703,6 +704,10 @@ export default function AddExpense() {
           </Pressable>
         )}
 
+        {savedFailed ? (
+          <Button title="No pudimos traer el gasto. Reintentar" variant="link" onPress={() => setSavedFailed(false)} style={styles.start} />
+        ) : null}
+
         {/* 2. Monto con la moneda al lado. */}
         <View style={styles.amountRow}>
           <View style={styles.flex}>
@@ -938,35 +943,22 @@ export default function AddExpense() {
           </Text>
         ) : null}
 
-        {/* Borrar un gasto de grupo (D6), con confirmación en la misma hoja. */}
-        {groupExpenseId && editing ? (
+        {/* Borrar con confirmación en la misma hoja: un gasto de grupo (D6) o uno personal (L10, sin "Deshacer"). */}
+        {(groupExpenseId && editing) || (editId && saved) ? (
           confirmDelete ? (
             <View style={[styles.confirm, { borderColor: colors.line }]} accessibilityLiveRegion="polite">
               <Text style={[type.body, { color: colors.text }]}>
-                ¿Borrás este gasto del grupo?{editing.movement ? ' En tus finanzas queda y vuelve a contar completo.' : ''}
+                {editId
+                  ? '¿Borrás este gasto? No se puede deshacer.'
+                  : `¿Borrás este gasto del grupo?${editing?.movement ? ' En tus finanzas queda y vuelve a contar completo.' : ''}`}
               </Text>
               <View style={styles.questionButtons}>
                 <Button title="Cancelar" onPress={() => setConfirmDelete(false)} disabled={saving} />
-                <Button title="Borrar" variant="primary" onPress={deleteFromGroup} loading={saving} />
+                <Button title="Borrar" variant="primary" onPress={editId ? removeExpense : deleteFromGroup} loading={saving} />
               </View>
             </View>
           ) : (
-            <Button title="Borrar gasto" variant="link" onPress={() => setConfirmDelete(true)} style={styles.start} />
-          )
-        ) : null}
-
-        {/* Borrar un gasto personal (L10), con confirmación en la misma hoja y sin "Deshacer". */}
-        {editId && saved ? (
-          confirmDelete ? (
-            <View style={[styles.confirm, { borderColor: colors.line }]} accessibilityLiveRegion="polite">
-              <Text style={[type.body, { color: colors.text }]}>¿Borrás este gasto? No se puede deshacer.</Text>
-              <View style={styles.questionButtons}>
-                <Button title="Cancelar" onPress={() => setConfirmDelete(false)} disabled={saving} />
-                <Button title="Borrar" variant="primary" onPress={removeExpense} loading={saving} />
-              </View>
-            </View>
-          ) : (
-            <Button title="Eliminar gasto" variant="link" onPress={() => setConfirmDelete(true)} style={styles.start} />
+            <Button title={editId ? 'Eliminar gasto' : 'Borrar gasto'} variant="link" onPress={() => setConfirmDelete(true)} style={styles.start} />
           )
         ) : null}
       </KeyboardAwareScrollView>
