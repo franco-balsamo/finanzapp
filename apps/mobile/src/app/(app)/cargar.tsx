@@ -71,6 +71,7 @@ import { CATEGORIES } from '../../lib/categories';
 import { walletChanged } from '../../lib/events';
 import {
   deleteGroupExpense,
+  loadMoneyLocked,
   loadMyGroupMovement,
   saveGroupExpense,
   type MovementChange,
@@ -298,13 +299,12 @@ export default function AddExpense() {
     const g = groups.find((x) => x.id === groupParam);
     const e = g?.expenses.find((x) => x.id === groupExpenseId);
     if (!g || !e) return;
-    loadMyGroupMovement(e.id).then(
-      (mine) => {
-        const payer = g.members.find((m) => m.id === e.payer_member_id);
+    Promise.all([loadMyGroupMovement(e.id), loadMoneyLocked(e.id)]).then(
+      ([mine, payerLocked]) => {
         const ids = [...new Set([...g.members.filter((m) => !m.left_at).map((m) => m.id), ...e.parts.map((p) => p.member_id), e.payer_member_id])];
         setEditing({
           memberIds: g.members.map((m) => m.id).filter((m) => ids.includes(m)),
-          payerLocked: !!payer?.user_id && e.payer_member_id !== g.my_member_id,
+          payerLocked,
           movement: mine,
         });
         defaultsFor.current = g.id;

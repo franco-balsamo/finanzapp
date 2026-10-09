@@ -86,3 +86,10 @@ export async function loadMyGroupMovement(groupExpenseId: string): Promise<MyGro
   if (error) throw error;
   return ((data ?? [])[0] as MyGroupMovement | undefined) ?? null;
 }
+
+/** D5: otro lo tiene en sus finanzas, así que no podés cambiar monto, moneda ni quién pagó. */
+export async function loadMoneyLocked(groupExpenseId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('group_expense_money_locked', { expense_id: groupExpenseId });
+  if (error) throw error;
+  return data as boolean;
+}

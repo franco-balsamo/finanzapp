@@ -286,7 +286,7 @@ export function groupDetail(input: WalletInput, groupId: string): GroupDetail;
 - En la línea plegada, las fichas son "Sin grupo", los 3 grupos con actividad más reciente y "Otro…" (si hay más de 3). Al editar, el grupo no cambia.
 - "No sumarlo a mis finanzas" es una ficha más del medio de pago; al editar un gasto que tenías en tus finanzas, manda `{"remove": true}`.
 - La cotización usa `fx_rate_on(user_settings.fx_reference, fecha)` y se edita como un monto ("1.500").
-- D5 en la hoja: el monto, la moneda y quién pagó se deshabilitan si el que pagó tiene cuenta y no sos vos. La app no puede ver los movimientos de otros, así que se deshabilitan aunque esa persona no lo haya sumado a sus finanzas. La base igual rechaza el cambio con "only the payer" si corresponde.
+- D5 en la hoja: el monto, la moneda y quién pagó se deshabilitan si `group_expense_money_locked` dice que otro tiene el gasto en sus finanzas (9/10; antes bastaba con que el que pagó tuviera cuenta). La base igual rechaza el cambio con "only the payer" si corresponde.
 - **Pendiente:** "¿Ya lo pagaste?" (D-6) no se combina con el gasto de grupo. La función de grupo no registra pagos de resumen, y hacerlo aparte no sería atómico. Un gasto de grupo pagado con tarjeta en un resumen ya pagado queda como "Pago parcial" hasta registrar el pago.
 - La carga por texto no aparece al editar un gasto de grupo.
 - Criterio 2 (la carga sin grupo sigue igual) verificado por código: el camino sin grupo no cambió. Falta verlo en el teléfono.
