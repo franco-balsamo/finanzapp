@@ -25,7 +25,9 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Pendientes chicos cerrados (9/10):** Inicio ordena los grupos en dólares por su saldo en pesos; la hoja bloquea el monto de un gasto de grupo solo si otro lo tiene en sus finanzas (`group_expense_money_locked`); "¿Ya lo pagaste?" también funciona en un gasto de grupo con tarjeta (`save_group_expense_with_movement` recibe `payments`); en el login, un 5xx dice "Algo falló" y no "Sin conexión"; `ponytail-review` de los cambios del 8/10, con un arreglo en la lista de movimientos. Migraciones aplicadas en `mangos`. **Sin probar en el teléfono:** la pregunta en un gasto de grupo y el monto habilitado cuando el que pagó no lo sumó a sus finanzas.
 
-- **Primer paso de la próxima sesión:** que Fran elija la épica siguiente: Ajustes (T10), cola sin conexión (T8) o íconos de categoría en las filas y fichas. Cada una arranca con su `/spec`.
+- **Ajustes (9/10):** spec aprobada (`docs/specs/2026-10-09-epica-ajustes.md`, hijas A-1 a A-6; decisiones en `docs/decisiones/2026-10-09-spec-ajustes.md`). Sin implementar.
+
+- **Primer paso de la próxima sesión:** implementar Ajustes en orden: A-1 (docs), A-2 (`set_card_alert`, con `tdd`), A-3 (`cardAlerts`, con `tdd`), A-4 (pantalla), A-5 (exportar) y A-6 (borrar la cuenta).
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -76,7 +78,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 1. **Siguiente tanda de pantallas**, cada una con su `/spec` (Fran elige el orden):
    - **Inicio:** hecho y probado en el teléfono el 8/10.
    - **Lista de movimientos:** hecha y probada en el teléfono el 9/10.
-   - **Ajustes (T10):** perfil, dólar de referencia, tema, avisos por tarjeta, no molestar, tarjetas archivadas, borrar la cuenta (volver a pedir el código si la base responde "reauthentication required") y exportar el JSON.
+   - **Ajustes (T10):** spec aprobada el 9/10, falta implementarla.
    - **Cola sin conexión (T8):** gastos guardados en el teléfono con "Pendiente" y envío automático.
    - **Íconos de categoría en filas y fichas:** usar `CategoryIcon`, que ya está.
 2. **Antes de la beta:**
