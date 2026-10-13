@@ -1,4 +1,4 @@
-# Mangos: estado y próximos pasos (cierre del 9 de octubre de 2026)
+# Mangos: estado y próximos pasos (cierre del 13 de octubre de 2026)
 
 Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales de Fran para Argentina; el nombre es provisorio.
 
@@ -25,9 +25,9 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Pendientes chicos cerrados (9/10):** Inicio ordena los grupos en dólares por su saldo en pesos; la hoja bloquea el monto de un gasto de grupo solo si otro lo tiene en sus finanzas (`group_expense_money_locked`); "¿Ya lo pagaste?" también funciona en un gasto de grupo con tarjeta (`save_group_expense_with_movement` recibe `payments`); en el login, un 5xx dice "Algo falló" y no "Sin conexión"; `ponytail-review` de los cambios del 8/10, con un arreglo en la lista de movimientos. Migraciones aplicadas en `mangos`. **Sin probar en el teléfono:** la pregunta en un gasto de grupo y el monto habilitado cuando el que pagó no lo sumó a sus finanzas.
 
-- **Ajustes (9/10):** spec aprobada (`docs/specs/2026-10-09-epica-ajustes.md`, hijas A-1 a A-6; decisiones en `docs/decisiones/2026-10-09-spec-ajustes.md`). Hechas A-1 (docs), A-2 (`set_card_alert`, aplicada en `mangos`) y A-3 (`cardAlerts` en core). A-4 (pantalla `/ajustes`, `Switch`, engranaje en Inicio y sin el menú ⋯ de la Billetera) hecha y probada en headless contra la base local; falta verla en el teléfono. A-5 (exportar, con `expo-file-system` y `expo-sharing`) y A-6 (borrar la cuenta, hoja `/borrar-cuenta`) hechas. **Falta en el teléfono contra `mangos`:** Ajustes entero, exportar y borrar una cuenta `+borrar` con un login de más de 10 minutos.
+- **Ajustes (9 al 13/10):** hecha (A-1 a A-6, `docs/specs/2026-10-09-epica-ajustes.md`; decisiones en `docs/decisiones/2026-10-09-spec-ajustes.md`) y **probada en el teléfono contra `mangos` el 13/10**: pantalla `/ajustes` desde el engranaje de Inicio, avisos por tarjeta (`set_card_alert`), no molestar, exportar y borrar la cuenta. Borrar se probó con cuentas `+borrar`: con un login de más de 10 minutos pide el código del mail. Sin probar en el teléfono: un guardado que falla y vuelve atrás, y el `Switch` con reducir movimiento.
 
-- **Primer paso de la próxima sesión:** probar Ajustes en el teléfono (Expo con `--clear`, por los paquetes nuevos) y marcar la épica como terminada.
+- **Primer paso de la próxima sesión:** que Fran elija la próxima épica de "Próximos pasos" y arrancar con su `/spec`.
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -78,7 +78,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 1. **Siguiente tanda de pantallas**, cada una con su `/spec` (Fran elige el orden):
    - **Inicio:** hecho y probado en el teléfono el 8/10.
    - **Lista de movimientos:** hecha y probada en el teléfono el 9/10.
-   - **Ajustes (T10):** implementada el 9/10 (A-1 a A-6); falta probarla en el teléfono.
+   - **Ajustes (T10):** hecha y probada en el teléfono el 13/10.
    - **Cola sin conexión (T8):** gastos guardados en el teléfono con "Pendiente" y envío automático.
    - **Íconos de categoría en filas y fichas:** usar `CategoryIcon`, que ya está.
 2. **Antes de la beta:**

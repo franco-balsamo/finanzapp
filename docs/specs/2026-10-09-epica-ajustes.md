@@ -1,6 +1,6 @@
 ---
 spec_kind: epic
-status: approved
+status: done
 date: 2026-10-09
 ---
 
@@ -208,7 +208,7 @@ Implementado el 9/10. Diferencias con lo de arriba:
 - Si `Sharing.isAvailableAsync()` da `false`: toast "No se puede compartir desde este dispositivo.".
 - En la web no hay botón (la web de producción es solo de invitados).
 
-Implementado el 9/10 con la API nueva de `expo-file-system` (`File` y `Paths.cache`). `expo install` sumó el plugin `expo-sharing` a `app.json`. Sin probar en el teléfono.
+Implementado el 9/10 con la API nueva de `expo-file-system` (`File` y `Paths.cache`). `expo install` sumó el plugin `expo-sharing` a `app.json`. Probado en el teléfono contra `mangos` el 13/10.
 
 ### A-6. Borrar mi cuenta
 
@@ -222,6 +222,7 @@ Implementado el 9/10. Diferencias con lo de arriba:
 - El error del código es el de `authErrorMessage`: "El código no es válido o ya venció.".
 - `Button` suma la variante `danger` (borde y texto `error`), anotada en `DESIGN.md`, y `SheetFooter` la recibe en `actionVariant`.
 - Probado en Chrome headless contra la base local con `borrar@test.local` en un grupo con Fran. El primer `delete_account` se forzó a `42501` interceptando la llamada. Se probaron la frase de grupos, el paso del código, un código mal con "Mandar otro código", el código bien, el toast y la vuelta a `/ingresar`. En la base, el usuario ya no está, su lugar quedó con `user_id` null y el dueño pasó a Fran.
+- Probado en el teléfono contra `mangos` el 13/10 con cuentas `+borrar`. Con un login reciente borra sin pedir el código. Con un login de 11 minutos, la base rechazó el primer `delete_account`, la app mandó el mail y, con el código, borró la cuenta. "Mandar otro código" antes de los 60 segundos da 429 en Supabase y la app muestra "Esperá un minuto antes de pedir otro código.". En el grupo de prueba, el lugar quedó sin cuenta y el dueño pasó a Fran.
 
 ## Testing
 
