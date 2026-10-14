@@ -41,6 +41,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
+import { CategoryIcon } from '../../components/CategoryIcon';
 import { Chip } from '../../components/Chip';
 import { DateChooser, dateLabel } from '../../components/DateChooser';
 import { GroupSplit } from '../../components/GroupSplit';
@@ -841,7 +842,13 @@ export default function AddExpense() {
           <Text style={[type.caption, { color: colors.textMuted }]}>Categoría</Text>
           <View style={styles.chips}>
             {CATEGORIES.map((c) => (
-              <Chip key={c.id} label={c.label} selected={c.id === categoryId} onPress={() => setPickedCategory(c.id)} />
+              <Chip
+                key={c.id}
+                label={c.label}
+                selected={c.id === categoryId}
+                icon={(color) => <CategoryIcon categoryId={c.id} size="inline" color={color} />}
+                onPress={() => setPickedCategory(c.id)}
+              />
             ))}
           </View>
         </View>

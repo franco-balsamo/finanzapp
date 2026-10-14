@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { radius, type } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
@@ -8,13 +9,16 @@ interface Props {
   /** Un número que va después del texto, en Plex Mono ("·· 2337"). */
   mono?: string;
   selected?: boolean;
+  /** Ícono antes del texto; recibe el color del texto del chip. */
+  icon?: (color: string) => ReactNode;
   onPress: () => void;
   accessibilityLabel?: string;
 }
 
 /** `Chip` de DESIGN.md. Mide menos de 44 de alto: lleva `hitSlop` vertical de 8. */
-export function Chip({ label, mono, selected = false, onPress, accessibilityLabel }: Props) {
+export function Chip({ label, mono, selected = false, icon, onPress, accessibilityLabel }: Props) {
   const { colors } = useTheme();
+  const textColor = selected ? colors.onPrimary : colors.textMuted;
   return (
     <Pressable
       onPress={onPress}
@@ -27,9 +31,11 @@ export function Chip({ label, mono, selected = false, onPress, accessibilityLabe
         selected
           ? { backgroundColor: colors.primary, borderColor: colors.primary }
           : { backgroundColor: colors.surface, borderColor: colors.line },
+        icon ? { paddingLeft: 8 } : null,
       ]}
     >
-      <Text style={[type.small, { color: selected ? colors.onPrimary : colors.textMuted }]}>
+      {icon?.(textColor)}
+      <Text style={[type.small, { color: textColor }]}>
         {label}
         {mono ? (
           <>
@@ -43,5 +49,5 @@ export function Chip({ label, mono, selected = false, onPress, accessibilityLabe
 }
 
 const styles = StyleSheet.create({
-  chip: { paddingVertical: 5, paddingHorizontal: 11, borderRadius: radius.full, borderWidth: 1 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, paddingHorizontal: 11, borderRadius: radius.full, borderWidth: 1 },
 });

@@ -1,4 +1,4 @@
-# Mangos: estado y próximos pasos (cierre del 13 de octubre de 2026)
+# Mangos: estado y próximos pasos (cierre del 14 de octubre de 2026)
 
 Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales de Fran para Argentina; el nombre es provisorio.
 
@@ -27,12 +27,13 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Ajustes (9 al 13/10):** hecha (A-1 a A-6, `docs/specs/2026-10-09-epica-ajustes.md`; decisiones en `docs/decisiones/2026-10-09-spec-ajustes.md`) y **probada en el teléfono contra `mangos` el 13/10**: pantalla `/ajustes` desde el engranaje de Inicio, avisos por tarjeta (`set_card_alert`), no molestar, exportar y borrar la cuenta. Borrar se probó con cuentas `+borrar`: con un login de más de 10 minutos pide el código del mail. Sin probar en el teléfono: un guardado que falla y vuelve atrás, y el `Switch` con reducir movimiento.
 
+- **Íconos de categoría (14/10):** `CategoryIcon` en los consumos del detalle de tarjeta y en los chips de categoría de la hoja de carga, como en el prototipo. Probado en Chrome headless contra la base local (390 y 320, claro y oscuro); sin probar en el teléfono.
+
 - **Primer paso de la próxima sesión:** que Fran elija la próxima épica de "Próximos pasos" y arrancar con su `/spec`.
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
 - **Pendientes chicos:**
-  - `CategoryIcon` ya existe (Inicio), pero las filas de movimientos y las fichas todavía no lo usan.
   - `markNoticeRead` guarda la hora del teléfono en `read_at`, no `now()` de la base. No se arregla mientras `read_at` se use solo como "leído o no"; si algún día se muestra la hora, pasarlo a la base.
   - Preview y producción de Vercel usan la misma base `mangos`.
 
@@ -80,7 +81,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - **Lista de movimientos:** hecha y probada en el teléfono el 9/10.
    - **Ajustes (T10):** hecha y probada en el teléfono el 13/10.
    - **Cola sin conexión (T8):** gastos guardados en el teléfono con "Pendiente" y envío automático.
-   - **Íconos de categoría en filas y fichas:** usar `CategoryIcon`, que ya está.
+   - **Íconos de categoría:** hechos el 14/10. Están en los consumos del detalle de tarjeta y en los chips de categoría de la hoja (`Chip` recibe `icon`). Probados en headless, falta verlos en el teléfono.
 2. **Antes de la beta:**
    - T12: plan pago de Supabase y cómo pausa los proyectos;
    - los índices de las claves foráneas que marcó el advisor (`docs/decisiones/2026-10-04-primer-deploy.md`);

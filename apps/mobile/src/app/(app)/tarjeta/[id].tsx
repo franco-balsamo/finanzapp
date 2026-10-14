@@ -13,6 +13,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/Button';
+import { CategoryIcon } from '../../../components/CategoryIcon';
 import { CreditCard } from '../../../components/CreditCard';
 import { Mono } from '../../../components/Mono';
 import { Pill, type PillVariant } from '../../../components/Pill';
@@ -293,6 +294,7 @@ export default function CardDetailScreen() {
                 accessibilityLabel={`${item.description}, ${formatShortDate(item.date)}${item.of > 1 ? `, cuota ${item.index} de ${item.of}` : ''}, ${moneyInWords(item.amount)}, ${categoryLabel(item.categoryId)}`}
                 style={[styles.row, i < visibleItems.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.line }]}
               >
+                <CategoryIcon categoryId={item.categoryId} size="md" />
                 <View style={styles.rowMiddle}>
                   <Text style={[type.bodyStrong, { color: colors.text }]} numberOfLines={1}>
                     {item.description || 'Sin descripción'}
