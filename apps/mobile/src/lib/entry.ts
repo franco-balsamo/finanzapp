@@ -82,7 +82,11 @@ export async function loadEntryContext(userId: string | undefined): Promise<Entr
   // El userId viene de la sesión de la app: sin red, `getSession()` da null si el token venció.
   const today = todayInArgentina();
   try {
-    const ctx = await fetchEntryContext(today);
+    // Con el token vencido y sin red, supabase-js espera hasta 30 s el refresco: a los 5 s se usa la copia.
+    const ctx = await Promise.race([
+      fetchEntryContext(today),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('network request failed: timeout')), 5000)),
+    ]);
     if (userId) {
       const stored: StoredContext = {
         methods: ctx.methods,
@@ -111,20 +115,23 @@ export async function loadEntryContext(userId: string | undefined): Promise<Entr
 }
 
 async function fetchEntryContext(today: ISODate): Promise<EntryContext> {
+  // Sin reintentos: sin red, la hoja abre ya con la copia (postgrest-js reintenta los GET 7 s).
   const [cards, accounts, recent, keywords, overrides] = await Promise.all([
     supabase
       .from('cards')
       .select('id, bank, network, last4, is_favorite, close_day, due_day')
       .is('archived_at', null)
-      .order('created_at'),
-    supabase.from('accounts').select('id, name, currency').is('deleted_at', null).order('created_at'),
+      .order('created_at')
+      .retry(false),
+    supabase.from('accounts').select('id, name, currency').is('deleted_at', null).order('created_at').retry(false),
     supabase
       .from('movements')
       .select('card_id, account_id, date')
       .eq('type', 'expense')
-      .gte('date', addDays(today, -29)),
-    supabase.from('category_keywords').select('word, category_id'),
-    supabase.from('statement_overrides').select('card_id, period, close_date, due_date'),
+      .gte('date', addDays(today, -29))
+      .retry(false),
+    supabase.from('category_keywords').select('word, category_id').retry(false),
+    supabase.from('statement_overrides').select('card_id, period, close_date, due_date').retry(false),
   ]);
   const cardRows = check(cards) as {
     id: string; bank: string; network: CardNetwork; last4: string; is_favorite: boolean; close_day: number; due_day: number;

@@ -199,7 +199,7 @@ La pregunta aparece solo para gastos con fecha anterior al último cierre, así 
 - **"¿Ya lo pagaste?":** no se pregunta (§3, "Gastos que se cargan tarde").
 - **Qué espera y qué falla:**
   - siguen **pendientes** y se reintentan: los errores de red, los errores del servidor y la sesión vencida;
-  - quedan como **"No se pudo guardar"** los rechazos de la base, por ejemplo una tarjeta archivada desde otro teléfono o una cuenta borrada;
+  - quedan como **"No se pudo guardar"** los rechazos de la base, por ejemplo una tarjeta que ya se eliminó (pasados los 7 días de archivada). Una tarjeta archivada sí acepta el gasto, porque su deuda sigue contando (§3);
   - si el gasto ya había llegado (mismo identificador), cuenta como enviado.
 - **Cuándo se envía:** al abrir la app, al iniciar sesión, al volver a la app, cada 30 segundos mientras haya pendientes y después de cada gasto que se guarda bien. De a uno y en el orden en que se cargaron.
 - **Una cola por cuenta:** cerrar sesión no la borra; se envía cuando vuelve a entrar esa misma cuenta. Otra cuenta en el mismo teléfono no la ve. Borrar la cuenta (§10) sí la borra.

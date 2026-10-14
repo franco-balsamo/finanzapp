@@ -21,6 +21,9 @@ export const supabase = createClient(url, key, {
   },
 });
 
+// Donde supabase-js guarda la sesión ("sb-<ref>-auth-token"): `SessionProvider` la lee sin red.
+export const authStorageKey = (supabase.auth as unknown as { storageKey: string }).storageKey;
+
 // Refresca el token solo con la app en primer plano (guía de Supabase para Expo).
 if (Platform.OS !== 'web') {
   AppState.addEventListener('change', (state) => {

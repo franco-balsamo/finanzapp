@@ -7,6 +7,7 @@ import {
   home,
   money,
   moneyInWords,
+  pendingSummary,
   SYSTEM_CATEGORY_IDS,
   todayInArgentina,
   UNCATEGORIZED,
@@ -31,6 +32,7 @@ import { Section } from '../../../components/Section';
 import { useToast } from '../../../components/Toast';
 import { CATEGORIES, categoryLabel } from '../../../lib/categories';
 import { onWalletChanged } from '../../../lib/events';
+import { usePendingQueue } from '../../../lib/pending';
 import type { FxKind } from '../../../lib/fx';
 import { loadHome, markNoticeRead } from '../../../lib/home';
 import { useSession, type UserSettings } from '../../../lib/session';
@@ -95,6 +97,7 @@ export default function Home() {
   const [readIds, setReadIds] = useState<ReadonlySet<string>>(new Set());
 
   const userId = session?.user.id;
+  const pending = pendingSummary(usePendingQueue(userId).queue);
   const fxReference = settings?.fx_reference;
   const load = useCallback(() => {
     if (!userId || !fxReference) return;
@@ -165,6 +168,22 @@ export default function Home() {
             )}
           </Pressable>
         </View>
+
+        {/* 02 §5, "Sin conexión": arriba de los avisos y también con Inicio en error. */}
+        {pending.count ? (
+          <Pressable
+            onPress={() => router.push('/movimientos')}
+            accessibilityRole="button"
+            style={({ pressed }) => [panel, styles.banner, pressed && styles.pressed]}
+          >
+            <Text style={[type.body, styles.flex, { color: pending.failed ? colors.error : colors.text }]}>
+              {pending.failed
+                ? `${pending.failed} ${pending.failed === 1 ? 'gasto no se pudo guardar' : 'gastos no se pudieron guardar'}`
+                : `${pending.count} ${pending.count === 1 ? 'gasto sin enviar' : 'gastos sin enviar'}`}
+            </Text>
+            <Text style={[type.title, { color: colors.textMuted }]}>›</Text>
+          </Pressable>
+        ) : null}
 
         {failed ? (
           <View style={styles.state}>

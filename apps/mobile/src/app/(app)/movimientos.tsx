@@ -1,13 +1,17 @@
 import {
   addDays,
   formatMoney,
+  fromDbNumeric,
   moneyInWords,
   movementList,
+  paymentMethodLabel,
   periodMonthName,
   todayInArgentina,
   type ISODate,
   type MovementFilter,
   type MovementListRow,
+  type PaymentMethod,
+  type PendingExpense,
   type Period,
 } from '@mangos/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -18,10 +22,12 @@ import { CategoryIcon } from '../../components/CategoryIcon';
 import { Chip } from '../../components/Chip';
 import { Fab, FAB_SPACE } from '../../components/Fab';
 import { Mono } from '../../components/Mono';
+import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
 import { categoryLabel } from '../../lib/categories';
 import { onWalletChanged } from '../../lib/events';
+import { retryPending, usePendingQueue } from '../../lib/pending';
 import { useSession } from '../../lib/session';
 import { loadWalletInput } from '../../lib/wallet';
 import { layout, radius, type } from '../../theme/tokens';
@@ -68,6 +74,7 @@ export default function Movements() {
   const [monthsOpen, setMonthsOpen] = useState(false);
 
   const userId = session?.user.id;
+  const pending = usePendingQueue(userId);
   const fxReference = settings?.fx_reference;
   const load = useCallback(() => {
     if (!userId || !fxReference) return;
@@ -114,6 +121,25 @@ export default function Movements() {
             Movimientos
           </Text>
         </View>
+
+        {/* 02 §5, "Sin conexión": arriba de todo, sin filtros, aunque la lista no haya cargado. */}
+        {pending.queue.length && userId ? (
+          <View>
+            <Text style={[styles.dayHeader, { color: colors.textMuted, borderBottomColor: colors.line }]} accessibilityRole="header">
+              Sin enviar
+            </Text>
+            {pending.queue.map((item, i) => (
+              <PendingRow
+                key={item.id}
+                item={item}
+                methods={pending.methods}
+                last={i === pending.queue.length - 1}
+                onRetry={() => retryPending(userId, item.id)}
+                onEdit={() => router.push({ pathname: '/cargar', params: { pendingId: item.id } })}
+              />
+            ))}
+          </View>
+        ) : null}
 
         {failed && !loaded ? (
           <View style={styles.state}>
@@ -262,6 +288,60 @@ function MovementRow({ row, last, onPress }: { row: MovementListRow; last: boole
   );
 }
 
+/** Un gasto de la cola: "Pendiente", o "No se pudo guardar" con Reintentar y Editar (DESIGN.md, "Fila de movimiento"). */
+function PendingRow(props: {
+  item: PendingExpense;
+  methods: readonly PaymentMethod[];
+  last: boolean;
+  onRetry: () => void;
+  onEdit: () => void;
+}) {
+  const { item, methods, last, onRetry, onEdit } = props;
+  const { colors } = useTheme();
+  const { row } = item;
+  const method = methods.find((m) => m.id === (row.card_id ?? row.account_id));
+  const methodLabel = method ? paymentMethodLabel(method) : null;
+  const amount = fromDbNumeric(row.amount, row.currency);
+  const failed = item.status === 'failed';
+  const label = [row.description, methodLabel, moneyInWords(amount), failed ? 'no se pudo guardar' : 'pendiente de envío']
+    .filter(Boolean)
+    .join(', ');
+
+  return (
+    <View style={!last && { borderBottomWidth: 1, borderBottomColor: colors.line }}>
+      <View style={styles.row} accessible accessibilityRole="text" accessibilityLabel={label}>
+        <CategoryIcon categoryId={row.category_id} size="md" />
+        <View style={styles.rowMiddle}>
+          <Text style={[type.bodyStrong, { color: colors.text }]} numberOfLines={1}>
+            {row.description}
+          </Text>
+          {methodLabel ? (
+            <Text style={[type.caption, { color: colors.textMuted }]} numberOfLines={1}>
+              {withMono(methodLabel)}
+            </Text>
+          ) : null}
+        </View>
+        <View style={styles.rowRight}>
+          <Text style={[type.money, { color: colors.text }]} maxFontSizeMultiplier={1.3}>
+            {formatMoney(amount)}
+          </Text>
+          {failed ? (
+            <Text style={[type.caption, { color: colors.error }]}>No se pudo guardar</Text>
+          ) : (
+            <Pill label="Pendiente" variant="neutral" />
+          )}
+        </View>
+      </View>
+      {failed ? (
+        <View style={styles.pendingActions}>
+          <Button title="Reintentar" variant="link" onPress={onRetry} />
+          <Button title="Editar" variant="link" onPress={onEdit} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -283,4 +363,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, minHeight: layout.minTouch },
   rowMiddle: { flex: 1, minWidth: 0 },
   rowRight: { alignItems: 'flex-end', maxWidth: '45%' },
+  pendingActions: { flexDirection: 'row', gap: 16, paddingLeft: 48, paddingBottom: 8 },
 });

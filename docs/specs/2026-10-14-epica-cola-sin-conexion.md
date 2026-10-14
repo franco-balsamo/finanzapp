@@ -156,7 +156,7 @@ export function classifySaveError(input: { status?: number; code?: string; netwo
 | Situación | Qué pasa |
 |---|---|
 | Sin señal y sin copia del contexto (primer uso offline) | La hoja muestra el error de hoy (`loadFailed`) |
-| La copia del contexto tiene una tarjeta que se archivó en otro teléfono | El envío da 4xx: "No se pudo guardar". Editar permite elegir otro medio de pago |
+| La copia del contexto tiene una tarjeta que se eliminó en otro teléfono | El envío da 4xx (`23503`): "No se pudo guardar". Editar permite elegir otro medio de pago. Una tarjeta solo archivada acepta el gasto (verificado el 14/10) |
 | Mismo gasto enviado dos veces (corte después de que llegó) | `23505`: cuenta como enviado y sale de la cola |
 | Se envía mientras la persona toca "Deshacer" | Si ya llegó, `deleteExpense(id)`; si no, sale de la cola |
 | La sesión venció sin señal | 401: queda `pending`. Al volver la señal, supabase-js refresca el token y se envía |
@@ -212,12 +212,25 @@ C-1 docs: 30 min · C-2 core con tests: 1 h · C-3 cola, envío y copia: 2 h · 
 - Encolar la categoría aprendida.
 - `netinfo` o `expo-network`.
 
+## Implementado el 14/10
+
+C-1 a C-5 en `main`. Probado en Chrome headless contra la base local (390, claro), cortando la red con la intercepción de pedidos de puppeteer en lugar de apagar Kong: 20 de 20 chequeos (`offline.mjs` en el scratchpad de la sesión). Diferencias con lo de arriba:
+
+- **Una tarjeta archivada no rechaza el gasto:** la base no lo impide y la deuda sigue contando (02 §3). El rechazo real es una tarjeta o cuenta que ya no existe (`23503`). Se corrigieron 02 §5 y los ejemplos de esta spec.
+- **Arranque en frío sin red:** la app cerrada y abierta sin señal iba a la bienvenida (no podía leer `user_settings`) o, con el token vencido, quedaba en blanco hasta 30 s y después iba al login. Ahora `SessionProvider` arranca con la sesión guardada (solo `SIGNED_OUT` la saca) y con una copia de los ajustes (`mangos.settings.<userId>`, que borrar la cuenta también borra).
+- **Sin reintentos en las lecturas de la hoja y de los ajustes** (`.retry(false)`): postgrest-js reintenta los GET 7 s cuando falla la red. Además, el contexto de la hoja espera como máximo 5 s antes de usar la copia (con el token vencido, supabase-js espera el refresco).
+- **"¿Ya lo pagaste?" contestado "Sí" y la señal se corta al guardar:** no va a la cola, porque la cola no guarda pagos. La hoja queda abierta con "Sin conexión. Probá de nuevo." y, en la carga por texto, esas líneas quedan en el campo.
+- **`saveExpense`:** los 5xx y 401 ahora cuentan como `'offline'` (la hoja los encola).
+- **Inicio** cuenta los que fallaron: "2 gastos no se pudieron guardar".
+
+Falta E-2 en el teléfono contra `mangos`.
+
 ## Definición de terminado
 
 1. Con el backend apagado y la copia del contexto guardada, la hoja abre, guarda y muestra el toast "Guardado en el teléfono · se envía cuando tengas señal".
 2. Ese gasto aparece en "Sin enviar" con "Pendiente", y en Inicio se ve "1 gasto sin enviar", aunque las dos pantallas estén en error.
 3. Al prender el backend, a los ≤30 s el gasto está en `movements` con su cotización, una sola vez, y desaparece de "Sin enviar".
-4. Un gasto que la base rechaza (tarjeta archivada) queda "No se pudo guardar". Reintentar lo vuelve a mandar y Editar abre la hoja con sus datos.
+4. Un gasto que la base rechaza (tarjeta eliminada) queda "No se pudo guardar". Reintentar lo vuelve a mandar y Editar abre la hoja con sus datos.
 5. "Deshacer" saca el gasto de la cola, o lo borra de la base si ya llegó.
 6. 02 §3 y §5 y `DESIGN.md` actualizados antes del código.
 7. Pasan Vitest, pgTAP y el typecheck. E-2 probado en el teléfono contra `mangos`.

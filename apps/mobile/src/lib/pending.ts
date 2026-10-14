@@ -2,13 +2,15 @@
 // y se envían solos cuando vuelve la señal. La lógica de estados está en core (`pendingQueue.ts`).
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { applyOutcome, enqueue, nextToSend, remove, retry, type PendingExpense } from '@mangos/core';
-import { useEffect } from 'react';
+import { applyOutcome, enqueue, nextToSend, remove, retry, type PaymentMethod, type PendingExpense } from '@mangos/core';
+import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 import { deleteExpense, entryContextKey, expenseRow, sendExpense, type ExpenseDraft } from './entry';
-import { onWalletChanged, pendingChanged, walletChanged } from './events';
+import { onPendingChanged, onWalletChanged, pendingChanged, walletChanged } from './events';
 
 const queueKey = (userId: string) => `mangos.pending.${userId}`;
+/** Copia de los ajustes en el teléfono: sin red, la app abre igual (la usa `SessionProvider`). */
+export const settingsKey = (userId: string) => `mangos.settings.${userId}`;
 
 export async function loadQueue(userId: string): Promise<PendingExpense[]> {
   const raw = await AsyncStorage.getItem(queueKey(userId));
@@ -112,7 +114,7 @@ export function usePendingSender(userId: string | undefined): void {
 /** Borrar la cuenta (02 §10) borra también lo guardado en el teléfono. */
 export async function clearLocalData(userId: string): Promise<void> {
   const broken = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(`${queueKey(userId)}.broken.`));
-  await AsyncStorage.multiRemove([queueKey(userId), entryContextKey(userId), ...broken]);
+  await AsyncStorage.multiRemove([queueKey(userId), entryContextKey(userId), settingsKey(userId), ...broken]);
   pendingChanged();
 }
 
@@ -121,4 +123,28 @@ export async function loadPendingRow(userId: string, id: string): Promise<Pendin
   const item = (await loadQueue(userId)).find((p) => p.id === id);
   if (!item) throw new Error('El gasto ya no está en la cola');
   return item.row;
+}
+
+/**
+ * La cola para "Sin enviar" e Inicio, con los medios de pago de la copia del contexto (para nombrarlos
+ * sin red). Se vuelve a leer con cada cambio de la cola.
+ */
+export function usePendingQueue(userId: string | undefined): { queue: PendingExpense[]; methods: PaymentMethod[] } {
+  const [state, setState] = useState<{ queue: PendingExpense[]; methods: PaymentMethod[] }>({ queue: [], methods: [] });
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    const read = async () => {
+      const [queue, ctx] = await Promise.all([loadQueue(userId), AsyncStorage.getItem(entryContextKey(userId))]);
+      const methods = ctx ? ((JSON.parse(ctx) as { methods: PaymentMethod[] }).methods ?? []) : [];
+      if (!cancelled) setState({ queue, methods });
+    };
+    read().catch((error) => console.warn('Cola sin conexión', error));
+    const off = onPendingChanged(() => void read().catch(() => undefined));
+    return () => {
+      cancelled = true;
+      off();
+    };
+  }, [userId]);
+  return state;
 }
