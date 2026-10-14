@@ -33,6 +33,7 @@
 | [2026-10-09-spec-ajustes.md](2026-10-09-spec-ajustes.md) | Spec de Ajustes: perfil, dólar y tema, avisos por tarjeta y no molestar, exportar, borrar la cuenta con código y `set_card_alert` |
 | [2026-10-07-historial-estado.md](2026-10-07-historial-estado.md) | Historial movido desde `estado-y-proximos-pasos.md`: lo que cambió el 7/10 y lo hecho hasta el primer deploy |
 | [2026-10-14-spec-cola-sin-conexion.md](2026-10-14-spec-cola-sin-conexion.md) | /spec de la cola sin conexión (épica C-1 a C-5): copia del contexto de la hoja, cola por usuario en AsyncStorage, reintento sin dependencias, "Sin enviar" en Movimientos e Inicio y "¿Ya lo pagaste?" que no se pregunta sin señal |
+| [2026-10-14-spec-push-de-avisos.md](2026-10-14-spec-push-de-avisos.md) | /spec del push de los avisos (épica P-1 a P-7): solo Android con un development build de EAS y FCM, `push_tokens`, `claim_push_batch` que manda cada aviso a lo sumo una vez y solo dentro de las 24 h, cron `send-push` cada 5 min, permiso al entrar a Inicio e interruptor en Ajustes |
 
 La fuente de verdad es `02-reglas-de-negocio.md` junto con `03-modelo-de-datos.md`.
 

@@ -33,7 +33,9 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Índices de claves foráneas (14/10):** `20261014120000_foreign_key_indexes` indexa las 24 claves foráneas que marcaba el advisor; aplicada en `mangos`, donde el advisor ya no marca ninguna. Los avisos de "Unused Index" son esperables con índices nuevos. El test pgTAP `23_foreign_key_indexes` falla si se suma una clave foránea sin índice.
 
-- **Primer paso de la próxima sesión:** elegir la próxima tanda (ver "Próximos pasos"). Las pantallas de la v1 están todas hechas; lo que queda es lo de "Antes de la beta".
+- **Push de los avisos (14/10):** spec aprobada (`docs/specs/2026-10-14-epica-push-de-avisos.md`, P-1 a P-7; decisiones en `docs/decisiones/2026-10-14-spec-push-de-avisos.md`). Sin implementar. P-5 tiene pasos de Fran: una cuenta de Expo y el proyecto de Firebase con la app `com.francobalsamo.mangos`.
+
+- **Primer paso de la próxima sesión:** implementar el push (P-1 a P-4 no dependen de Fran; P-5 sí).
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -88,7 +90,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - **Íconos de categoría:** hechos el 14/10. Están en los consumos del detalle de tarjeta y en los chips de categoría de la hoja (`Chip` recibe `icon`). Probados en headless, falta verlos en el teléfono.
 2. **Antes de la beta:**
    - T12: plan pago de Supabase y cómo pausa los proyectos;
-   - el envío del push de los avisos, cuando la app registre tokens;
+   - el envío del push de los avisos: spec aprobada el 14/10, sin implementar;
    - Maestro (T11);
    - la Auth de producción: remitente con dominio propio (Resend o Brevo) y la URL del sitio;
    - legal: consultar con un abogado e inscribir la base de datos (Ley 25.326).
