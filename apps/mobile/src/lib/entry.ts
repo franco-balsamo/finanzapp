@@ -341,6 +341,8 @@ export const WARNING_TEXT: Record<LineWarning, string> = {
 export interface BatchResult {
   /** Los ids que quedaron guardados, en orden. */
   saved: string[];
+  /** Los que quedaron en el teléfono, sin señal (02 §5, "Sin conexión"). */
+  queued: string[];
   /** Los pagos de "¿Ya lo pagaste?" que se registraron con esos gastos. */
   payments: LatePayment[];
   /** Sin dólar tarjeta de la fecha para descontar de una cuenta en otra moneda: quedan en el campo. */
@@ -350,23 +352,28 @@ export interface BatchResult {
 }
 
 /**
- * Guarda las líneas listas de a una, cada una con su id (D-5). Si se corta la señal, para ahí: al
- * reintentar, las que ya habían llegado cuentan como guardadas y no se duplican.
+ * Guarda las líneas listas de a una, cada una con su id (D-5). Sin señal, las que no llevan pagos de
+ * "¿Ya lo pagaste?" van a la cola con `enqueue` y se envían solas; con pagos, la tanda para ahí y
+ * quedan en el campo. Un rechazo de la base también la corta. Al reintentar, las que ya habían
+ * llegado cuentan como guardadas y no se duplican.
  */
 export async function saveBatch(
   lines: readonly ResolvedLine[],
   ctx: EntryContext,
+  enqueue: (draft: ExpenseDraft) => Promise<unknown>,
   payments: ReadonlyMap<string, readonly LatePayment[]> = new Map(),
 ): Promise<BatchResult> {
-  const result: BatchResult = { saved: [], payments: [], noRate: [], failure: null };
+  const result: BatchResult = { saved: [], queued: [], payments: [], noRate: [], failure: null };
   const rates = new Map<ISODate, Rate | null>();
+  // Con la copia del contexto ni se intenta: lo manda el envío automático.
+  let offline = ctx.fromCache;
   for (const line of lines) {
     const method = ctx.methods.find((m) => m.id === line.methodId);
     if (!method || !line.amount) continue;
     const account = method.kind === 'account' ? ctx.accounts.get(method.id) : undefined;
     let debited: Money | null = null;
     if (account && account.currency !== line.amount.currency) {
-      if (!rates.has(line.date)) rates.set(line.date, await cardRateOn(line.date));
+      if (!rates.has(line.date)) rates.set(line.date, offline ? null : await cardRateOn(line.date));
       const r = rates.get(line.date);
       if (!r) {
         result.noRate.push(line.id);
@@ -375,7 +382,7 @@ export async function saveBatch(
       debited = convert(line.amount, r, account.currency);
     }
     const linePayments = payments.get(line.id) ?? [];
-    const failure = await saveExpense({
+    const draft: ExpenseDraft = {
       id: line.id,
       origin: 'text',
       date: line.date,
@@ -385,7 +392,14 @@ export async function saveBatch(
       installments: line.installments,
       categoryId: line.categoryId,
       debited,
-    }, linePayments);
+    };
+    const failure = offline ? 'offline' : await saveExpense(draft, linePayments);
+    if (failure === 'offline' && !linePayments.length) {
+      offline = true;
+      await enqueue(draft);
+      result.queued.push(line.id);
+      continue;
+    }
     if (failure) {
       result.failure = failure;
       break;

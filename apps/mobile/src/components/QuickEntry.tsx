@@ -2,6 +2,7 @@ import {
   alreadyPaidQuestion,
   assignLineIds,
   batchSavedText,
+  queuedToastText,
   batchSaveLabel,
   batchTexts,
   formatMoney,
@@ -35,6 +36,7 @@ import {
 } from '../lib/entry';
 import { walletChanged } from '../lib/events';
 import { revertPayments } from '../lib/payments';
+import { enqueueExpense, undoPending } from '../lib/pending';
 import { useSession } from '../lib/session';
 import { radius, type } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
@@ -108,7 +110,8 @@ export function QuickEntry({ defaultCardId }: Props) {
 
   async function save() {
     if (!ctx || !session || !settings || !ready.length) return;
-    const late = lateDrafts(ready, ctx).filter((d) => mayBeLate(ctx, d.cardId, d.date));
+    // Sin señal no se pregunta "¿Ya lo pagaste?" (02 §3): cuenta como "No".
+    const late = ctx.fromCache ? [] : lateDrafts(ready, ctx).filter((d) => mayBeLate(ctx, d.cardId, d.date));
     if (late.length) {
       setSaving(true);
       const impacts = await loadLateImpacts(session.user.id, settings, late);
@@ -135,13 +138,14 @@ export function QuickEntry({ defaultCardId }: Props) {
   }
 
   async function commit(lines: ResolvedLine[], payments: ReadonlyMap<string, LatePayment[]>) {
-    if (!ctx) return;
+    if (!ctx || !session) return;
+    const userId = session.user.id;
     setQuestion(null);
     setSaving(true);
     setNote(null);
-    const result = await saveBatch(lines, ctx, payments);
+    const result = await saveBatch(lines, ctx, (draft) => enqueueExpense(userId, draft), payments);
     setSaving(false);
-    keepOnly(new Set(result.saved));
+    keepOnly(new Set([...result.saved, ...result.queued]));
 
     const problems: string[] = [];
     if (result.failure) {
@@ -150,16 +154,18 @@ export function QuickEntry({ defaultCardId }: Props) {
     if (result.noRate.length) problems.push('Falta el dólar tarjeta para descontar de la cuenta.');
     setNote(problems.length ? `${problems.join(' ')} Probá de nuevo.` : null);
 
-    if (!result.saved.length) return;
-    walletChanged();
-    const saved = result.saved;
+    const { saved, queued } = result;
+    if (!saved.length && !queued.length) return;
+    if (saved.length) walletChanged();
     const paymentIds = result.payments.map((p) => p.id);
-    toast(batchSavedText(saved.length) + paymentsToastSuffix(result.payments), {
+    const text = queued.length ? queuedToastText(saved.length, queued.length) : batchSavedText(saved.length);
+    toast(text + paymentsToastSuffix(result.payments), {
       label: 'Deshacer',
       onPress: async () => {
         let ok = true;
         if (paymentIds.length) ok = await revertPayments(paymentIds).then(() => true, () => false);
-        if (ok) ok = await deleteExpenses(saved);
+        if (ok && saved.length) ok = await deleteExpenses(saved);
+        if (ok && queued.length) await undoPending(userId, queued);
         walletChanged();
         toast(ok ? (saved.length === 1 ? 'Gasto borrado' : 'Gastos borrados') : 'No se pudieron borrar. Probá de nuevo.');
       },

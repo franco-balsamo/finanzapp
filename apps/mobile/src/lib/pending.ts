@@ -115,3 +115,10 @@ export async function clearLocalData(userId: string): Promise<void> {
   await AsyncStorage.multiRemove([queueKey(userId), entryContextKey(userId), ...broken]);
   pendingChanged();
 }
+
+/** El borrador de la cola que se edita en la hoja, con la misma forma que un gasto guardado. */
+export async function loadPendingRow(userId: string, id: string): Promise<PendingExpense['row']> {
+  const item = (await loadQueue(userId)).find((p) => p.id === id);
+  if (!item) throw new Error('El gasto ya no está en la cola');
+  return item.row;
+}

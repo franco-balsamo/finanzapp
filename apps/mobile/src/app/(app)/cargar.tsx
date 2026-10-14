@@ -5,6 +5,7 @@ import {
   expenseShareFor,
   rate as toRate,
   recentGroups,
+  queuedToastText,
   savedToastText,
   splitParts,
   splitRemainder,
@@ -69,6 +70,7 @@ import {
   type SavedExpense,
   WARNING_TEXT,
 } from '../../lib/entry';
+import { enqueueExpense, flushPending, loadPendingRow, removePending, undoPending } from '../../lib/pending';
 import { CATEGORIES } from '../../lib/categories';
 import { walletChanged } from '../../lib/events';
 import {
@@ -132,12 +134,15 @@ export default function AddExpense() {
   // Desde el detalle de una tarjeta, la hoja abre con esa tarjeta elegida (02 §5).
   // Desde el detalle de un grupo, abre con ese grupo; con `groupExpenseId`, edita ese gasto (G-5).
   // Con `movementId`, edita un gasto personal o completa un "Sin medio de pago" (L-5).
-  const { cardId, groupId: groupParam, groupExpenseId, movementId: editId } = useLocalSearchParams<{
+  // Con `pendingId`, edita un gasto que todavía está en la cola sin conexión (02 §5).
+  const { cardId, groupId: groupParam, groupExpenseId, movementId: editMovementId, pendingId } = useLocalSearchParams<{
     cardId?: string;
     groupId?: string;
     groupExpenseId?: string;
     movementId?: string;
+    pendingId?: string;
   }>();
+  const editId = editMovementId ?? pendingId;
 
   // El id lo genera el teléfono al abrir la hoja: reintentar nunca duplica (02 §5).
   const newId = useRef(randomUUID()).current;
@@ -347,8 +352,8 @@ export default function AddExpense() {
 
   // Editar un gasto personal: la hoja abre con todo lo guardado, también el medio actual en las fichas.
   useEffect(() => {
-    if (!editId || !ctx || saved || savedFailed) return;
-    loadExpense(editId).then(
+    if (!editId || !ctx || !session || saved || savedFailed) return;
+    (pendingId ? loadPendingRow(session.user.id, pendingId) : loadExpense(editId)).then(
       (e) => {
         setSaved(e);
         setAmount(amountInputText(fromDbNumeric(e.amount, e.currency).minor));
@@ -368,7 +373,7 @@ export default function AddExpense() {
       },
       () => setSavedFailed(true),
     );
-  }, [editId, ctx, saved, savedFailed]);
+  }, [editId, pendingId, ctx, session, saved, savedFailed]);
 
   // Gasto en otra moneda que el grupo: se propone tu dólar de referencia de la fecha (D8), editable.
   useEffect(() => {
@@ -490,7 +495,8 @@ export default function AddExpense() {
     };
 
     // Un gasto en un resumen que ya cerró: si ese resumen estaba pagado, se pregunta antes de guardar.
-    if (method.kind === 'card' && mayBeLate(ctx, method.id, expenseDate)) {
+    // Sin señal (o un borrador de la cola) no se pregunta: cuenta como "No" (02 §3).
+    if (method.kind === 'card' && !ctx.fromCache && !pendingId && mayBeLate(ctx, method.id, expenseDate)) {
       setSaving(true);
       const impacts = await loadLateImpacts(session.user.id, settings, [
         { id, cardId: method.id, date: expenseDate, amount: draft.amount, installments: draft.installments },
@@ -624,7 +630,7 @@ export default function AddExpense() {
   async function removeExpense() {
     setSaving(true);
     setSaveError(null);
-    const ok = await deleteExpense(id);
+    const ok = pendingId && session ? await removePending(session.user.id, pendingId).then(() => true, () => false) : await deleteExpense(id);
     if (!ok) {
       setSaving(false);
       setSaveError('No pudimos borrar el gasto. Probá de nuevo.');
@@ -654,7 +660,11 @@ export default function AddExpense() {
     if (!ctx || !session || !settings) return;
     setSaving(true);
     setSaveError(null);
-    const failure = editId ? await updateExpense(draft, payments) : await saveExpense(draft, payments);
+    if (pendingId) return queue(draft, false);
+    // Con la copia del contexto ni se intenta: lo manda el envío automático.
+    const failure = editId ? await updateExpense(draft, payments) : ctx.fromCache ? 'offline' : await saveExpense(draft, payments);
+    // Sin señal, un gasto nuevo va a la cola. Si se contestó "Sí", la hoja espera: no se pierden los pagos.
+    if (failure === 'offline' && !editId && !payments.length) return queue(draft, true);
     if (failure) {
       setSaving(false);
       setSaveError(failure === 'offline' ? 'Sin conexión. Probá de nuevo.' : 'No pudimos guardar el gasto. Probá de nuevo.');
@@ -686,6 +696,32 @@ export default function AddExpense() {
     });
   }
 
+  /** Guarda en el teléfono (02 §5, "Sin conexión"). La categoría corregida no se aprende sin señal. */
+  async function queue(draft: ExpenseDraft, isNew: boolean) {
+    if (!session) return;
+    const userId = session.user.id;
+    try {
+      await enqueueExpense(userId, draft);
+    } catch {
+      setSaving(false);
+      setSaveError('No pudimos guardar el gasto. Probá de nuevo.');
+      return;
+    }
+    void flushPending(userId);
+    router.back();
+    if (!isNew) {
+      toast('Guardaste los cambios');
+      return;
+    }
+    toast(queuedToastText(0, 1), {
+      label: 'Deshacer',
+      onPress: async () => {
+        await undoPending(userId, [draft.id]);
+        toast('Gasto borrado');
+      },
+    });
+  }
+
   const cardSelected = method?.kind === 'card';
   const accountName = (p: LatePayment) => ctx?.accounts.get(p.fromAccountId)?.name ?? 'una cuenta';
 
@@ -697,6 +733,9 @@ export default function AddExpense() {
         </Text>
         <Button title="✕" variant="ghost" onPress={() => router.back()} accessibilityLabel="Cerrar" />
       </View>
+      {ctx?.fromCache && !editMovementId && !groupExpenseId ? (
+        <Text style={[type.caption, styles.offline, { color: colors.textMuted }]}>Sin conexión: se guarda en el teléfono</Text>
+      ) : null}
 
       <KeyboardAwareScrollView
         contentContainerStyle={[styles.content, question && styles.frozen]}
@@ -1125,6 +1164,7 @@ const styles = StyleSheet.create({
   sheet: { flex: 1 },
   flex: { flex: 1 },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16 },
+  offline: { paddingHorizontal: 20 },
   content: { padding: 20, paddingTop: 8, gap: 14 },
   block: { gap: 6 },
   quick: { borderWidth: 1, borderRadius: radius.sm, paddingVertical: 9, paddingHorizontal: 10, minHeight: 44, justifyContent: 'center' },
