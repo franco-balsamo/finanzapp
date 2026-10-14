@@ -192,7 +192,13 @@ Lo que una tarea diaria no pudo hacer, para revisarlo: id, job, ref_id, error, f
 |---|---|
 | **notifications** | id, user_id, alert_id, title, body, severity, kind (`card_closing`/`card_due`; nulo en las de grupo), data (jsonb: `{"card_ids"}` para abrir el detalle con la carga por texto), deliver_after (cuándo puede salir el push, con el no molestar), created_at, sent_at, read_at |
 
-Sin fila en `alerts` para una tarjeta, los dos avisos están prendidos y el de vencimiento es a 2 días. El envío del push llega con la app (cuando registre los tokens de dispositivo): va a mandar las que tienen `deliver_after` vencido, `sent_at` nulo y `notify_push`.
+Sin fila en `alerts` para una tarjeta, los dos avisos están prendidos y el de vencimiento es a 2 días. El push (cron `send-push`, cada 5 minutos) manda las que tienen `sent_at` nulo, `deliver_after` vencido hace menos de 24 horas, `notify_push` prendido y algún token; `sent_at` se marca antes de llamar a Expo (02 §9).
+
+### `push_tokens`
+| token (pk, `ExponentPushToken[…]`, hasta 200 caracteres) | user_id (se borra con el usuario) | updated_at |
+|---|---|---|
+
+Un token es un teléfono: si otra cuenta lo registra, pasa a esa cuenta. Sin políticas de RLS: solo se toca por las funciones de push.
 
 Ejemplos de `params` según el tipo:
 - **precio:** `{asset:"mep", op:">", value:1600}`
@@ -221,6 +227,9 @@ Ejemplos de `params` según el tipo:
 | `export_account()` | *(T10)* Solo `authenticated`. JSON con `version`, `exported_at`, `user` (id, email y ajustes), cuentas, tarjetas, cierres corregidos, pagos de tarjeta, movimientos, palabras, alertas, avisos y grupos. Montos como texto y sin `user_id` en las filas. Grupos activos: como los ve en la app (`private.group_snapshot`, lo mismo que la web de invitados) más su lugar con su alias; grupos que dejó o eliminados: solo el nombre y su lugar. Nunca trae alias ni `user_id` de los demás |
 | `card_notice_input()` | Solo `service_role` (la leen las Edge Functions `card-closing-notices` y `card-due-notices`). Por usuario con tarjetas no archivadas: `notify_push`, el no molestar y, por tarjeta, días, límite, cierres corregidos, consumos, pagos (con lo descontado en la moneda de la cuenta), las alertas (sin fila: prendidas y vencimiento a 2 días) y lo ya avisado. Montos como texto y fechas en hora de Argentina |
 | `record_card_notices(notices)` | Solo `service_role`. Guarda los avisos que calculó core (`closingNotices`/`dueNotices`): cada uno en su bloque, se saltea entero si alguna tarjeta y resumen ya se avisó o si una tarjeta no es de ese usuario; las fallas van a `private.job_failures`. La notificación lleva `kind`, `data` (`{"card_ids"}`) y `deliver_after` |
+| `register_push_token(token)` / `unregister_push_token(token)` | Security definer, solo `authenticated`. `register` guarda el token del teléfono para `auth.uid()` (si era de otra cuenta, pasa a esta). `unregister` lo borra solo si es tuyo; si no, no hace nada |
+| `claim_push_batch(max_rows = 500)` | Solo `service_role` (la llama la Edge Function `send-push`). Con `for update skip locked`, marca `sent_at` en los avisos listos para push y devuelve `(notification_id, token, title, body, data)`, una fila por token. Un segundo llamado no devuelve los mismos |
+| `drop_push_tokens(tokens)` | Solo `service_role`. Borra los tokens a los que Expo respondió `DeviceNotRegistered` |
 | `private.deliver_after(quiet_from, quiet_to, at)` | Interna. Si `at` cae en el no molestar (horas de Argentina, puede pasar la medianoche), el próximo `quiet_to:00`; si no, `at` |
 | `private.group_snapshot(gid)` | Interna. El grupo como lo ve un integrante: nombre, moneda, integrantes (`id`, `display_name`, `has_account`, `active`), gastos no borrados con partes y pagos no anulados. La usan `get_guest_group` y `export_account` |
 | `ingest_fx_rates(source, payload)` | Solo `service_role` (la llaman las Edge Functions `fx-rates` y `fx-history`). `source` es `dolarapi` o `argentinadatos` (si no, `22023`) y `payload` es la lista que devolvió la API. Mapea las casas, saltea las filas que no se pueden leer (venta nula, ≤ 0 o en texto, fecha inválida), no duplica, y después vuelve a calcular los movimientos con `fx_pending`. Devuelve cuántas filas nuevas guardó |

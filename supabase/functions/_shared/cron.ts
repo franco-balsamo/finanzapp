@@ -30,7 +30,9 @@ export async function rpc<T>(name: string, args: Record<string, unknown> = {}): 
     body: JSON.stringify(args),
   });
   if (!res.ok) throw new Error(`${name} respondió ${res.status}: ${await res.text()}`);
-  return await res.json();
+  // Una función que devuelve void responde sin cuerpo.
+  const text = await res.text();
+  return text ? JSON.parse(text) : (undefined as T);
 }
 
 /** Arma el handler de un cron: 401 sin el secreto, 502 si algo falla. */

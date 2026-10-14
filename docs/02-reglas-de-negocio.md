@@ -423,9 +423,15 @@ Se muestra en pesos o en dólares. En Inicio (antes en la Billetera; spec de Ini
   - Si cierran varias el mismo día: "Cerraron tu Visa ($187.000) y tu Master (sin consumos cargados). ¿Te falta cargar algo?".
   - Si el aviso no salió el día del cierre, sale al día siguiente: "Ayer cerró tu Visa: te vienen $187.000. ¿Te falta cargar algo?". Más tarde, no.
 - **Sin configurar:** los dos avisos están prendidos y el de vencimiento sale 2 días antes. Las tarjetas archivadas no reciben avisos.
-- **Canales:** notificación en la v1; mail y WhatsApp en el plan Pro.
+- **Canales:** notificación push en la v1 (solo Android en la beta); mail y WhatsApp en el plan Pro.
+- **Push** (spec del push, 14/10):
+  - La app pide el permiso una sola vez, al entrar a Inicio después de la bienvenida. Si se niega, no lo vuelve a pedir por su cuenta.
+  - Se mandan todos los avisos, también los de grupo. Tocar uno con tarjeta abre el detalle con la carga por texto; los demás abren Inicio. Tocarlo lo marca como leído.
+  - Sale cuando termina el no molestar, con un cron cada 5 minutos. Los avisos que tendrían que haber salido hace más de 24 horas ya no salen por push, pero siguen en Inicio.
+  - Cada aviso sale **a lo sumo una vez**: si el envío falla, no se reintenta.
+  - Al cerrar sesión, ese teléfono deja de recibir los avisos de la cuenta.
 - **No molestar:** entre la hora de inicio y la de fin, los avisos se guardan y salen al terminar. Al prenderlo en Ajustes, va de 22:00 a 8:00; si se eligen dos horas iguales, se apaga (spec de Ajustes, 9/10).
-- **Configuración en Ajustes** (spec de Ajustes, 9/10): por cada tarjeta de crédito activa, el aviso de cierre (sí/no) y el de vencimiento (sí/no y días antes, de 1 a 5). Al apagar el de vencimiento, se guardan los días para cuando se vuelva a prender. Sin el interruptor general de notificaciones hasta que se mande el push.
+- **Configuración en Ajustes** (spec de Ajustes, 9/10): por cada tarjeta de crédito activa, el aviso de cierre (sí/no) y el de vencimiento (sí/no y días antes, de 1 a 5). Al apagar el de vencimiento, se guardan los días para cuando se vuelva a prender. Arriba, el interruptor general "Notificaciones" (`notify_push`); si el permiso del teléfono está negado, dice "Desactivadas en el teléfono" y abre los ajustes del sistema (spec del push, 14/10).
 - Las alertas **informan hechos, nunca recomiendan** comprar o vender, para no entrar en asesoramiento regulado por la CNV.
 
 ## 10. Tu cuenta y tus datos
