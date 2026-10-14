@@ -70,7 +70,7 @@ import {
   type SavedExpense,
   WARNING_TEXT,
 } from '../../lib/entry';
-import { enqueueExpense, flushPending, loadPendingRow, removePending, undoPending } from '../../lib/pending';
+import { enqueueExpense, flushPending, loadPendingRow, removePending, undoPending, updatePending } from '../../lib/pending';
 import { CATEGORIES } from '../../lib/categories';
 import { walletChanged } from '../../lib/events';
 import {
@@ -701,7 +701,12 @@ export default function AddExpense() {
     if (!session) return;
     const userId = session.user.id;
     try {
-      await enqueueExpense(userId, draft);
+      if (isNew) await enqueueExpense(userId, draft);
+      else if (!(await updatePending(userId, draft))) {
+        setSaving(false);
+        setSaveError('Este gasto ya se envió: editalo desde Movimientos.');
+        return;
+      }
     } catch {
       setSaving(false);
       setSaveError('No pudimos guardar el gasto. Probá de nuevo.');

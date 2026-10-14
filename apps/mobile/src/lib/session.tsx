@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Session } from '@supabase/supabase-js';
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { settingsKey, usePendingSender } from './pending';
 import { authStorageKey, supabase } from './supabase';
 
@@ -35,16 +35,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [sessionKnown, setSessionKnown] = useState(false);
   // Los ajustes van con el usuario al que pertenecen, así un cambio de sesión no muestra los de otro.
   const [loaded, setLoaded] = useState<{ userId: string; settings: UserSettings | null } | null>(null);
-  const loadedRef = useRef(loaded);
-  loadedRef.current = loaded;
 
   useEffect(() => {
     // Sin red y con el token vencido, getSession reintenta el refresco hasta 30 s y da null aunque la
     // sesión siga guardada: se arranca con la guardada (02 §5, "Sin conexión"). Solo SIGNED_OUT la saca.
+    let signedOut = false;
     AsyncStorage.getItem(authStorageKey)
       .then((raw) => {
         const stored = raw ? (JSON.parse(raw) as Session) : null;
-        if (!stored?.user) return;
+        // Si auth-js ya la invalidó mientras se leía, no se revive.
+        if (!stored?.user || signedOut) return;
         setSession((current) => current ?? stored);
         setSessionKnown(true);
       })
@@ -54,6 +54,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setSessionKnown(true);
     });
     const { data } = supabase.auth.onAuthStateChange((event, next) => {
+      if (event === 'SIGNED_OUT') signedOut = true;
       if (next || event === 'SIGNED_OUT') setSession(next);
       setSessionKnown(true);
     });
@@ -66,20 +67,27 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (!userId) return;
     let cancelled = false;
     // Primero la copia del teléfono (sin red la app abre igual) y después lo que trae la base.
-    AsyncStorage.getItem(settingsKey(userId))
-      .then((raw) => {
-        if (raw && !cancelled) setLoaded((current) => (current?.userId === userId ? current : { userId, settings: JSON.parse(raw) }));
-      })
-      .catch(() => undefined);
+    const readCopy = () =>
+      AsyncStorage.getItem(settingsKey(userId))
+        .then((raw) => (raw ? (JSON.parse(raw) as UserSettings) : null))
+        .catch(() => null);
+    readCopy().then((copy) => {
+      if (copy && !cancelled) setLoaded((current) => (current?.userId === userId ? current : { userId, settings: copy }));
+    });
     supabase
       .from('user_settings')
       .select(SETTINGS_COLUMNS)
       .eq('user_id', userId)
       .single()
       .retry(false)
-      .then(({ data, error, status }) => {
-        // status 0: sin red. Queda la copia; sin copia, se trata como bienvenida pendiente.
-        if (cancelled || (status === 0 && loadedRef.current?.userId === userId)) return;
+      .then(async ({ data, error, status }) => {
+        if (cancelled) return;
+        // status 0: sin red. Queda la copia, aunque todavía no se haya leído; sin copia, bienvenida pendiente.
+        if (status === 0) {
+          const copy = await readCopy();
+          if (!cancelled) setLoaded((current) => (current?.userId === userId ? current : { userId, settings: copy }));
+          return;
+        }
         const settings = error ? null : (data as UserSettings);
         if (settings) AsyncStorage.setItem(settingsKey(userId), JSON.stringify(settings)).catch(() => undefined);
         setLoaded({ userId, settings });

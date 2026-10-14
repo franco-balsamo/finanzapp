@@ -167,7 +167,7 @@ export function QuickEntry({ defaultCardId }: Props) {
         if (ok && saved.length) ok = await deleteExpenses(saved);
         if (ok && queued.length) await undoPending(userId, queued);
         walletChanged();
-        toast(ok ? (saved.length === 1 ? 'Gasto borrado' : 'Gastos borrados') : 'No se pudieron borrar. Probá de nuevo.');
+        toast(ok ? (saved.length + queued.length === 1 ? 'Gasto borrado' : 'Gastos borrados') : 'No se pudieron borrar. Probá de nuevo.');
       },
     });
   }

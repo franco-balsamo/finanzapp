@@ -44,6 +44,19 @@ export function enqueueExpense(userId: string, draft: ExpenseDraft): Promise<Pen
   return mutate(userId, (queue) => enqueue(queue, item));
 }
 
+/**
+ * "Guardar cambios" de un borrador de la cola. false si ya no está (se envió con la hoja abierta): la
+ * edición no se encola, porque el envío la descartaría como repetida (`23505`).
+ */
+export async function updatePending(userId: string, draft: ExpenseDraft): Promise<boolean> {
+  let found = false;
+  await mutate(userId, (queue) => {
+    found = queue.some((p) => p.id === draft.id);
+    return found ? enqueue(queue, { id: draft.id, row: expenseRow(draft), status: 'pending', error: null, queuedAt: new Date().toISOString() }) : queue;
+  });
+  return found;
+}
+
 /** "Reintentar" de un gasto que no se pudo guardar. */
 export async function retryPending(userId: string, id: string): Promise<void> {
   await mutate(userId, (queue) => retry(queue, id));
