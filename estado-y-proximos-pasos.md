@@ -23,15 +23,15 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Lista de movimientos (8 y 9/10):** hecha (L-1 a L-5, `docs/specs/2026-10-08-epica-lista-de-movimientos.md`) y **probada en el teléfono contra `mangos` el 9/10**. Incluye `docs/02` §5 "Editar y borrar un gasto", `movementList` en core, `update_expense_with_payments` (aplicada en `mangos`), la pantalla `/movimientos` (desde Inicio y la Billetera) y la hoja de carga en modo editar, con borrar y completar los "Sin medio de pago". Sin probar en el teléfono, por falta de datos en `mangos`: completar un "Sin medio de pago" y "¿Ya lo pagaste?" al editar (sí probados en headless). Los datos de prueba locales de la lista estaban en el scratchpad de la sesión del 8/10: después de un `db reset` hay que armarlos de nuevo.
 
-- **Pendientes chicos cerrados (9/10):** Inicio ordena los grupos en dólares por su saldo en pesos; la hoja bloquea el monto de un gasto de grupo solo si otro lo tiene en sus finanzas (`group_expense_money_locked`); "¿Ya lo pagaste?" también funciona en un gasto de grupo con tarjeta (`save_group_expense_with_movement` recibe `payments`); en el login, un 5xx dice "Algo falló" y no "Sin conexión"; `ponytail-review` de los cambios del 8/10, con un arreglo en la lista de movimientos. Migraciones aplicadas en `mangos`. **Sin probar en el teléfono:** la pregunta en un gasto de grupo y el monto habilitado cuando el que pagó no lo sumó a sus finanzas.
+- **Pendientes chicos cerrados (9/10):** Inicio ordena los grupos en dólares por su saldo en pesos; la hoja bloquea el monto de un gasto de grupo solo si otro lo tiene en sus finanzas (`group_expense_money_locked`); "¿Ya lo pagaste?" también funciona en un gasto de grupo con tarjeta (`save_group_expense_with_movement` recibe `payments`); en el login, un 5xx dice "Algo falló" y no "Sin conexión"; `ponytail-review` de los cambios del 8/10, con un arreglo en la lista de movimientos. Migraciones aplicadas en `mangos`. La pregunta en un gasto de grupo con tarjeta se **probó en el teléfono contra `mangos` el 14/10** (resumen de septiembre de la Bna Visa pagado y un gasto de "Asado" del 22/9). **Sin probar en el teléfono:** el monto habilitado cuando el que pagó no lo sumó a sus finanzas.
 
 - **Ajustes (9 al 13/10):** hecha (A-1 a A-6, `docs/specs/2026-10-09-epica-ajustes.md`; decisiones en `docs/decisiones/2026-10-09-spec-ajustes.md`) y **probada en el teléfono contra `mangos` el 13/10**: pantalla `/ajustes` desde el engranaje de Inicio, avisos por tarjeta (`set_card_alert`), no molestar, exportar y borrar la cuenta. Borrar se probó con cuentas `+borrar`: con un login de más de 10 minutos pide el código del mail. Sin probar en el teléfono: un guardado que falla y vuelve atrás, y el `Switch` con reducir movimiento.
 
 - **Íconos de categoría (14/10):** `CategoryIcon` en los consumos del detalle de tarjeta y en los chips de categoría de la hoja de carga, como en el prototipo. Probado en Chrome headless contra la base local (390 y 320, claro y oscuro); sin probar en el teléfono.
 
-- **Cola sin conexión (14/10):** spec aprobado (`docs/specs/2026-10-14-epica-cola-sin-conexion.md`, C-1 a C-5; decisiones en `docs/decisiones/2026-10-14-spec-cola-sin-conexion.md`). Sin implementar.
+- **Cola sin conexión (14/10):** spec aprobado (`docs/specs/2026-10-14-epica-cola-sin-conexion.md`, C-1 a C-5; decisiones en `docs/decisiones/2026-10-14-spec-cola-sin-conexion.md`). **Hechos C-1** (02 §3 y §5, `DESIGN.md`) **y C-2** (`packages/core/src/entry/pendingQueue.ts` y `queuedToastText`, 18 tests). En `queuedToastText(saved, queued)`, `saved` son los que llegaron a la base, sin contar los encolados. Faltan C-3, C-4 y C-5.
 
-- **Primer paso de la próxima sesión:** implementar la cola sin conexión, empezando por C-1 (docs) y C-2 (core, con `tdd`).
+- **Primer paso de la próxima sesión:** C-3 de la cola sin conexión (`lib/pending.ts`, envío automático y copia del contexto).
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -46,7 +46,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
   - **Vercel `mangos`** (equipo `franco-balsamos-projects`): https://mangos-kohl.vercel.app, deploy automático en cada push a `main`. **La conexión de Vercel de Claude solo lee**: cambios de proyecto o variables los hace Fran.
   - **`apps/mobile/.env`** (no se commitea) apunta a `mangos` para probar en el teléfono: `EXPO_PUBLIC_SUPABASE_URL=https://pkhjsrknnijjygzwvtkn.supabase.co`, la clave publicable de `mangos` y `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app`. Para probar contra la base local, pasar las variables locales al comando (las del entorno le ganan al `.env`).
 
-- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 494 tests pgTAP, 362 de Vitest y el typecheck.
+- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 494 tests pgTAP, 380 de Vitest y el typecheck.
 
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.
