@@ -32,6 +32,7 @@
 | [2026-10-08-spec-lista-de-movimientos.md](2026-10-08-spec-lista-de-movimientos.md) | Spec de la lista de movimientos: pantalla `/movimientos`, editar y borrar gastos, completar los "Sin medio de pago" y `update_expense_with_payments` |
 | [2026-10-09-spec-ajustes.md](2026-10-09-spec-ajustes.md) | Spec de Ajustes: perfil, dólar y tema, avisos por tarjeta y no molestar, exportar, borrar la cuenta con código y `set_card_alert` |
 | [2026-10-07-historial-estado.md](2026-10-07-historial-estado.md) | Historial movido desde `estado-y-proximos-pasos.md`: lo que cambió el 7/10 y lo hecho hasta el primer deploy |
+| [2026-10-14-spec-cola-sin-conexion.md](2026-10-14-spec-cola-sin-conexion.md) | /spec de la cola sin conexión (épica C-1 a C-5): copia del contexto de la hoja, cola por usuario en AsyncStorage, reintento sin dependencias, "Sin enviar" en Movimientos e Inicio y "¿Ya lo pagaste?" que no se pregunta sin señal |
 
 La fuente de verdad es `02-reglas-de-negocio.md` junto con `03-modelo-de-datos.md`.
 

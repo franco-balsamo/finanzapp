@@ -29,7 +29,9 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Íconos de categoría (14/10):** `CategoryIcon` en los consumos del detalle de tarjeta y en los chips de categoría de la hoja de carga, como en el prototipo. Probado en Chrome headless contra la base local (390 y 320, claro y oscuro); sin probar en el teléfono.
 
-- **Primer paso de la próxima sesión:** que Fran elija la próxima épica de "Próximos pasos" y arrancar con su `/spec`.
+- **Cola sin conexión (14/10):** spec aprobado (`docs/specs/2026-10-14-epica-cola-sin-conexion.md`, C-1 a C-5; decisiones en `docs/decisiones/2026-10-14-spec-cola-sin-conexion.md`). Sin implementar.
+
+- **Primer paso de la próxima sesión:** implementar la cola sin conexión, empezando por C-1 (docs) y C-2 (core, con `tdd`).
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -80,7 +82,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - **Inicio:** hecho y probado en el teléfono el 8/10.
    - **Lista de movimientos:** hecha y probada en el teléfono el 9/10.
    - **Ajustes (T10):** hecha y probada en el teléfono el 13/10.
-   - **Cola sin conexión (T8):** gastos guardados en el teléfono con "Pendiente" y envío automático.
+   - **Cola sin conexión (T5/7A):** spec aprobado el 14/10, falta implementar.
    - **Íconos de categoría:** hechos el 14/10. Están en los consumos del detalle de tarjeta y en los chips de categoría de la hoja (`Chip` recibe `icon`). Probados en headless, falta verlos en el teléfono.
 2. **Antes de la beta:**
    - T12: plan pago de Supabase y cómo pausa los proyectos;
