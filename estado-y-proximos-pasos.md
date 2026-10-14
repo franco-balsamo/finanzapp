@@ -31,6 +31,8 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Cola sin conexión (14/10):** hecha (C-1 a C-5, `docs/specs/2026-10-14-epica-cola-sin-conexion.md`, con la nota "Implementado el 14/10"; decisiones en `docs/decisiones/2026-10-14-spec-cola-sin-conexion.md`). Probada en Chrome headless contra la base local (20 chequeos, cortando la red con puppeteer), incluido el arranque en frío sin red con el token vencido. **Probada en el teléfono contra `mangos` el 14/10** (E-2): un gasto desde la hoja en modo avión (deshecho con "Deshacer") y 3 líneas por texto (test1 a test3), que llegaron una vez cada una y con su cotización. En el teléfono la carga por texto está en el detalle de la tarjeta, que no abre sin señal: el corte tiene que pasar con el detalle ya abierto.
 
+- **Índices de claves foráneas (14/10):** `20261014120000_foreign_key_indexes` indexa las 24 claves foráneas que marcaba el advisor; aplicada en `mangos`, donde el advisor ya no marca ninguna. Los avisos de "Unused Index" son esperables con índices nuevos. El test pgTAP `23_foreign_key_indexes` falla si se suma una clave foránea sin índice.
+
 - **Primer paso de la próxima sesión:** elegir la próxima tanda (ver "Próximos pasos"). Las pantallas de la v1 están todas hechas; lo que queda es lo de "Antes de la beta".
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
@@ -42,11 +44,11 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - **Datos de prueba en `mangos`:** la cuenta de Fran (`balsamote96@gmail.com`) tiene la tarjeta "Bna Visa" (··2337), la cuenta "Caja De Ahorros - Bna", gastos del 7/10 y el grupo "Asado" (Fran, Juan y Caro provisorios). Existe además el usuario `balsamote96+juan@gmail.com`, que reclamó y deshizo el lugar de Juan. Son datos reales de prueba: no borrarlos sin preguntar.
 
 - **Servicios configurados:**
-  - **Supabase `mangos`** (`pkhjsrknnijjygzwvtkn`): migraciones al día hasta `20261009160000_set_card_alert`. Se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. Mail con el código: SMTP de Gmail (remitente "Mangos", contraseña de aplicación) con la plantilla `supabase/templates/codigo.html`; unos 500 mails por día (Gmail) y 30 por hora (Supabase).
+  - **Supabase `mangos`** (`pkhjsrknnijjygzwvtkn`): migraciones al día hasta `20261014120000_foreign_key_indexes`. Se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. Mail con el código: SMTP de Gmail (remitente "Mangos", contraseña de aplicación) con la plantilla `supabase/templates/codigo.html`; unos 500 mails por día (Gmail) y 30 por hora (Supabase).
   - **Vercel `mangos`** (equipo `franco-balsamos-projects`): https://mangos-kohl.vercel.app, deploy automático en cada push a `main`. **La conexión de Vercel de Claude solo lee**: cambios de proyecto o variables los hace Fran.
   - **`apps/mobile/.env`** (no se commitea) apunta a `mangos` para probar en el teléfono: `EXPO_PUBLIC_SUPABASE_URL=https://pkhjsrknnijjygzwvtkn.supabase.co`, la clave publicable de `mangos` y `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app`. Para probar contra la base local, pasar las variables locales al comando (las del entorno le ganan al `.env`).
 
-- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 494 tests pgTAP, 380 de Vitest y el typecheck.
+- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 495 tests pgTAP, 380 de Vitest y el typecheck.
 
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.
@@ -86,7 +88,6 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - **Íconos de categoría:** hechos el 14/10. Están en los consumos del detalle de tarjeta y en los chips de categoría de la hoja (`Chip` recibe `icon`). Probados en headless, falta verlos en el teléfono.
 2. **Antes de la beta:**
    - T12: plan pago de Supabase y cómo pausa los proyectos;
-   - los índices de las claves foráneas que marcó el advisor (`docs/decisiones/2026-10-04-primer-deploy.md`);
    - el envío del push de los avisos, cuando la app registre tokens;
    - Maestro (T11);
    - la Auth de producción: remitente con dominio propio (Resend o Brevo) y la URL del sitio;

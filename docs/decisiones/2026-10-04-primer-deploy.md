@@ -66,6 +66,6 @@ La respuesta queda en `net._http_response`.
 ## Abierto
 
 - **T12:** precio del plan pago y cómo pausa los proyectos inactivos.
-- **Índices** de las claves foráneas de arriba.
+- ~~**Índices** de las claves foráneas de arriba.~~ Hecho el 14/10: `20261014120000_foreign_key_indexes` indexa las 24 que marcaba el advisor, y el test pgTAP `23_foreign_key_indexes` falla si aparece una clave foránea nueva sin índice.
 - **Contraseña de la base:** para usar `db push` hay que resetearla desde el panel y guardarla en tu gestor de contraseñas.
 - **Auth de producción:** URL del sitio, plantilla del mail con el código y SMTP propio. Va con la app.
