@@ -1,6 +1,6 @@
 ---
 spec_kind: epic
-status: approved
+status: done
 date: 2026-10-14
 ---
 
@@ -223,7 +223,7 @@ C-1 a C-5 en `main`. Probado en Chrome headless contra la base local (390, claro
 - **`saveExpense`:** los 5xx y 401 ahora cuentan como `'offline'` (la hoja los encola).
 - **Inicio** cuenta los que fallaron: "2 gastos no se pudieron guardar".
 
-Falta E-2 en el teléfono contra `mangos`.
+E-2 probado en el teléfono contra `mangos` el 14/10: un gasto desde la hoja (deshecho) y 3 líneas por texto, que llegaron una vez cada una y con su cotización.
 
 ## Definición de terminado
 

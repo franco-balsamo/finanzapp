@@ -29,9 +29,9 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Íconos de categoría (14/10):** `CategoryIcon` en los consumos del detalle de tarjeta y en los chips de categoría de la hoja de carga, como en el prototipo. Probado en Chrome headless contra la base local (390 y 320, claro y oscuro); sin probar en el teléfono.
 
-- **Cola sin conexión (14/10):** hecha (C-1 a C-5, `docs/specs/2026-10-14-epica-cola-sin-conexion.md`, con la nota "Implementado el 14/10"; decisiones en `docs/decisiones/2026-10-14-spec-cola-sin-conexion.md`). Probada en Chrome headless contra la base local (20 chequeos, cortando la red con puppeteer), incluido el arranque en frío sin red con el token vencido. **Falta E-2 en el teléfono contra `mangos`:** modo avión, cargar un gasto y 3 líneas por texto, reconectar y ver 4 gastos con su cotización y sin duplicados. Ojo: en el teléfono la carga por texto está en el detalle de la tarjeta, que no abre sin señal; el corte tiene que pasar con el detalle ya abierto.
+- **Cola sin conexión (14/10):** hecha (C-1 a C-5, `docs/specs/2026-10-14-epica-cola-sin-conexion.md`, con la nota "Implementado el 14/10"; decisiones en `docs/decisiones/2026-10-14-spec-cola-sin-conexion.md`). Probada en Chrome headless contra la base local (20 chequeos, cortando la red con puppeteer), incluido el arranque en frío sin red con el token vencido. **Probada en el teléfono contra `mangos` el 14/10** (E-2): un gasto desde la hoja en modo avión (deshecho con "Deshacer") y 3 líneas por texto (test1 a test3), que llegaron una vez cada una y con su cotización. En el teléfono la carga por texto está en el detalle de la tarjeta, que no abre sin señal: el corte tiene que pasar con el detalle ya abierto.
 
-- **Primer paso de la próxima sesión:** E-2 de la cola sin conexión en el teléfono contra `mangos`. Después, elegir la próxima tanda.
+- **Primer paso de la próxima sesión:** elegir la próxima tanda (ver "Próximos pasos"). Las pantallas de la v1 están todas hechas; lo que queda es lo de "Antes de la beta".
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -82,7 +82,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - **Inicio:** hecho y probado en el teléfono el 8/10.
    - **Lista de movimientos:** hecha y probada en el teléfono el 9/10.
    - **Ajustes (T10):** hecha y probada en el teléfono el 13/10.
-   - **Cola sin conexión (T5/7A):** hecha el 14/10, falta probarla en el teléfono.
+   - **Cola sin conexión (T5/7A):** hecha y probada en el teléfono el 14/10.
    - **Íconos de categoría:** hechos el 14/10. Están en los consumos del detalle de tarjeta y en los chips de categoría de la hoja (`Chip` recibe `icon`). Probados en headless, falta verlos en el teléfono.
 2. **Antes de la beta:**
    - T12: plan pago de Supabase y cómo pausa los proyectos;
