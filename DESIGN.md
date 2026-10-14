@@ -402,6 +402,10 @@ Una grilla de 3 columnas: ícono de categoría de 36, texto que se estira y un b
 | Lista vacía | Texto `textMuted` 14, padding 16 × 4, que dice qué cargar: "Todavía no tenés cuentas. Sumá tu banco, tu billetera virtual o el efectivo." |
 | Cargando | Falta definir (ver I-11) |
 | Recién guardada | El prototipo no lo tiene. Sugerencia: un destello de `primarySoft` de 1,4 s, como el `.filled` del formulario |
+| Sin enviar, `pending` (14/10) | En la sección "Sin enviar", arriba de `/movimientos`: pill `neutral` "Pendiente" en lugar de la categoría. Sin acción |
+| Sin enviar, `failed` (14/10) | Texto `caption` `error` "No se pudo guardar" en lugar de la categoría, y debajo dos botones `link`: "Reintentar" y "Editar" |
+
+**Fila "sin enviar" de Inicio** (14/10): arriba de los avisos, si hay gastos en la cola. "2 gastos sin enviar" (o "1 gasto sin enviar") en `body`; si alguno falló, "1 gasto no se pudo guardar" en `error`. Tocarla abre `/movimientos`. Se ve aunque Inicio esté en error.
 
 **Otras filas** que comparten esta grilla con medidas distintas: alerta (ícono de 28, padding 12), integrante (32 y 8), categoría (30 y 8), cómo saldar (sin ícono, 10) y ajustes (sin ícono, 12). ⚠ Ver I-4.
 

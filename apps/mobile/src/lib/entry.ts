@@ -21,6 +21,7 @@ import {
   type Money,
   type PaymentMethod,
   type PaymentUse,
+  type PendingRow,
   type ProposedPayment,
   type Rate,
   type ResolvedLine,
@@ -194,7 +195,7 @@ export function paymentJson(p: LatePayment) {
   };
 }
 
-function expenseRow(draft: ExpenseDraft) {
+export function expenseRow(draft: ExpenseDraft): PendingRow {
   return {
     id: draft.id,
     type: 'expense',

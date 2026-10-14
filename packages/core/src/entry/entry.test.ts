@@ -12,7 +12,7 @@ import {
   type PaymentUse,
 } from './paymentMethods.ts';
 import { parseQuickEntry, parseQuickEntryLine, parseShortDate, type QuickEntryContext } from './quickEntry.ts';
-import { formatShortDate, savedToastText } from './toast.ts';
+import { formatShortDate, queuedToastText, savedToastText } from './toast.ts';
 
 // Hoy: lunes 5/10/2026.
 const today = '2026-10-05';
@@ -414,6 +414,24 @@ describe('toast después de guardar (9A)', () => {
 
   it('fecha corta', () => {
     expect(formatShortDate('2026-01-05')).toBe('5/1');
+  });
+});
+
+describe('toast con gastos guardados en el teléfono (cola sin conexión)', () => {
+  it('un gasto de la hoja', () => {
+    expect(queuedToastText(0, 1)).toBe('Guardado en el teléfono · se envía cuando tengas señal');
+  });
+
+  it('carga por texto, todos al teléfono', () => {
+    expect(queuedToastText(0, 2)).toBe('2 gastos guardados en el teléfono · se envían cuando tengas señal');
+  });
+
+  it('carga por texto, unos enviados y otros al teléfono', () => {
+    expect(queuedToastText(3, 2)).toBe('3 gastos guardados · 2 en el teléfono, se envían cuando tengas señal');
+  });
+
+  it('carga por texto, uno y uno', () => {
+    expect(queuedToastText(1, 1)).toBe('1 gasto guardado · 1 en el teléfono, se envía cuando tengas señal');
   });
 });
 

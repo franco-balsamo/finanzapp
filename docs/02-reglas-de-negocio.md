@@ -111,6 +111,10 @@ En los ejemplos que siguen, la Visa cierra el 30 y vence el 10, salvo el de cuot
 
 La pregunta aparece solo para gastos con fecha anterior al último cierre, así que no suma pasos a la carga común.
 
+- **Sin conexión** (spec de la cola sin conexión, 14/10, D5): si el gasto se guarda en el teléfono (§5, "Sin conexión"), **no se pregunta**. Al enviarse, cuenta como si se hubiera contestado **No**: el resumen queda en "Pago parcial" o "Vencido", con la diferencia pendiente. La Billetera ya muestra "A pagar" o "Vencido" en la tarjeta, y el pago se registra desde su detalle, como cualquier otro. Tampoco se pregunta después, cuando el gasto llega a la base.
+
+**Ejemplo sin conexión:** la Visa cierra el 30 y septiembre se pagó completo ($100.000). Sin señal cargás "28/09 12000 farmacia visa". Al enviarse, septiembre pasa a $112.000 en "Pago parcial", con $12.000 pendientes, y no se pregunta nada.
+
 ### Estados de un resumen
 
 | Estado | Condición |
@@ -181,7 +185,28 @@ La pregunta aparece solo para gastos con fecha anterior al último cierre, así 
   Excepción del sistema: los gastos que entran al reclamar un lugar en un grupo quedan "Sin medio de pago" (§7).
 - **Categoría** (diseño, 1/10): ninguna viene preseleccionada. Se deduce de la descripción con las palabras clave de la carga por texto; si no hay coincidencia, queda "Otros". Si la persona la corrige, se aprende como dice "Aprendizaje de categorías" en la carga por texto.
 - **Medio de pago en la hoja de carga** (diseño, 1/10): se muestran la favorita, los dos medios más usados en 30 días y "Otro…". Ninguno viene marcado.
-- **Sin conexión** (diseño y eng review, 1/10): el gasto se guarda en el teléfono y se envía cuando vuelve la señal. Cada gasto tiene un identificador que genera el teléfono, así que reintentar **nunca lo duplica**. Si el envío falla por otra causa, el gasto queda como "No se pudo guardar", con Reintentar o Editar.
+- **Sin conexión** (diseño y eng review, 1/10): el gasto se guarda en el teléfono y se envía cuando vuelve la señal. Cada gasto tiene un identificador que genera el teléfono, así que reintentar **nunca lo duplica**. Si el envío falla por otra causa, el gasto queda como "No se pudo guardar", con Reintentar o Editar. El detalle está en "Sin conexión", más abajo.
+
+### Sin conexión
+
+> **✅ Decidido** (spec de la cola sin conexión, 14/10, D1 a D10).
+
+- **Qué se guarda en el teléfono:** solo los **gastos personales nuevos**, desde la hoja y desde la carga por texto. Editar, borrar, los gastos de grupo, los pagos y los ajustes siguen pidiendo señal. Los grupos sin conexión quedan para la fase 2.
+- **La hoja abre sin señal** con lo último que trajo del servidor (medios de pago, palabras de categoría y cierres corregidos). La fecha de hoy se calcula al abrir. Si nunca trajo nada, no abre, como siempre.
+- **Cotización:** la completa el servidor con la **fecha del gasto** cuando el gasto llega (§1), no la del día en que se envía.
+- **No suman** a saldos, resúmenes ni patrimonio hasta que llegan a la base. Se ven arriba de la lista de movimientos, en "Sin enviar", y en Inicio con "N gastos sin enviar".
+- **Cuenta en otra moneda:** sin señal no hay dólar tarjeta para proponer lo descontado. En la hoja se escribe a mano (el campo ya lo pide). En la carga por texto, la línea queda en el campo con "Falta el dólar tarjeta". Nunca se guarda en el teléfono un gasto al que le falta lo descontado.
+- **"¿Ya lo pagaste?":** no se pregunta (§3, "Gastos que se cargan tarde").
+- **Qué espera y qué falla:**
+  - siguen **pendientes** y se reintentan: los errores de red, los errores del servidor y la sesión vencida;
+  - quedan como **"No se pudo guardar"** los rechazos de la base, por ejemplo una tarjeta archivada desde otro teléfono o una cuenta borrada;
+  - si el gasto ya había llegado (mismo identificador), cuenta como enviado.
+- **Cuándo se envía:** al abrir la app, al iniciar sesión, al volver a la app, cada 30 segundos mientras haya pendientes y después de cada gasto que se guarda bien. De a uno y en el orden en que se cargaron.
+- **Una cola por cuenta:** cerrar sesión no la borra; se envía cuando vuelve a entrar esa misma cuenta. Otra cuenta en el mismo teléfono no la ve. Borrar la cuenta (§10) sí la borra.
+- **Deshacer** (el del aviso de guardado) saca el gasto del teléfono. Si justo se había enviado, lo borra de la base.
+- **La categoría aprendida** no se guarda en el teléfono: sin señal no se aprende.
+
+**Ejemplo:** en el subte, sin señal, cargás "Coto súper" por $12.000 con la Visa. Aparece "Guardado en el teléfono · se envía cuando tengas señal" y en Inicio, "1 gasto sin enviar". Al salir del subte, la app se envía sola: el gasto entra en la Visa con la cotización de ese día y desaparece de "Sin enviar".
 
 ### Editar y borrar un gasto
 

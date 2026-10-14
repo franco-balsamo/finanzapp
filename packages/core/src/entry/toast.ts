@@ -31,3 +31,15 @@ export function savedToastText(input: SavedToastInput): string {
   if (input.kind === 'account') return `Guardado · se descontó de ${input.accountName}`;
   return `Guardado · entra en el resumen del ${formatShortDate(input.closeDate)} (te vienen ${formatTotal(input.statementTotal)})`;
 }
+
+/**
+ * Sin señal, con `queued` gastos guardados en el teléfono y `saved` que sí llegaron (02 §5, "Sin conexión"):
+ * - "Guardado en el teléfono · se envía cuando tengas señal" (uno solo, desde la hoja)
+ * - "2 gastos guardados en el teléfono · se envían cuando tengas señal"
+ * - "3 gastos guardados · 2 en el teléfono, se envían cuando tengas señal"
+ */
+export function queuedToastText(saved: number, queued: number): string {
+  const willSend = queued === 1 ? 'se envía cuando tengas señal' : 'se envían cuando tengas señal';
+  if (saved > 0) return `${saved} ${saved === 1 ? 'gasto guardado' : 'gastos guardados'} · ${queued} en el teléfono, ${willSend}`;
+  return queued === 1 ? `Guardado en el teléfono · ${willSend}` : `${queued} gastos guardados en el teléfono · ${willSend}`;
+}
