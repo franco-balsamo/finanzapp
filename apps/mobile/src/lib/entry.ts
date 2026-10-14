@@ -1,5 +1,6 @@
 import {
   addDays,
+  classifySaveError,
   cardStatementFor,
   closeDate,
   lateImpacts,
@@ -25,8 +26,10 @@ import {
   type ProposedPayment,
   type Rate,
   type ResolvedLine,
+  type SendOutcome,
   type StatementOverride,
 } from '@mangos/core';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { UserSettings } from './session';
 import { impliedRate } from './payments';
 import { supabase } from './supabase';
@@ -53,6 +56,8 @@ export interface EntryContext {
   keywords: Map<string, string>;
   cards: Map<string, EntryCard>;
   accounts: Map<string, EntryAccount>;
+  /** Sin señal, con lo último que se trajo (02 §5, "Sin conexión"): lo que se guarde va a la cola. */
+  fromCache: boolean;
 }
 
 function check<T>(result: { data: T | null; error: unknown }): T {
@@ -60,8 +65,52 @@ function check<T>(result: { data: T | null; error: unknown }): T {
   return result.data as T;
 }
 
-export async function loadEntryContext(): Promise<EntryContext> {
+export const entryContextKey = (userId: string) => `mangos.entryContext.${userId}`;
+
+/** Lo que se guarda en el teléfono: los Map como pares, sin la fecha de hoy (se calcula al abrir). */
+type StoredContext = Pick<EntryContext, 'methods' | 'uses'> & {
+  keywords: [string, string][];
+  cards: [string, EntryCard][];
+  accounts: [string, EntryAccount][];
+};
+
+/**
+ * Trae el contexto de la hoja y guarda una copia en el teléfono. Sin red usa esa copia (D1): la hoja
+ * abre y lo que se guarde va a la cola. Sin red y sin copia, falla como siempre.
+ */
+export async function loadEntryContext(userId: string | undefined): Promise<EntryContext> {
+  // El userId viene de la sesión de la app: sin red, `getSession()` da null si el token venció.
   const today = todayInArgentina();
+  try {
+    const ctx = await fetchEntryContext(today);
+    if (userId) {
+      const stored: StoredContext = {
+        methods: ctx.methods,
+        uses: ctx.uses,
+        keywords: [...ctx.keywords],
+        cards: [...ctx.cards],
+        accounts: [...ctx.accounts],
+      };
+      AsyncStorage.setItem(entryContextKey(userId), JSON.stringify(stored)).catch(() => undefined);
+    }
+    return ctx;
+  } catch (error) {
+    const raw = userId && isNetworkError(error) ? await AsyncStorage.getItem(entryContextKey(userId)) : null;
+    if (!raw) throw error;
+    const stored = JSON.parse(raw) as StoredContext;
+    return {
+      today,
+      methods: stored.methods,
+      uses: stored.uses,
+      keywords: new Map(stored.keywords),
+      cards: new Map(stored.cards),
+      accounts: new Map(stored.accounts),
+      fromCache: true,
+    };
+  }
+}
+
+async function fetchEntryContext(today: ISODate): Promise<EntryContext> {
   const [cards, accounts, recent, keywords, overrides] = await Promise.all([
     supabase
       .from('cards')
@@ -107,6 +156,7 @@ export async function loadEntryContext(): Promise<EntryContext> {
       ]),
     ),
     accounts: new Map(accountRows.map((a) => [a.id, a])),
+    fromCache: false,
   };
 }
 
@@ -213,21 +263,30 @@ export function expenseRow(draft: ExpenseDraft): PendingRow {
 }
 
 /**
- * Guarda el gasto con el id que generó el teléfono al abrir la hoja. Si ese id ya existe (un reintento
- * que sí había llegado), cuenta como guardado: nunca se duplica (02 §5). Con pagos ("¿Ya lo pagaste?"
- * → Sí), gasto y pagos van juntos en `save_expense_with_payments`.
+ * Manda la fila con el id que generó el teléfono al abrir la hoja. Si ese id ya existe (un reintento
+ * que sí había llegado), cuenta como enviado: nunca se duplica (02 §5). Con pagos ("¿Ya lo pagaste?"
+ * → Sí), gasto y pagos van juntos en `save_expense_with_payments`. `retry`: sin red, un 5xx o la
+ * sesión vencida; `failed`: la base lo rechazó.
  */
-export async function saveExpense(draft: ExpenseDraft, payments: readonly LatePayment[] = []): Promise<SaveError | null> {
-  const row = expenseRow(draft);
+export async function sendExpense(
+  row: PendingRow,
+  payments: readonly LatePayment[] = [],
+): Promise<{ outcome: SendOutcome; message: string | null }> {
   try {
-    const { error } = payments.length
+    const { error, status } = payments.length
       ? await supabase.rpc('save_expense_with_payments', { expense: row, payments: payments.map(paymentJson) })
       : await supabase.from('movements').insert(row);
-    if (!error || error.code === '23505') return null;
-    return isNetworkError(error) ? 'offline' : 'failed';
+    if (!error) return { outcome: 'sent', message: null };
+    // status 0: el fetch ni llegó al servidor.
+    return { outcome: classifySaveError({ status, code: error.code, network: status === 0 || isNetworkError(error) }), message: error.message };
   } catch (error) {
-    return isNetworkError(error) ? 'offline' : 'failed';
+    return { outcome: classifySaveError({ network: isNetworkError(error) }), message: String(error) };
   }
+}
+
+export async function saveExpense(draft: ExpenseDraft, payments: readonly LatePayment[] = []): Promise<SaveError | null> {
+  const { outcome } = await sendExpense(expenseRow(draft), payments);
+  return outcome === 'sent' ? null : outcome === 'retry' ? 'offline' : 'failed';
 }
 
 /**

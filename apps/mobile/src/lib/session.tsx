@@ -1,5 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { usePendingSender } from './pending';
 import { supabase } from './supabase';
 
 export interface UserSettings {
@@ -47,6 +48,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const userId = session?.user.id;
+  usePendingSender(userId);
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;

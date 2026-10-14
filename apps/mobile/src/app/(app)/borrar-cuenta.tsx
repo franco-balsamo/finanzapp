@@ -9,6 +9,7 @@ import { useToast } from '../../components/Toast';
 import { authErrorMessage } from '../../lib/authErrors';
 import { loadGroupList } from '../../lib/groups';
 import { useSession } from '../../lib/session';
+import { clearLocalData } from '../../lib/pending';
 import { deleteAccount, exportAccount } from '../../lib/settings';
 import { supabase } from '../../lib/supabase';
 import { type } from '../../theme/tokens';
@@ -38,6 +39,7 @@ export default function DeleteAccount() {
     setBusy(true);
     try {
       if ((await deleteAccount()) === 'deleted') {
+        if (session) await clearLocalData(session.user.id);
         toast('Borramos tu cuenta.');
         // Sin sesión, el layout raíz vuelve al login.
         await signOut();

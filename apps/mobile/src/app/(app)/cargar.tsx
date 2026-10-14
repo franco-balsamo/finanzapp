@@ -200,8 +200,8 @@ export default function AddExpense() {
 
   const load = useCallback(() => {
     setLoadFailed(false);
-    loadEntryContext().then(setCtx, () => setLoadFailed(true));
-  }, []);
+    loadEntryContext(session?.user.id).then(setCtx, () => setLoadFailed(true));
+  }, [session?.user.id]);
   // También al volver de "Sumá una tarjeta o una cuenta".
   useFocusEffect(load);
 

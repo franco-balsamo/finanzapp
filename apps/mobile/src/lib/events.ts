@@ -12,3 +12,15 @@ export function onWalletChanged(listener: Listener): () => void {
 export function walletChanged(): void {
   listeners.forEach((l) => l());
 }
+
+// Aviso de que cambió la cola sin conexión (02 §5, "Sin conexión"): "Sin enviar" e Inicio la vuelven a leer.
+const pendingListeners = new Set<Listener>();
+
+export function onPendingChanged(listener: Listener): () => void {
+  pendingListeners.add(listener);
+  return () => pendingListeners.delete(listener);
+}
+
+export function pendingChanged(): void {
+  pendingListeners.forEach((l) => l());
+}

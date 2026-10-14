@@ -86,7 +86,7 @@ export function QuickEntry({ defaultCardId }: Props) {
 
   function load() {
     setLoadFailed(false);
-    loadEntryContext().then(setCtx, () => setLoadFailed(true));
+    loadEntryContext(session?.user.id).then(setCtx, () => setLoadFailed(true));
   }
 
   function expand() {
