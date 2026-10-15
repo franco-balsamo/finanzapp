@@ -1,6 +1,6 @@
 # Épica: Push de los avisos
 
-Estado: aprobada por Fran el 14/10/2026. P-1 a P-4 implementados y en `mangos`; P-5 (código) y P-6 implementados el 15/10. Faltan los pasos de Fran de P-5 y P-7.
+Estado: aprobada por Fran el 14/10/2026. Implementada (P-1 a P-6) y probada en el teléfono contra `mangos` el 15/10/2026 (P-7). Sin probar: el tap con la app cerrada y un push de grupo.
 
 ## Contexto
 

@@ -33,19 +33,23 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Índices de claves foráneas (14/10):** `20261014120000_foreign_key_indexes` indexa las 24 claves foráneas que marcaba el advisor; aplicada en `mangos`, donde el advisor ya no marca ninguna. Los avisos de "Unused Index" son esperables con índices nuevos. El test pgTAP `23_foreign_key_indexes` falla si se suma una clave foránea sin índice.
 
-- **Push de los avisos (14 y 15/10):** spec aprobada (`docs/specs/2026-10-14-epica-push-de-avisos.md`, P-1 a P-7; decisiones en `docs/decisiones/2026-10-14-spec-push-de-avisos.md`).
-  - **P-1 a P-4 hechos y en `mangos`:** docs, migración `20261014130000_push` (tabla `push_tokens`, `register`/`unregister_push_token`, `claim_push_batch`, `drop_push_tokens` y el cron `send-push` cada 5 minutos), core `notices/push.ts` y la Edge Function `send-push`. Probada en local contra Expo con un token falso (lo borró por `DeviceNotRegistered`). En `mangos` el cron responde 200 con `claimed: 0`.
-  - **P-5 (código) y P-6 hechos, sin probar en un teléfono:** `expo-notifications` y `expo-dev-client`, `android.package` y `googleServicesFile` en `app.json`, `eas.json` (perfil `development`, APK), `apps/mobile/src/lib/push.ts`, permiso al entrar a Inicio, registro y tap en `(app)/_layout.tsx`, `unregisterPush` en `signOut` y la fila "Notificaciones" en Ajustes. En la web y en Expo Go todo es no-op.
-  - **Falta (pasos de Fran, P-5):** cuenta de Expo y `npx eas login`; `npx eas init` (escribe `extra.eas.projectId`); proyecto de Firebase con la app `com.francobalsamo.mangos` y `google-services.json` en `apps/mobile/`; la clave FCM V1 con `npx eas credentials`; `npx eas build --profile development --platform android`. Después, P-7 con el APK.
+- **Push de los avisos (14 y 15/10):** hecha (P-1 a P-7, `docs/specs/2026-10-14-epica-push-de-avisos.md`; decisiones en `docs/decisiones/2026-10-14-spec-push-de-avisos.md`) y **probada en el teléfono contra `mangos` el 15/10** con el development build de EAS.
+  - En `mangos`: migración `20261014130000_push` (tabla `push_tokens`, `register`/`unregister_push_token`, `claim_push_batch`, `drop_push_tokens`, cron `send-push` cada 5 minutos) y la Edge Function `send-push`.
+  - Chequeos de P-7 en el teléfono: el aviso llega con el cron siguiente, tocarlo abre la Bna Visa y lo marca leído (app en segundo plano); con "Notificaciones" apagado no llega y sigue en Inicio; al cerrar sesión el token se borra y no llega; un `deliver_after` futuro no sale antes (cron de las 16:35 lo salteó, llegó a las 16:40) y `private.deliver_after` con no molestar de 16 a 17 da las 17:00. **Sin probar:** el tap con la app cerrada (arranque en frío) y un push de grupo abriendo Inicio.
+  - Bug encontrado en la prueba: en Android 13+ el permiso sin pedir viene como `denied` con `canAskAgain`; ahora se pide en ese caso (`b294934`).
+  - **Build:** proyecto de EAS `@fbalsamo/mangos`, Firebase `mangos-fbalsamo` (`google-services.json` commiteado; la clave de API restringida a FCM Registration, Firebase Cloud Messaging y Firebase Installations), keystore y clave FCM V1 en EAS. APK de desarrollo: build `9a6627ce-6d3e-4495-b9e5-a103950ac294`. Para probar: instalar el APK y `npx expo start --dev-client`. Si se suma una librería nativa, hay que hacer otro build (`npx eas-cli@<versión> build --profile development --platform android`).
+  - Los `console.log` del teléfono ya no salen en la terminal de Metro (React Native 0.77+) y no hay `adb`: para depurar en el teléfono, un `Alert` temporal.
   - `pnpm` tiene una antigüedad mínima de paquetes: `npx expo install` la saltea agregando `minimumReleaseAgeExclude` en `pnpm-workspace.yaml`. No aceptarlo: esperar a que el paquete cumpla el día.
 
-- **Primer paso de la próxima sesión:** si Fran hizo los pasos de P-5, el build de EAS y P-7 en el teléfono.
+- **Primer paso de la próxima sesión:** Fran elige. Lo que queda antes de la beta está en "Próximos pasos".
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
 - **Pendientes chicos:**
   - `markNoticeRead` guarda la hora del teléfono en `read_at`, no `now()` de la base. No se arregla mientras `read_at` se use solo como "leído o no"; si algún día se muestra la hora, pasarlo a la base.
   - Preview y producción de Vercel usan la misma base `mangos`.
+  - Push: un aviso que queda pendiente con "Notificaciones" apagado llega igual si se prende dentro de las 24 horas (regla de la spec). Si molesta, guardar desde cuándo está prendido y no mandar lo anterior.
+  - Push: restringir también la clave de API de Firebase por app Android (`com.francobalsamo.mangos` y SHA-1 `5E:66:84:DB:D0:BF:A3:D6:93:BE:DA:5E:EA:0F:52:F6:43:74:55:4F`). Fran lo hace en Google Cloud.
 
 - **Datos de prueba en `mangos`:** la cuenta de Fran (`balsamote96@gmail.com`) tiene la tarjeta "Bna Visa" (··2337), la cuenta "Caja De Ahorros - Bna", gastos del 7/10 y el grupo "Asado" (Fran, Juan y Caro provisorios). Existe además el usuario `balsamote96+juan@gmail.com`, que reclamó y deshizo el lugar de Juan. Son datos reales de prueba: no borrarlos sin preguntar.
 
@@ -94,7 +98,6 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - **Íconos de categoría:** hechos el 14/10. Están en los consumos del detalle de tarjeta y en los chips de categoría de la hoja (`Chip` recibe `icon`). Probados en headless, falta verlos en el teléfono.
 2. **Antes de la beta:**
    - T12: plan pago de Supabase y cómo pausa los proyectos;
-   - el push de los avisos: base, envío y app hechos; falta el build de EAS (pasos de Fran) y probarlo en el teléfono;
    - Maestro (T11);
    - la Auth de producción: remitente con dominio propio (Resend o Brevo) y la URL del sitio;
    - legal: consultar con un abogado e inscribir la base de datos (Ley 25.326).
