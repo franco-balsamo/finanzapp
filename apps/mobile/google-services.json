@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "869151261221",
+    "project_id": "mangos-fbalsamo",
+    "storage_bucket": "mangos-fbalsamo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:869151261221:android:5a7e209c1fc978c9caf5cc",
+        "android_client_info": {
+          "package_name": "com.francobalsamo.mangos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDLojGl4lEDCxs2J6mB6xzs6zVbcTwgyGA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
