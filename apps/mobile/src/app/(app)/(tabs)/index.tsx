@@ -35,6 +35,7 @@ import { onWalletChanged } from '../../../lib/events';
 import { usePendingQueue } from '../../../lib/pending';
 import type { FxKind } from '../../../lib/fx';
 import { loadHome, markNoticeRead } from '../../../lib/home';
+import { registerPush } from '../../../lib/push';
 import { useSession, type UserSettings } from '../../../lib/session';
 import { layout, radius, type } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
@@ -107,6 +108,10 @@ export default function Home() {
 
   useFocusEffect(load);
   useEffect(() => onWalletChanged(load), [load]);
+  // El permiso del push se pide acá y no en la hoja de carga (D5).
+  useEffect(() => {
+    registerPush({ ask: true }).catch(() => undefined);
+  }, []);
 
   const data = useMemo(() => {
     if (!loaded) return null;

@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { settingsKey, usePendingSender } from './pending';
+import { unregisterPush } from './push';
 import { authStorageKey, supabase } from './supabase';
 
 export interface UserSettings {
@@ -14,9 +15,11 @@ export interface UserSettings {
   /** No molestar (02 §9): hora de 0 a 23, o null sin horario. */
   quiet_from: number | null;
   quiet_to: number | null;
+  /** Interruptor general del push (02 §9). */
+  notify_push: boolean;
 }
 
-const SETTINGS_COLUMNS = 'name, display_currency, fx_reference, theme, onboarded_at, quiet_from, quiet_to';
+const SETTINGS_COLUMNS = 'name, display_currency, fx_reference, theme, onboarded_at, quiet_from, quiet_to, notify_push';
 
 interface SessionState {
   /** true hasta saber si hay sesión y, si la hay, hasta traer los ajustes. */
@@ -117,6 +120,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
+    // Sin señal, la sesión se cierra igual: el token queda hasta que otra cuenta lo registre.
+    await unregisterPush().catch(() => undefined);
     await supabase.auth.signOut();
   }, []);
 

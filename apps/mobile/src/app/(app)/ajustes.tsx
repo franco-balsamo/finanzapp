@@ -1,7 +1,7 @@
 import type { CardAlertSettings } from '@mangos/core';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { AppState, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { Chip } from '../../components/Chip';
 import { Mono } from '../../components/Mono';
@@ -11,6 +11,7 @@ import { Segmented } from '../../components/Segmented';
 import { Switch } from '../../components/Switch';
 import { TextField } from '../../components/TextField';
 import { useToast } from '../../components/Toast';
+import { pushPermission, type PushPermission } from '../../lib/push';
 import { useSession, type UserSettings } from '../../lib/session';
 import { exportAccount, loadCardAlerts, setCardAlert } from '../../lib/settings';
 import { layout, radius, type } from '../../theme/tokens';
@@ -46,12 +47,20 @@ export default function Settings() {
   const [alertsFailed, setAlertsFailed] = useState(false);
   const [editingHour, setEditingHour] = useState<'quiet_from' | 'quiet_to' | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [permission, setPermission] = useState<PushPermission>('unsupported');
 
   const loadAlerts = useCallback(() => {
     setAlertsFailed(false);
     loadCardAlerts().then(setAlerts, () => setAlertsFailed(true));
   }, []);
   useEffect(loadAlerts, [loadAlerts]);
+  // Se vuelve a leer al volver de los ajustes del teléfono.
+  useEffect(() => {
+    const read = () => pushPermission().then(setPermission, () => undefined);
+    read();
+    const sub = AppState.addEventListener('change', (state) => state === 'active' && read());
+    return () => sub.remove();
+  }, []);
 
   if (!settings) return null;
   const current = { ...settings, ...pending };
@@ -167,6 +176,23 @@ export default function Settings() {
       </Section>
 
       <Section title="Avisos">
+        {/* En la web no hay push (spec del 14/10). */}
+        {permission === 'unsupported' ? null : permission === 'denied' ? (
+          <Pressable
+            style={styles.row}
+            onPress={() => Linking.openSettings()}
+            accessibilityRole="button"
+            accessibilityLabel="Notificaciones desactivadas en el teléfono. Abrir los ajustes del teléfono"
+          >
+            <Text style={label}>Notificaciones</Text>
+            <Text style={muted}>Desactivadas en el teléfono</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.row}>
+            <Text style={label}>Notificaciones</Text>
+            <Switch value={current.notify_push !== false} onChange={(notify_push) => save({ notify_push })} accessibilityLabel="Notificaciones" />
+          </View>
+        )}
         {alertsFailed ? (
           <View style={styles.field}>
             <Text style={muted}>No se pudieron cargar los avisos.</Text>

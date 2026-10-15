@@ -1,6 +1,6 @@
 # Épica: Push de los avisos
 
-Estado: aprobada por Fran el 14/10/2026. Sin implementar.
+Estado: aprobada por Fran el 14/10/2026. P-1 a P-4 implementados y en `mangos`; P-5 (código) y P-6 implementados el 15/10. Faltan los pasos de Fran de P-5 y P-7.
 
 ## Contexto
 

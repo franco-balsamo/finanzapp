@@ -1,4 +1,4 @@
-# Mangos: estado y próximos pasos (cierre del 14 de octubre de 2026)
+# Mangos: estado y próximos pasos (cierre del 15 de octubre de 2026)
 
 Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales de Fran para Argentina; el nombre es provisorio.
 
@@ -33,9 +33,13 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 
 - **Índices de claves foráneas (14/10):** `20261014120000_foreign_key_indexes` indexa las 24 claves foráneas que marcaba el advisor; aplicada en `mangos`, donde el advisor ya no marca ninguna. Los avisos de "Unused Index" son esperables con índices nuevos. El test pgTAP `23_foreign_key_indexes` falla si se suma una clave foránea sin índice.
 
-- **Push de los avisos (14/10):** spec aprobada (`docs/specs/2026-10-14-epica-push-de-avisos.md`, P-1 a P-7; decisiones en `docs/decisiones/2026-10-14-spec-push-de-avisos.md`). Sin implementar. P-5 tiene pasos de Fran: una cuenta de Expo y el proyecto de Firebase con la app `com.francobalsamo.mangos`.
+- **Push de los avisos (14 y 15/10):** spec aprobada (`docs/specs/2026-10-14-epica-push-de-avisos.md`, P-1 a P-7; decisiones en `docs/decisiones/2026-10-14-spec-push-de-avisos.md`).
+  - **P-1 a P-4 hechos y en `mangos`:** docs, migración `20261014130000_push` (tabla `push_tokens`, `register`/`unregister_push_token`, `claim_push_batch`, `drop_push_tokens` y el cron `send-push` cada 5 minutos), core `notices/push.ts` y la Edge Function `send-push`. Probada en local contra Expo con un token falso (lo borró por `DeviceNotRegistered`). En `mangos` el cron responde 200 con `claimed: 0`.
+  - **P-5 (código) y P-6 hechos, sin probar en un teléfono:** `expo-notifications` y `expo-dev-client`, `android.package` y `googleServicesFile` en `app.json`, `eas.json` (perfil `development`, APK), `apps/mobile/src/lib/push.ts`, permiso al entrar a Inicio, registro y tap en `(app)/_layout.tsx`, `unregisterPush` en `signOut` y la fila "Notificaciones" en Ajustes. En la web y en Expo Go todo es no-op.
+  - **Falta (pasos de Fran, P-5):** cuenta de Expo y `npx eas login`; `npx eas init` (escribe `extra.eas.projectId`); proyecto de Firebase con la app `com.francobalsamo.mangos` y `google-services.json` en `apps/mobile/`; la clave FCM V1 con `npx eas credentials`; `npx eas build --profile development --platform android`. Después, P-7 con el APK.
+  - `pnpm` tiene una antigüedad mínima de paquetes: `npx expo install` la saltea agregando `minimumReleaseAgeExclude` en `pnpm-workspace.yaml`. No aceptarlo: esperar a que el paquete cumpla el día.
 
-- **Primer paso de la próxima sesión:** implementar el push (P-1 a P-4 no dependen de Fran; P-5 sí).
+- **Primer paso de la próxima sesión:** si Fran hizo los pasos de P-5, el build de EAS y P-7 en el teléfono.
 
 - **Historial:** lo que cambió el 7/10 y lo hecho antes está en `docs/decisiones/2026-10-07-historial-estado.md`. Leelo solo si la tarea lo necesita.
 
@@ -46,11 +50,11 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
 - **Datos de prueba en `mangos`:** la cuenta de Fran (`balsamote96@gmail.com`) tiene la tarjeta "Bna Visa" (··2337), la cuenta "Caja De Ahorros - Bna", gastos del 7/10 y el grupo "Asado" (Fran, Juan y Caro provisorios). Existe además el usuario `balsamote96+juan@gmail.com`, que reclamó y deshizo el lugar de Juan. Son datos reales de prueba: no borrarlos sin preguntar.
 
 - **Servicios configurados:**
-  - **Supabase `mangos`** (`pkhjsrknnijjygzwvtkn`): migraciones al día hasta `20261014120000_foreign_key_indexes`. Se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. Mail con el código: SMTP de Gmail (remitente "Mangos", contraseña de aplicación) con la plantilla `supabase/templates/codigo.html`; unos 500 mails por día (Gmail) y 30 por hora (Supabase).
+  - **Supabase `mangos`** (`pkhjsrknnijjygzwvtkn`): migraciones al día hasta `20261014130000_push`. Se aplican por el MCP (`apply_migration`) y después se corrige `supabase_migrations.schema_migrations.version` a la del nombre del archivo. Mail con el código: SMTP de Gmail (remitente "Mangos", contraseña de aplicación) con la plantilla `supabase/templates/codigo.html`; unos 500 mails por día (Gmail) y 30 por hora (Supabase).
   - **Vercel `mangos`** (equipo `franco-balsamos-projects`): https://mangos-kohl.vercel.app, deploy automático en cada push a `main`. **La conexión de Vercel de Claude solo lee**: cambios de proyecto o variables los hace Fran.
   - **`apps/mobile/.env`** (no se commitea) apunta a `mangos` para probar en el teléfono: `EXPO_PUBLIC_SUPABASE_URL=https://pkhjsrknnijjygzwvtkn.supabase.co`, la clave publicable de `mangos` y `EXPO_PUBLIC_WEB_URL=https://mangos-kohl.vercel.app`. Para probar contra la base local, pasar las variables locales al comando (las del entorno le ganan al `.env`).
 
-- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 495 tests pgTAP, 380 de Vitest y el typecheck.
+- **Estado del código:** todo en `main` (`franco-balsamo/finanzapp`). Pasan 511 tests pgTAP, 387 de Vitest y el typecheck.
 
 - **Cómo se trabajó cada parte:**
   1. Lógica pura en `packages/core` con tests Vitest.
@@ -90,7 +94,7 @@ Nota para retomar en una sesión nueva. Mangos es la app de finanzas personales 
    - **Íconos de categoría:** hechos el 14/10. Están en los consumos del detalle de tarjeta y en los chips de categoría de la hoja (`Chip` recibe `icon`). Probados en headless, falta verlos en el teléfono.
 2. **Antes de la beta:**
    - T12: plan pago de Supabase y cómo pausa los proyectos;
-   - el envío del push de los avisos: spec aprobada el 14/10, sin implementar;
+   - el push de los avisos: base, envío y app hechos; falta el build de EAS (pasos de Fran) y probarlo en el teléfono;
    - Maestro (T11);
    - la Auth de producción: remitente con dominio propio (Resend o Brevo) y la URL del sitio;
    - legal: consultar con un abogado e inscribir la base de datos (Ley 25.326).

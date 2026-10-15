@@ -1,4 +1,6 @@
 import { Stack } from 'expo-router';
+import { useEffect } from 'react';
+import { registerPush, usePushTaps } from '../../lib/push';
 
 const sheet = {
   presentation: 'formSheet' as const,
@@ -8,6 +10,12 @@ const sheet = {
 };
 
 export default function AppLayout() {
+  // Con el permiso ya dado, mantiene el token al día (cambió o el teléfono pasó a esta cuenta).
+  useEffect(() => {
+    registerPush({ ask: false }).catch(() => undefined);
+  }, []);
+  usePushTaps();
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
