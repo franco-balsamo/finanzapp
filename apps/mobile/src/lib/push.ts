@@ -32,7 +32,14 @@ export type PushPermission = 'granted' | 'denied' | 'undetermined' | 'unsupporte
 
 export async function pushPermission(): Promise<PushPermission> {
   if (!enabled) return 'unsupported';
-  return (await Notifications.getPermissionsAsync()).status;
+  const status = askable(await Notifications.getPermissionsAsync());
+  // Ya se preguntó y no se va a volver a preguntar (D5): para Ajustes está negado.
+  return status === 'undetermined' && (await AsyncStorage.getItem(ASKED_KEY)) ? 'denied' : status;
+}
+
+// En Android 13+ el permiso sin pedir viene como denied con canAskAgain.
+function askable({ status, canAskAgain }: Notifications.NotificationPermissionsStatus): Notifications.PermissionStatus {
+  return status === 'denied' && canAskAgain ? Notifications.PermissionStatus.UNDETERMINED : status;
 }
 
 /**
@@ -42,7 +49,7 @@ export async function pushPermission(): Promise<PushPermission> {
 export async function registerPush({ ask }: { ask: boolean }): Promise<void> {
   if (!enabled) return;
   await channel;
-  let { status } = await Notifications.getPermissionsAsync();
+  let status = askable(await Notifications.getPermissionsAsync());
   if (status === 'undetermined' && ask && !(await AsyncStorage.getItem(ASKED_KEY))) {
     await AsyncStorage.setItem(ASKED_KEY, '1');
     ({ status } = await Notifications.requestPermissionsAsync());
